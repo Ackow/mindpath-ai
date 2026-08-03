@@ -1,0 +1,66 @@
+{
+  "title": "AI 学习路线与知识地图",
+  "version": "1.0.0",
+  "modules": [
+    {
+      "id": "foundations",
+      "title": "准备知识",
+      "description": "数学基础、概率统计、编程基础等 AI 学习所需的预备知识。",
+      "icon": "book-open",
+      "color": "blue",
+      "totalNotes": 12,
+      "completedNotes": 5,
+      "progressPercent": 45
+    },
+    {
+      "id": "machine-learning",
+      "title": "机器学习",
+      "description": "经典机器学习算法与模型，掌握从数据到模型的核心流程。",
+      "icon": "trending-up",
+      "color": "emerald",
+      "totalNotes": 18,
+      "completedNotes": 9,
+      "progressPercent": 48
+    },
+    {
+      "id": "deep-learning",
+      "title": "深度学习",
+      "description": "神经网络基础与进阶，理解深度学习的原理与实践。",
+      "icon": "cpu",
+      "color": "orange",
+      "totalNotes": 15,
+      "completedNotes": 5,
+      "progressPercent": 36
+    },
+    {
+      "id": "vision",
+      "title": "计算机视觉",
+      "description": "图像处理、目标检测、分割与视觉理解等核心技术。",
+      "icon": "image",
+      "color": "sky",
+      "totalNotes": 10,
+      "completedNotes": 3,
+      "progressPercent": 28
+    },
+    {
+      "id": "llm",
+      "title": "Transformer 与 LLM",
+      "description": "Transformer 架构与大模型原理，掌握预训练与微调方法。",
+      "icon": "layers",
+      "color": "purple",
+      "totalNotes": 14,
+      "completedNotes": 4,
+      "progressPercent": 31
+    },
+    {
+      "id": "rag",
+      "title": "RAG 与 Agent",
+      "description": "检索增强生成与智能体应用，构建更强大的 AI 系统。",
+      "icon": "message-square",
+      "color": "teal",
+      "totalNotes": 9,
+      "completedNotes": 2,
+      "progressPercent": 24
+    }
+  ]
+}

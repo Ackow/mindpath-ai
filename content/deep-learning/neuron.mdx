@@ -1,0 +1,35 @@
+---
+id: dl-neuron
+title: 单个人工神经元
+module: deep-learning
+order: 1
+difficulty: beginner
+prerequisites: [math-vector, ml-linear-model]
+estimatedMinutes: 25
+tags: [神经网络, 前向传播]
+summary: 理解神经网络的基本计算单元，包括输入、权重、偏置、激活与输出之间的关系。
+---
+
+# 单个人工神经元
+
+单个人工神经元（也称为感知机的推广形式）是神经网络中的基本计算单元。它接收一组输入信号，对这些输入进行加权求和并加上偏置项，然后通过激活函数得到最终输出。
+
+<ConceptCard title="核心直觉">
+神经元先计算加权和 $z = \sum_i w_i x_i + b$，再通过激活函数 $\sigma(z)$ 产生非线性输出。
+</ConceptCard>
+
+$$z = \sum_{i=1}^{n} w_i x_i + b, \quad a = \text{ReLU}(z)$$
+
+<NeuronLab initialInputs={[0.8, -0.4]} initialWeights={[1.2, 0.7]} bias={0.3} />
+
+<RunnableCodeBlock title="用 Python 计算一个神经元的输出">
+{`import numpy as np
+
+x = np.array([0.8, -0.4])
+w = np.array([1.2, 0.7])
+b = 0.3
+
+z = np.dot(x, w) + b
+a = max(0, z)
+print(f"z = {z:.2f}, a = {a:.2f}")`}
+</RunnableCodeBlock>
