@@ -18,7 +18,7 @@ export const Navbar: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-6 py-3">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
+      <div className="max-w-[1850px] mx-auto flex items-center justify-between">
         {/* Left: Brand Logo */}
         <Link href="/" className="flex items-center gap-3 group">
           <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200/80 flex items-center justify-center text-teal-600 group-hover:bg-teal-100 transition-colors">

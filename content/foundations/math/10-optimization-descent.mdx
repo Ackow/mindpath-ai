@@ -1,0 +1,18 @@
+---
+id: math-10-optimization-descent
+title: 梯度下降与凸优化基础
+module: foundations
+submodule: math
+order: 10
+difficulty: intermediate
+prerequisites: [math-09-calculus-gradient]
+estimatedMinutes: 35
+tags: [梯度下降, 学习率, 凸优化]
+summary: 梯度下降算法、随机梯度下降 SGD、Mini-batch 机制、学习率设置与鞍点/局部极值问题。
+---
+
+# 10. 梯度下降与凸优化基础
+
+梯度下降是现代机器学习与深度学习中参数更新的核心方法。
+
+$$\mathbf{w}^{(t+1)} = \mathbf{w}^{(t)} - \alpha \nabla L(\mathbf{w}^{(t)})$$

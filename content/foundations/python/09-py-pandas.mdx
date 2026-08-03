@@ -1,0 +1,22 @@
+---
+id: py-pandas
+title: pandas 数据处理
+module: foundations
+submodule: python
+order: 9
+difficulty: intermediate
+prerequisites: [py-files-debugging]
+estimatedMinutes: 35
+tags: [pandas, DataFrame, GroupBy]
+summary: Series 与 DataFrame 索引、缺失值填充 (fillna)、GroupBy 分组聚合与数据合并 (merge)。
+---
+
+# 09. pandas 数据处理
+
+用于表格数据处理、清洗与探索性数据分析 (EDA) 的标准工具。
+
+```python
+import pandas as pd
+df = pd.read_csv("data.csv")
+print(df.describe())
+```

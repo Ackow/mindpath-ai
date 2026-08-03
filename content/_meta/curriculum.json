@@ -9,8 +9,28 @@
       "icon": "book-open",
       "color": "blue",
       "totalNotes": 12,
-      "completedNotes": 5,
-      "progressPercent": 45
+      "completedNotes": 6,
+      "progressPercent": 50,
+      "submodules": [
+        {
+          "id": "python",
+          "title": "Python 与科学计算",
+          "notesCount": 6,
+          "completedCount": 6
+        },
+        {
+          "id": "math",
+          "title": "线性代数与微积分",
+          "notesCount": 4,
+          "completedCount": 4
+        },
+        {
+          "id": "probability",
+          "title": "概率与统计",
+          "notesCount": 2,
+          "completedCount": 2
+        }
+      ]
     },
     {
       "id": "machine-learning",

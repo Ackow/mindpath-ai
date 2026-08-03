@@ -1,0 +1,23 @@
+---
+id: py-modules
+title: 模块、包与配置
+module: foundations
+submodule: python
+order: 6
+difficulty: beginner
+prerequisites: [py-functions]
+estimatedMinutes: 25
+tags: [模块, 包, import, sys.path]
+summary: __init__.py 机制、相对与绝对导入、sys.path 搜索路径与 argparse/yaml 配置解析。
+---
+
+# 06. 模块、包与配置
+
+工程化 AI 项目的结构化组织方式。
+
+```python
+# argparse 示例
+import argparse
+parser = argparse.ArgumentParser(description="训练超参数配置")
+parser.add_argument("--lr", type=float, default=0.01, help="学习率")
+```

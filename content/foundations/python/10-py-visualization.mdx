@@ -1,0 +1,23 @@
+---
+id: py-visualization
+title: 可视化
+module: foundations
+submodule: python
+order: 10
+difficulty: beginner
+prerequisites: [py-numpy, py-pandas]
+estimatedMinutes: 25
+tags: [Matplotlib, Seaborn, 数据可视化]
+summary: Figure 与 Axes 架构、折线图、散点图、直方图与 Seaborn 统计特征热力图。
+---
+
+# 10. 可视化
+
+将高维特征与模型 Loss 下降过程进行直观图形化展示。
+
+<RunnableCodeBlock title="Loss 下降曲线展示">
+{`import numpy as np
+epochs = np.arange(1, 11)
+loss = 2.5 * np.exp(-0.4 * epochs) + 0.1
+print("Loss 趋势:", [round(l, 3) for l in loss])`}
+</RunnableCodeBlock>

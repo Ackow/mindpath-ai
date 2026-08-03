@@ -1,0 +1,18 @@
+---
+id: prob-12-mle-hypothesis
+title: 最大似然估计 MLE 与交叉熵
+module: foundations
+submodule: probability
+order: 12
+difficulty: intermediate
+prerequisites: [prob-11-probability-bayes]
+estimatedMinutes: 35
+tags: [MLE, MAP, 交叉熵, 似然函数]
+summary: 最大似然估计 MLE、最大后验概率 MAP、高斯噪声与 MSE 的等价性、伯努利分布与交叉熵。
+---
+
+# 12. 最大似然估计 MLE 与交叉熵
+
+为什么回归模型常用最小二乘损失 (MSE)，而分类模型常用交叉熵 (Cross Entropy) 损失？答案源于最大似然估计。
+
+$$\theta_{\text{MLE}} = \arg\max_\theta \sum_{i=1}^n \log P(x_i | \theta)$$

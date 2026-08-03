@@ -1,0 +1,23 @@
+---
+id: py-numpy
+title: NumPy 数值计算
+module: foundations
+submodule: python
+order: 8
+difficulty: intermediate
+prerequisites: [py-functions]
+estimatedMinutes: 35
+tags: [NumPy, ndarray, 广播, 向量化]
+summary: ndarray 创建、维度变化 (Reshape)、广播规则 (Broadcasting) 与矩阵运算 (@)。
+---
+
+# 08. NumPy 数值计算
+
+NumPy 是所有科学计算与深度学习框架 (PyTorch, TensorFlow) 的基石。
+
+<RunnableCodeBlock title="广播机制示例">
+{`import numpy as np
+X = np.array([[1, 2], [3, 4]])
+b = np.array([10, 20])
+print("X + b 广播结果:\n", X + b)`}
+</RunnableCodeBlock>

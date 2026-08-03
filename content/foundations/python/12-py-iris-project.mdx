@@ -1,0 +1,29 @@
+---
+id: py-iris-project
+title: 鸢尾花分类小项目
+module: foundations
+submodule: python
+order: 12
+difficulty: intermediate
+prerequisites: [py-ml-workflow]
+estimatedMinutes: 40
+tags: [实战项目, Iris, scikit-learn]
+summary: 经典鸢尾花 (Iris) 数据集加载、数据清洗、KNN/逻辑回归分类建模与准确率评估实战。
+---
+
+# 12. 鸢尾花分类小项目
+
+阶段 0 综合实战：从头完成一个端到端的机器学习分类任务。
+
+<RunnableCodeBlock title="鸢尾花数据集加载与模型拟合">
+{`from sklearn.datasets import load_iris
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+
+iris = load_iris()
+X_train, X_test, y_train, y_test = train_test_split(iris.data, iris.target, test_size=0.2, random_state=42)
+
+clf = LogisticRegression(max_iter=200)
+clf.fit(X_train, y_train)
+print("测试集准确率:", round(clf.score(X_test, y_test), 4))`}
+</RunnableCodeBlock>

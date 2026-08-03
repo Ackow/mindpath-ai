@@ -1,0 +1,23 @@
+---
+id: py-control-flow
+title: 控制流与推导式
+module: foundations
+submodule: python
+order: 3
+difficulty: beginner
+prerequisites: [py-basics]
+estimatedMinutes: 25
+tags: [控制流, 列表推导式, 字典推导式]
+summary: if-elif-else 条件分支、for/while 循环控制、列表/字典推导式的高效简洁表达。
+---
+
+# 03. 控制流与推导式
+
+推导式 (Comprehension) 是 Python 最具特色的 Pythonic 简洁语法。
+
+<RunnableCodeBlock title="列表推导式与条件筛选">
+{`data = [1.2, -0.5, 3.4, -2.1, 0.8]
+# 相当于激活函数 ReLU
+relu_output = [x if x > 0 else 0 for x in data]
+print("ReLU 模拟滤波:", relu_output)`}
+</RunnableCodeBlock>

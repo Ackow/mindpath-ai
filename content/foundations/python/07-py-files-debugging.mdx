@@ -1,0 +1,21 @@
+---
+id: py-files-debugging
+title: 文件、异常、调试与测试
+module: foundations
+submodule: python
+order: 7
+difficulty: beginner
+prerequisites: [py-modules]
+estimatedMinutes: 30
+tags: [文件IO, 异常处理, pdb, pytest]
+summary: with 上下文管理器、try-except-finally、pdb 断点调试与 pytest 单元测试基础。
+---
+
+# 07. 文件、异常、调试与测试
+
+保障 AI 数据 pipeline 与模型训练逻辑稳健运行的必备工程技能。
+
+```python
+with open("dataset.csv", "r", encoding="utf-8") as f:
+    lines = f.readlines()
+```

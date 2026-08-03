@@ -1,4 +1,5 @@
 @import 'katex/dist/katex.min.css';
+@import 'highlight.js/styles/github-dark.css';
 
 @tailwind base;
 @tailwind components;
@@ -7,6 +8,7 @@
 :root {
   --background: #F4F7FA;
   --foreground: #0F172A;
+  font-size: 18px;
 }
 
 body {
@@ -15,6 +17,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  line-height: 1.85;
 }
 
 /* Custom Scrollbar */
@@ -44,3 +47,96 @@ body {
 .react-flow__node {
   border-radius: 12px;
 }
+
+/* MDX Content Generous Spacing */
+.mdx-content h2 {
+  margin-top: 3.25rem;
+  margin-bottom: 1.25rem;
+  border-left: 4px solid #0d9488;
+  padding-left: 1rem;
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.4;
+  color: #0f172a;
+}
+
+.mdx-content h3 {
+  margin-top: 2.25rem;
+  margin-bottom: 1rem;
+  font-size: 1.35rem;
+  font-weight: 750;
+  color: #1e293b;
+}
+
+.mdx-content p,
+.mdx-content ul,
+.mdx-content ol,
+.mdx-content table,
+.mdx-content pre {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.mdx-content p,
+.mdx-content li,
+.mdx-content th,
+.mdx-content td {
+  font-size: 1.05rem;
+  line-height: 1.85;
+}
+
+.mdx-content ul,
+.mdx-content ol {
+  padding-left: 1.75rem;
+}
+
+.mdx-content ul { list-style: disc; }
+.mdx-content ol { list-style: decimal; }
+
+.mdx-content a {
+  color: #0f766e;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.mdx-content code:not(pre code) {
+  border-radius: 0.25rem;
+  background: #f1f5f9;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.85em;
+  color: #0f172a;
+}
+
+.mdx-content pre {
+  overflow-x: auto;
+  border-radius: 0.85rem;
+  background: #0d1117;
+  padding: 1.25rem;
+  color: #c9d1d9;
+  font-size: 0.92rem;
+  line-height: 1.8;
+  margin-top: 1.75rem;
+  margin-bottom: 1.75rem;
+}
+
+.mdx-content table {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.85rem;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+.mdx-content th,
+.mdx-content td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+
+.mdx-content th { background: #f8fafc; font-weight: 700; }
+.mdx-content tr:last-child td { border-bottom: 0; }

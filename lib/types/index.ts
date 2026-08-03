@@ -16,6 +16,7 @@ export interface MindMapNodeData {
   id: string;
   title: string;
   module: string;
+  submodule?: string;
   route: string;
   difficulty: NodeDifficulty;
   estimatedMinutes: number;
