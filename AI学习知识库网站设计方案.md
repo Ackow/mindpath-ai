@@ -196,6 +196,62 @@ print(max(0, z))`}
 
 组件只承担单一职责：地图组件不解析文章正文；代码块不维护课程关系；公式组件只处理数学渲染。
 
+### 一篇笔记在网站中需要哪些文件
+
+以 Python 第一章“Python 环境与 Notebook”（ID：`py-environment`）为例，内容显示的最小文件组合如下：
+
+```text
+content/
+  python/
+    01-environment.mdx              # 必需：文章、公式、正文、组件引用
+maps/
+  global.json                       # 必需：新增/更新该节点及依赖边
+content/_meta/
+  curriculum.json                   # 必需：Python 模块的标题、说明、进度统计
+public/assets/python/
+  environment-flow.svg              # 可选：静态示意图
+components/animations/
+  NotebookLifecycle.tsx             # 可选：需要动态讲解时才创建
+public/examples/python/
+  01-environment.py                 # 可选：供用户下载的完整示例
+```
+
+| 文件 | 是否必需 | 网站如何使用 |
+|---|---:|---|
+| `content/python/01-environment.mdx` | 是 | 阅读页加载正文；Frontmatter 决定标题、路由、标签、前置和顺序。代码块直接写在 MDX 内。 |
+| `maps/global.json` | 是 | 地图读取节点标题、位置、前置关系与文章路由；没有节点则文章无法出现在图谱。 |
+| `content/_meta/curriculum.json` | 是 | 首页和模块列表显示 Python 模块卡片、总笔记数和完成度。 |
+| `public/assets/...` | 否 | 存放优化后的静态图片/SVG；MDX 通过相对站点路径引用。 |
+| `components/animations/...` | 否 | 只有需要滑块、步骤播放或数据流时才编写；简单图优先 SVG。 |
+| `public/examples/...` | 否 | 放可下载的完整 `.py` 文件；不要复制与 MDX 完全相同的小代码块。 |
+
+推荐的 Python 笔记命名和路由：
+
+```text
+content/python/01-environment.mdx       -> /learn/python/01-environment
+content/python/02-basics.mdx            -> /learn/python/02-basics
+content/python/08-numpy.mdx             -> /learn/python/08-numpy
+content/python/12-iris-project.mdx      -> /learn/python/12-iris-project
+```
+
+每篇 MDX 的 Frontmatter 必须和地图节点一致：
+
+```mdx
+---
+id: py-environment
+title: Python 环境与 Notebook
+module: python
+order: 1
+difficulty: beginner
+prerequisites: []
+estimatedMinutes: 35
+tags: [Python, 环境, Jupyter]
+summary: 建立可复现的 Python 学习和实验环境。
+---
+```
+
+注意：当前项目的 `/learn/[...slug]` 页面仍是写死的“神经元”展示原型。因此仅新增 MDX 文件还不会自动显示；下一步必须让页面根据 URL 读取和渲染对应 MDX，并让地图页读取 `maps/global.json`，才能真正形成内容闭环。
+
 ## 5. 浏览器代码运行设计
 
 ### Worker 协议
@@ -394,7 +450,47 @@ flowchart LR
 
 第二版再完成：全文搜索、进度导入导出、梯度下降/反向传播动画、更多 Python 包和专项内容。
 
-## 13. 参考资料
+## 13. 当前初步构建评估（2026-08-03）
+
+### 已完成且可复用的基础
+
+- Next.js 14 + TypeScript + Tailwind 项目已初始化，`next.config.mjs` 已启用 `output: 'export'`，适合 GitHub Pages 静态部署。
+- 已有首页、地图、阅读、搜索、实验室、关于页的路由与 UI 原型。
+- 已存在 UI 基础组件、`NeuronLab` 动画、`RunnableCodeBlock` 组件、首篇 `content/deep-learning/neuron.mdx` 笔记。
+- 已有 `maps/global.json`、`content/_meta/curriculum.json` 和 `scripts/validate-content.mjs`。
+- 内容校验已实际运行成功：**13 个节点、16 条依赖边**，说明图谱节点 ID 和模块元数据目前一致。
+- Git 已初始化，文档已有历史提交，后续内容应继续按小批次提交。
+
+### 当前阻塞项与缺口
+
+| 优先级 | 事实 | 影响 |
+|---|---|---|
+| P0 | `npm run build` 失败：`/learn/[...slug]` 缺少 `generateStaticParams()`。 | 无法产生 GitHub Pages 所需的静态构建产物。 |
+| P0 | 阅读页目前写死为“单个人工神经元”展示，并未根据 URL 读取 MDX。 | 新增 Python/其他 MDX 后不会自动显示。 |
+| P0 | 地图页使用硬编码的模拟节点和树，而未读取 `maps/global.json`。 | JSON 图谱变更不会反映到 UI。 |
+| P1 | `global.json` 只有 13 个深度学习/数学/机器学习节点，尚无 Python 节点。 | Python 路线不能在网站中出现。 |
+| P1 | `curriculum.json` 还没有 `python` 模块，`content/python/` 也不存在。 | 首页和模块统计不能显示 Python 学习阶段。 |
+| P1 | `package.json` 尚无 `pyodide` 或 CodeMirror 依赖。 | 当前代码块是 UI 组件，尚未具备浏览器 Python 执行能力。 |
+| P1 | 未发现 `.github/workflows` 中的部署工作流，`basePath` 仍被注释。 | 尚未配置自动发布到 GitHub Pages。 |
+| P2 | 进度、搜索索引、MDX 内容校验尚未接入真实页面数据流。 | 当前进度与搜索还不能作为真实学习功能使用。 |
+
+### 下一步：只做一个最小内容闭环
+
+不要立刻增加 Pyodide、Agent 或大量 UI。按以下顺序完成 **Python 第一章** 的真实闭环：
+
+1. 创建 `lib/content.ts`：扫描 `content/**/*.mdx`，解析 Frontmatter，生成 slug、目录和文章元数据。
+2. 重构 `app/learn/[...slug]/page.tsx`：在构建期读取 MDX，并从内容文件生成 `generateStaticParams()`；将交互代码/动画拆到客户端组件。
+3. 先让已有 `deep-learning/neuron.mdx` 真实渲染，修复 `npm run build`，确认生成 `out/`。
+4. 新增 `python` 模块到 `curriculum.json`，新增 Python 12 个节点到 `maps/global.json`，并补足依赖边。
+5. 新建 `content/python/01-environment.mdx`，用真实 URL `/learn/python/01-environment` 验证它会在阅读页出现。
+6. 重构 `app/map/page.tsx`：读取 `maps/global.json`，先做到真实节点列表、节点详情、点击跳转；React Flow 拖拽画布可在后续迭代。
+7. 让首页模块卡片也读取 `curriculum.json`；暂时不实现真实进度，完成状态可先从 JSON 显示。
+8. 创建 `.github/workflows/deploy-pages.yml`，设置 `basePath`，本地构建通过后再启用 GitHub Pages。
+9. 每完成一步执行 `npm run validate:content` 和 `npm run build`，并创建一个 Git 提交。
+
+完成第 1～6 步，项目就从“高保真原型”变成“可持续边学习边写内容的网站”；完成第 8 步后才是可公开部署的静态网站。
+
+## 14. 参考资料
 
 - Next.js MDX：https://nextjs.org/docs/app/guides/mdx
 - React Flow：https://reactflow.dev/
