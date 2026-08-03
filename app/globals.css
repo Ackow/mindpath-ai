@@ -48,6 +48,22 @@ body {
   border-radius: 12px;
 }
 
+/* Silky Smooth Page Transition Keyframes */
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.996);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-page-fade {
+  animation: pageFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 /* MDX Content Generous Spacing */
 .mdx-content h2 {
   margin-top: 3.25rem;

@@ -30,12 +30,14 @@ export default async function NoteReaderPage({ params }: PageProps) {
   if (!mdxData) notFound();
 
   return (
-    <NoteReaderClient
-      slug={params.slug}
-      frontmatter={mdxData.frontmatter}
-      rawContent={mdxData.rawContent}
-    >
-      {mdxData.contentNode}
-    </NoteReaderClient>
+    <div className="animate-page-fade w-full">
+      <NoteReaderClient
+        slug={params.slug}
+        frontmatter={mdxData.frontmatter}
+        rawContent={mdxData.rawContent}
+      >
+        {mdxData.contentNode}
+      </NoteReaderClient>
+    </div>
   );
 }

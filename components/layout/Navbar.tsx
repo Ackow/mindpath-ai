@@ -11,7 +11,7 @@ export const Navbar: React.FC = () => {
   const navItems = [
     { label: '首页', href: '/', icon: Home },
     { label: '学习地图', href: '/map', icon: Network },
-    { label: '笔记库', href: '/learn/deep-learning/neuron', icon: BookOpen },
+    { label: '笔记库', href: '/learn/foundations/python/01-py-environment', icon: BookOpen },
     { label: '实验室', href: '/playground', icon: Beaker },
     { label: '搜索', href: '/search', icon: Search },
   ];
@@ -38,7 +38,13 @@ export const Navbar: React.FC = () => {
         <nav className="flex items-center gap-1 md:gap-2">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+            const isActive =
+              item.label === '笔记库'
+                ? pathname.startsWith('/learn/')
+                : item.href === '/'
+                ? pathname === '/'
+                : pathname.startsWith(item.href);
+
             return (
               <Link
                 key={item.href}

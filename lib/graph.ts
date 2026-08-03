@@ -55,10 +55,10 @@ export function getHierarchicalModuleTree(): ModuleTreeNode[] {
     if (mod.submodules && mod.submodules.length > 0) {
       return {
         id: mod.id,
-        title: `${mod.title} (阶段)`,
+        title: mod.title,
         submodules: mod.submodules.map((sub: any) => ({
           id: `sub-${sub.id}`,
-          title: `${sub.title} (${allNodes.filter((n) => n.module === mod.id && n.submodule === sub.id).length}章)`,
+          title: sub.title,
           children: allNodes.filter((n) => n.module === mod.id && n.submodule === sub.id),
         })),
       };
@@ -69,8 +69,8 @@ export function getHierarchicalModuleTree(): ModuleTreeNode[] {
         title: mod.title,
         submodules: children.length > 0 ? [
           {
-            id: `sub-${mod.id}-main`,
-            title: `${mod.title}核心课程`,
+            id: `sub-${mod.id}`,
+            title: mod.title,
             children: children,
           }
         ] : [],

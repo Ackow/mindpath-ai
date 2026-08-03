@@ -13,7 +13,8 @@ import {
   Check,
   CheckSquare,
   Bookmark,
-  ChevronRightIcon
+  ChevronRightIcon,
+  BookOpen
 } from 'lucide-react';
 
 interface NoteReaderClientProps {
@@ -54,7 +55,7 @@ export const NoteReaderClient: React.FC<NoteReaderClientProps> = ({
 
   const [activeTocId, setActiveTocId] = useState(toc[0]?.id || 'sec-1');
 
-  // Exact Pixel-Offset Smooth Scroll to Heading (Guaranteeing Title is 100% Visible Below Fixed Header)
+  // Smooth Scroll Navigation to Heading on TOC Click
   const handleTocClick = (item: { id: string; title: string }) => {
     setActiveTocId(item.id);
     let target = document.getElementById(`heading-${item.title}`) || document.getElementById(item.id);
@@ -78,18 +79,38 @@ export const NoteReaderClient: React.FC<NoteReaderClientProps> = ({
   const symbols: { symbol: string; mean: string }[] = frontmatter?.symbols || [];
   const hasMathSymbols = symbols.some((s) => s.symbol.length === 1 || s.symbol.startsWith('$'));
 
-  // 3. Dynamic Related Notes loaded from real nodes in graph
-  const realRelatedNotes = allNodes
-    .filter((n) => n.id !== currentNode.id && (n.module === currentNode.module || currentNode.prerequisites.includes(n.id) || currentNode.next.includes(n.id)))
-    .slice(0, 3)
-    .map((n) => ({
-      id: n.id,
-      title: n.title,
-      route: n.route,
-      badge: n.tags[0] || (n.difficulty === 'beginner' ? '入门基础' : '核心概念'),
-      badgeColor: n.difficulty === 'beginner' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-sky-50 text-sky-600 border-sky-200',
-      time: `${n.estimatedMinutes || 25} 分钟`,
-    }));
+  // 3. Dynamic Related Notes (Filtering out root & foundations module parent cards)
+  const getRelatedNotes = () => {
+    if (Array.isArray(frontmatter?.relatedNotes) && frontmatter.relatedNotes.length > 0) {
+      const explicitNodes = frontmatter.relatedNotes
+        .map((id: string) => getNodeById(id))
+        .filter(Boolean);
+      if (explicitNodes.length > 0) return explicitNodes;
+    }
+
+    return allNodes
+      .filter(
+        (n) =>
+          n.id !== currentNode.id &&
+          n.id !== 'root' &&
+          n.id !== 'foundations' &&
+          n.route.startsWith('/learn/') &&
+          (n.submodule === currentNode.submodule || n.module === currentNode.module)
+      )
+      .slice(0, 3);
+  };
+
+  const realRelatedNotes = getRelatedNotes().map((n: any) => ({
+    id: n.id,
+    title: n.title,
+    route: n.route,
+    badge: n.tags?.[0] || (n.difficulty === 'beginner' ? '入门基础' : '核心概念'),
+    badgeColor:
+      n.difficulty === 'beginner'
+        ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+        : 'bg-sky-50 text-sky-600 border-sky-200',
+    time: `${n.estimatedMinutes || 25} 分钟`,
+  }));
 
   // 4. Real Module Chapters & Real Completion Progress
   const moduleTree = getHierarchicalModuleTree();
@@ -203,14 +224,28 @@ export const NoteReaderClient: React.FC<NoteReaderClientProps> = ({
       {/* Center Main MDX Content */}
       <div className="flex-1 space-y-6 min-w-0">
         <Card className="p-6 md:p-8 space-y-6 border border-slate-200/80 shadow-sm">
-          {/* Breadcrumbs & Metadata */}
+          {/* Breadcrumbs & Metadata Bar with Explicit "笔记库" & "返回知识地图" */}
           <div className="space-y-3">
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              <Link href="/map" className="hover:text-teal-600">知识库</Link>
-              <span>/</span>
-              <span className="hover:text-teal-600 cursor-pointer">{currentModuleGroup.title}</span>
-              <span>/</span>
-              <span className="text-slate-700 font-bold">{title}</span>
+            <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2 text-xs text-slate-500 font-medium truncate">
+                <Link href="/learn/foundations/python/01-py-environment" className="flex items-center gap-1 text-teal-700 font-extrabold hover:underline shrink-0">
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>笔记库</span>
+                </Link>
+                <span>/</span>
+                <Link href="/map" className="hover:text-teal-600 font-bold truncate">
+                  {currentModuleGroup.title}
+                </Link>
+                <span>/</span>
+                <span className="text-slate-800 font-bold truncate">{title}</span>
+              </div>
+
+              <Link
+                href="/map"
+                className="shrink-0 flex items-center gap-1 text-xs text-slate-600 hover:text-teal-600 bg-slate-50 hover:bg-teal-50 border border-slate-200 px-3 py-1 rounded-lg font-bold transition-all shadow-2xs"
+              >
+                <span>← 返回知识地图</span>
+              </Link>
             </div>
 
             <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
@@ -313,28 +348,30 @@ export const NoteReaderClient: React.FC<NoteReaderClientProps> = ({
           </Card>
         )}
 
-        {/* 关联笔记 */}
-        <Card className="p-4 space-y-3 border border-slate-200/80 shadow-sm">
-          <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-            <h3 className="font-extrabold text-slate-800 text-xs">关联推荐笔记</h3>
-            <Link href="/map" className="text-[11px] text-teal-600 hover:underline font-bold">查看全部</Link>
-          </div>
-          <div className="space-y-2.5 text-xs">
-            {realRelatedNotes.map((note) => (
-              <Link
-                key={note.id}
-                href={note.route}
-                className="block p-3 rounded-xl border border-slate-100 hover:border-slate-300 hover:shadow-xs transition-all cursor-pointer space-y-1.5 bg-white"
-              >
-                <div className="font-bold text-slate-800 hover:text-teal-600 leading-snug truncate">{note.title}</div>
-                <div className="flex items-center justify-between text-[10px] text-slate-400 pt-0.5">
-                  <span className={`px-2 py-0.5 rounded-md font-bold border ${note.badgeColor}`}>{note.badge}</span>
-                  <span className="flex items-center gap-1 font-medium"><Clock className="w-3 h-3" /> {note.time}</span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </Card>
+        {/* 关联推荐笔记 */}
+        {realRelatedNotes.length > 0 && (
+          <Card className="p-4 space-y-3 border border-slate-200/80 shadow-sm">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+              <h3 className="font-extrabold text-slate-800 text-xs">关联推荐笔记</h3>
+              <Link href="/map" className="text-[11px] text-teal-600 hover:underline font-bold">查看全部</Link>
+            </div>
+            <div className="space-y-2.5 text-xs">
+              {realRelatedNotes.map((note: any) => (
+                <Link
+                  key={note.id}
+                  href={note.route}
+                  className="block p-3 rounded-xl border border-slate-100 hover:border-slate-300 hover:shadow-xs transition-all cursor-pointer space-y-1.5 bg-white"
+                >
+                  <div className="font-bold text-slate-800 hover:text-teal-600 leading-snug truncate">{note.title}</div>
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 pt-0.5">
+                    <span className={`px-2 py-0.5 rounded-md font-bold border ${note.badgeColor}`}>{note.badge}</span>
+                    <span className="flex items-center gap-1 font-medium"><Clock className="w-3 h-3" /> {note.time}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </Card>
+        )}
       </div>
     </div>
   );
