@@ -1,12 +1,29 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Network, BookOpen, Beaker, Search, Bell } from 'lucide-react';
+import { Home, Network, BookOpen, Beaker, Search } from 'lucide-react';
+import { ThemeToggle } from '@/components/layout/ThemeToggle';
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
+  const [avatar, setAvatar] = useState<string | undefined>();
+
+  useEffect(() => {
+    const refreshAvatar = () => {
+      try {
+        const saved = localStorage.getItem('ai-learning:user-profile');
+        const parsed = saved ? JSON.parse(saved) : null;
+        setAvatar(typeof parsed?.avatar === 'string' ? parsed.avatar : undefined);
+      } catch {
+        setAvatar(undefined);
+      }
+    };
+    refreshAvatar();
+    window.addEventListener('ai-learning:user-profile', refreshAvatar);
+    return () => window.removeEventListener('ai-learning:user-profile', refreshAvatar);
+  }, []);
 
   const navItems = [
     { label: '首页', href: '/', icon: Home },
@@ -65,32 +82,12 @@ export const Navbar: React.FC = () => {
           })}
         </nav>
 
-        {/* Right: Search, Notifications, Profile */}
+        {/* Right: Theme, Profile */}
         <div className="flex items-center gap-3">
-          <Link
-            href="/search"
-            className="hidden sm:flex items-center gap-2 bg-slate-100 hover:bg-slate-200/70 text-slate-400 text-xs px-3.5 py-2 rounded-xl border border-slate-200/60 w-48 lg:w-64 transition-all"
-          >
-            <Search className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-slate-400 flex-1 truncate">搜索笔记、课程、主题...</span>
-            <kbd className="hidden lg:inline-block bg-white px-1.5 py-0.5 text-[10px] text-slate-400 rounded border border-slate-200">
-              ⌘K
-            </kbd>
+          <ThemeToggle compact />
+          <Link href="/profile" aria-label="打开用户页" className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-slate-700 text-xs font-bold text-white shadow-sm transition-all hover:ring-2 hover:ring-teal-200">
+            {avatar ? <img src={avatar} alt="用户头像" className="h-full w-full object-cover" /> : 'H'}
           </Link>
-
-          <button
-            aria-label="通知中心"
-            className="relative p-2 rounded-xl text-slate-500 hover:bg-slate-100 border border-slate-200/60 transition-colors"
-          >
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-orange-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white">
-              3
-            </span>
-          </button>
-
-          <div className="w-8 h-8 rounded-full bg-slate-700 text-white text-xs font-bold flex items-center justify-center shadow-sm">
-            H
-          </div>
         </div>
       </div>
     </header>

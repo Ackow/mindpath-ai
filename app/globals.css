@@ -20,6 +20,48 @@ body {
   line-height: 1.85;
 }
 
+html.dark {
+  --background: #0f172a;
+  --foreground: #e2e8f0;
+  color-scheme: dark;
+}
+
+html.dark body {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+html.dark header,
+html.dark footer,
+html.dark .bg-white {
+  background-color: #111827 !important;
+  border-color: #334155 !important;
+}
+
+html.dark .bg-slate-50,
+html.dark .bg-\[\#F4F7FA\],
+html.dark .bg-\[\#F8FAFC\] {
+  background-color: #172033 !important;
+}
+
+html.dark .text-slate-900,
+html.dark .text-slate-800,
+html.dark .text-slate-700 {
+  color: #f1f5f9 !important;
+}
+
+html.dark .text-slate-600,
+html.dark .text-slate-500,
+html.dark .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark .border-slate-200\/80 {
+  border-color: #334155 !important;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
@@ -46,6 +88,26 @@ body {
 
 .react-flow__node {
   border-radius: 12px;
+}
+
+.learning-progress-circle {
+  width: 2rem;
+  height: 2rem;
+  min-width: 2rem;
+  min-height: 2rem;
+  flex: 0 0 2rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 0.625rem;
+  line-height: 1;
+  font-weight: 800;
+  color: #0f766e;
+  background: #f0fdfa;
+  border: 1px solid #5eead4;
 }
 
 /* Silky Smooth Page Transition Keyframes */

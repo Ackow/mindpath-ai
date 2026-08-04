@@ -1,11 +1,15 @@
 ---
 id: py-environment
-title: Python 环境与 Notebook
+title: 01.Python 环境与 Notebook
 module: foundations
 submodule: python
 order: 1
 difficulty: beginner
 prerequisites: []
+relatedNotes: [py-modules, py-files-debugging]
+nextNotes: [py-basics]
+map:
+  layoutGroup: foundations-python
 estimatedMinutes: 25
 tags: [Python, 环境配置, Jupyter]
 summary: AI 学习所需的 Python 解释器、Anaconda/venv 隔离环境、Conda/pip 包管理与 Jupyter Notebook 交互界面。
@@ -219,6 +223,37 @@ python check_environment.py
 
 如果每一行都正常输出版本号，说明：解释器、虚拟环境和基础包已经连通。
 
+### 7.1 `.py`、Notebook、注释与帮助如何配合
+
+`.py` 是从上到下运行的脚本，适合把已经验证过的步骤保存为可重复执行的程序；`.ipynb` 是由许多单元格组成的实验记录，适合边写边观察。学习时可以先在 Notebook 探索，再把稳定的过程整理到 `.py`。无论使用哪一种，都要用注释说明“为什么这样做”，而不是重复代码表面意思。
+
+```python
+# 这条信息用于确认：运行代码的解释器来自当前虚拟环境。
+import sys
+
+print(sys.executable)
+help(len)  # 在终端显示 len 的内置帮助；Notebook 中也可以写 len?
+```
+
+下面的最小目录足以开始一个可复现实验。`requirements.txt` 记录依赖，`.gitignore` 告诉 Git 忽略可重新生成或不应公开的文件：
+
+```text
+my-first-ai-project/
+  .gitignore
+  .venv/
+  check_environment.py
+  python-environment.ipynb
+  requirements.txt
+```
+
+`.gitignore` 至少加入：
+
+```text
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+```
+
 ## 8. 创建第一个 Notebook
 
 有两种方式，任选一种。
@@ -268,6 +303,10 @@ Restart Kernel → Run All Cells
 ```
 
 只有从空内核完整运行通过，实验才可复现。
+
+<NotebookLifecycle />
+
+先点击“重新赋值”，再运行输出单元格；然后重置内核并只运行输出单元格。这个演示把 Notebook 中看不见的内核状态变成可观察的状态，说明为什么共享 Notebook 前必须执行“Restart Kernel -> Run All Cells”。
 
 ## 小实验：生成第一个数据图
 

@@ -19,6 +19,9 @@ import {
 } from 'lucide-react';
 import { getContentIndex } from '@/lib/content';
 import { getCurriculumModules, getGlobalGraphNodes } from '@/lib/graph';
+import { LearningProgressBar, LearningProgressSummary, LearningProgressValue } from '@/components/progress/LearningProgress';
+import { RecentNotes } from '@/components/dashboard/RecentNotes';
+import { ContinueLearningLink } from '@/components/dashboard/ContinueLearningLink';
 
 export default async function DashboardPage() {
   const [entries, curriculum, graphNodes] = await Promise.all([
@@ -27,6 +30,7 @@ export default async function DashboardPage() {
     Promise.resolve(getGlobalGraphNodes()),
   ]);
   const notesByRoute = new Map(entries.map((entry) => [entry.route, entry]));
+  const moduleOrder = new Map(curriculum.map((module, index) => [module.id, index]));
   const iconByModule = {
     foundations: BookOpen,
     'machine-learning': TrendingUp,
@@ -47,22 +51,33 @@ export default async function DashboardPage() {
         progressBg: 'bg-teal-500',
         percent: module.totalNotes > 0 ? Math.round((notes.length / module.totalNotes) * 100) : 0,
         notesCount: notes.length,
+        nodes: graphNodes.filter((node) => node.module === module.id && node.route.startsWith('/learn/')),
       };
     })
     .filter((module) => module.notesCount > 0);
-  const currentRoute = graphNodes
+  const learningOrder = graphNodes
     .filter((node) => notesByRoute.has(node.route))
-    .sort((left, right) => left.route.localeCompare(right.route))
+    .sort((left, right) => {
+      const leftEntry = notesByRoute.get(left.route);
+      const rightEntry = notesByRoute.get(right.route);
+      const moduleDifference = (moduleOrder.get(left.module) || 0) - (moduleOrder.get(right.module) || 0);
+      if (moduleDifference !== 0) return moduleDifference;
+      const orderDifference = Number(leftEntry?.order || 0) - Number(rightEntry?.order || 0);
+      if (orderDifference !== 0) return orderDifference;
+      return left.route.localeCompare(right.route);
+    })
+  const currentRoute = learningOrder
     .slice(0, 4)
-    .map((node, index) => ({ title: node.title, active: index === 0 }));
+    .map((node, index) => ({ title: node.title, route: node.route, active: index === 0 }));
   const recentNotes = entries.slice(-3).reverse().map((entry) => ({
     title: entry.title,
     module: entry.module,
     badgeClass: 'bg-teal-50 text-teal-700',
-    time: `${entry.estimatedMinutes} 分钟阅读`,
+    time: `${entry.estimatedMinutes || 25} minutes`,
     summary: entry.summary,
     slug: entry.slug.join('/'),
   }));
+  const progressNodes = graphNodes.filter((node) => notesByRoute.has(node.route));
 
   return (
     <div className="space-y-8">
@@ -78,13 +93,7 @@ export default async function DashboardPage() {
             从数学基础到大模型，按清晰学习路线稳步前进，逐步建立完整的 AI 知识结构。
           </p>
           <div className="flex items-center gap-3">
-            <Link
-              href="/learn/deep-learning/neuron"
-              className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-md transition-all"
-            >
-              <Play className="w-4 h-4 fill-white" />
-              继续学习
-            </Link>
+            <ContinueLearningLink candidates={learningOrder} />
             <Link
               href="/map"
               className="inline-flex items-center gap-1.5 text-slate-600 hover:text-teal-600 text-sm font-medium px-4 py-2.5 rounded-xl transition-colors"
@@ -139,28 +148,7 @@ export default async function DashboardPage() {
             <h2 className="font-bold text-slate-800 text-base">知识库概览</h2>
           </div>
 
-          <div className="flex items-center gap-4 py-2">
-            <div className="w-20 h-20 rounded-full bg-teal-50 border border-teal-100 text-teal-700 flex flex-col items-center justify-center shrink-0">
-              <span className="text-2xl font-black">{entries.length}</span>
-              <span className="text-[10px] font-bold">篇笔记</span>
-            </div>
-            <div className="space-y-2.5 text-xs">
-              <div className="flex items-center gap-2 text-slate-600">
-                <BookOpen className="w-3.5 h-3.5 text-slate-400" />
-                <div>
-                  <div className="text-[10px] text-slate-400">已收录模块</div>
-                  <div className="font-semibold text-slate-800">{modules.length} 个</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 text-slate-600">
-                <Clock className="w-3.5 h-3.5 text-slate-400" />
-                <div>
-                  <div className="text-[10px] text-slate-400">预计阅读时长</div>
-                  <div className="font-semibold text-teal-600">{entries.reduce((total, entry) => total + entry.estimatedMinutes, 0)} 分钟</div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <LearningProgressSummary nodes={progressNodes} />
 
           <div className="pt-2 border-t border-slate-100 flex justify-end">
             <button className="text-xs font-medium text-slate-400 hover:text-teal-600 flex items-center gap-1 transition-colors">
@@ -192,12 +180,9 @@ export default async function DashboardPage() {
                 </p>
                 <div className="pt-2 flex items-center justify-between text-xs text-slate-400">
                   <div className="w-36 bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${mod.progressBg}`}
-                      style={{ width: `${mod.percent}%` }}
-                    />
+                    <LearningProgressBar nodes={mod.nodes} />
                   </div>
-                  <span>完成 {mod.percent}%</span>
+                  <LearningProgressValue nodes={mod.nodes} />
                   <span>{mod.notesCount} 篇笔记 &gt;</span>
                 </div>
               </Link>
@@ -210,12 +195,13 @@ export default async function DashboardPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="font-bold text-slate-800 text-lg">最近学习的笔记</h2>
-          <Link href="/learn/deep-learning/neuron" className="text-xs font-medium text-slate-400 hover:text-teal-600 flex items-center gap-1 transition-colors">
+          <Link href="/map" className="text-xs font-medium text-slate-400 hover:text-teal-600 flex items-center gap-1 transition-colors">
             查看全部 &rarr;
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <RecentNotes notes={entries} />
+        <div className="hidden">
           {recentNotes.map((note, idx) => (
             <Card key={idx} hoverable className="flex flex-col justify-between">
               <Link href={`/learn/${note.slug}`} className="space-y-3 block">

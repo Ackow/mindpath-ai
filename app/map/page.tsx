@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { DifficultyBadge } from '@/components/ui/Badge';
 import { getGlobalGraphNodes, getNodeById, getHierarchicalModuleTree } from '@/lib/graph';
 import { InteractiveMindMap } from '@/components/mindmap/InteractiveMindMap';
+import { LearningProgressValue } from '@/components/progress/LearningProgress';
+import { readDocumentProgress } from '@/components/mdx/TaskCheckbox';
 import {
   ChevronDown,
   ChevronRight,
@@ -13,39 +15,60 @@ import {
   Play,
   BookOpen,
   X,
-  SlidersHorizontal,
   Network,
   Star,
-  BarChart2,
-  Share2
 } from 'lucide-react';
 
 export default function MindMapPage() {
   const allNodes = getGlobalGraphNodes();
   const moduleTree = getHierarchicalModuleTree();
+  const documentNodes = allNodes.filter((node) => node.route.startsWith('/learn/'));
 
   const [selectedNodeId, setSelectedNodeId] = useState('py-environment');
 
   // Persistent Expanded Left Catalog Modules in LocalStorage
-  const [expandedModules, setExpandedModules] = useState<string[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('map_expanded_modules');
-        if (saved) return JSON.parse(saved);
-      } catch (e) {}
-    }
-    return ['foundations', 'sub-python'];
-  });
+  const [expandedModules, setExpandedModules] = useState<string[]>(['foundations', 'sub-python']);
+  const [isSidebarHydrated, setIsSidebarHydrated] = useState(false);
+  const [progressRevision, setProgressRevision] = useState(0);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('map_expanded_modules', JSON.stringify(expandedModules));
+    try {
+      const saved = localStorage.getItem('map_expanded_modules');
+      const parsed = saved ? JSON.parse(saved) : null;
+      if (Array.isArray(parsed) && parsed.every((item) => typeof item === 'string')) {
+        setExpandedModules(parsed);
+      }
+    } catch {
+      // Keep the default expanded learning path when storage is unavailable.
+    } finally {
+      setIsSidebarHydrated(true);
     }
-  }, [expandedModules]);
+  }, []);
+
+  useEffect(() => {
+    if (isSidebarHydrated) localStorage.setItem('map_expanded_modules', JSON.stringify(expandedModules));
+  }, [expandedModules, isSidebarHydrated]);
+
+  useEffect(() => {
+    const refresh = () => setProgressRevision((value) => value + 1);
+    window.addEventListener('ai-learning:document-progress', refresh);
+    return () => window.removeEventListener('ai-learning:document-progress', refresh);
+  }, []);
 
   const [isRelatedExpanded, setIsRelatedExpanded] = useState<boolean>(false);
 
   const selectedNode = getNodeById(selectedNodeId) || allNodes[0];
+
+  const getNodePercent = (node: typeof selectedNode) => {
+    void progressRevision;
+    if (!isSidebarHydrated || !node?.route.startsWith('/learn/')) return 0;
+    const progress = readDocumentProgress(node.route);
+    if (progress.completed) return 100;
+    const total = progress.taskTotal || 0;
+    const checked = Object.values(progress.tasks).filter(Boolean).length;
+    return total > 0 ? Math.round((checked / total) * 100) : 0;
+  };
+  const selectedProgress = getNodePercent(selectedNode);
 
   const toggleModule = (id: string) => {
     setExpandedModules((prev) =>
@@ -59,9 +82,9 @@ export default function MindMapPage() {
     .filter(Boolean);
 
   // Related Notes list & count
-  const relatedNoteNodes = allNodes.filter(
-    (n) => n.id !== selectedNode.id && n.submodule === selectedNode.submodule && n.route.startsWith('/learn/')
-  );
+  const relatedNoteNodes = (selectedNode.relatedNotes || [])
+    .map((relatedId) => getNodeById(relatedId))
+    .filter((node): node is NonNullable<typeof node> => Boolean(node));
 
   return (
     <div className="animate-page-fade h-[calc(100vh-120px)] flex flex-col md:flex-row gap-4 overflow-hidden">
@@ -143,7 +166,6 @@ export default function MindMapPage() {
                               >
                                 <div className="overflow-hidden pl-3 space-y-1 border-l border-teal-200 ml-2 py-0.5">
                                   {sub.children.map((child) => {
-                                    const isCompleted = child.status === 'completed';
                                     const isSelected = selectedNodeId === child.id;
 
                                     return (
@@ -156,16 +178,22 @@ export default function MindMapPage() {
                                             : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium'
                                         }`}
                                       >
-                                        {isCompleted ? (
-                                          <span className="w-4 h-4 rounded-full bg-emerald-50 border border-emerald-500 text-emerald-600 flex items-center justify-center text-[10px] font-bold shrink-0">
-                                            ✓
-                                          </span>
-                                        ) : (
-                                          <span className="w-4 h-4 rounded-full border-2 border-orange-500 flex items-center justify-center shrink-0">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                                          </span>
-                                        )}
+                                        {(() => {
+                                          const percent = getNodePercent(child);
+                                          if (percent === 100) {
+                                            return <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />;
+                                          }
+                                          if (percent > 0) {
+                                            return (
+                                              <span className="w-4 h-4 rounded-full border-2 border-orange-400 flex items-center justify-center shrink-0">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+                                              </span>
+                                            );
+                                          }
+                                          return <span className="w-4 h-4 rounded-full border-2 border-slate-300 flex items-center justify-center shrink-0" />;
+                                        })()}
                                         <span className="truncate">{child.title}</span>
+                                        <LearningProgressValue nodes={[child]} />
                                       </button>
                                     );
                                   })}
@@ -182,45 +210,22 @@ export default function MindMapPage() {
             </div>
           </div>
 
-          {/* Reference-Matched Filters Section */}
-          <div className="pt-4 border-t border-slate-100 space-y-2.5">
+          <div className="border-t border-slate-100 pt-4 space-y-2.5">
             <h3 className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
-              <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400" />
-              筛选器
+              <BookOpen className="w-3.5 h-3.5 text-teal-600" />
+              当前文档图谱
             </h3>
-
-            <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
-              <input
-                type="checkbox"
-                className="w-4 h-4 rounded border-amber-400 text-amber-500 focus:ring-amber-400"
-              />
-              <span>仅显示进行中</span>
-            </label>
-
-            <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
-              <input
-                type="checkbox"
-                defaultChecked
-                className="w-4 h-4 rounded bg-teal-600 border-teal-600 text-white focus:ring-teal-500"
-              />
-              <span>显示已完成</span>
-            </label>
-
-            <div className="flex items-center justify-between pt-1 text-xs text-slate-600 cursor-pointer hover:text-slate-900">
-              <div className="flex items-center gap-1.5">
-                <BarChart2 className="w-3.5 h-3.5 text-slate-400" />
-                <span>按难度</span>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="rounded-lg bg-slate-50 px-2.5 py-2">
+                <div className="font-extrabold text-slate-800">{documentNodes.length}</div>
+                <div className="text-slate-500">篇文档</div>
               </div>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-            </div>
-
-            <div className="flex items-center justify-between text-xs text-slate-600 cursor-pointer hover:text-slate-900">
-              <div className="flex items-center gap-1.5">
-                <Share2 className="w-3.5 h-3.5 text-slate-400" />
-                <span>显示依赖关系</span>
+              <div className="rounded-lg bg-slate-50 px-2.5 py-2">
+                <div className="font-extrabold text-slate-800">{moduleTree.length}</div>
+                <div className="text-slate-500">个模块</div>
               </div>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
             </div>
+            <p className="text-[11px] leading-relaxed text-slate-500">文档关系、前置条件和目录均由 MDX 配置自动生成。</p>
           </div>
         </div>
       </div>
@@ -257,12 +262,8 @@ export default function MindMapPage() {
 
           {/* Node Progress Circle & Title */}
           <div className="flex items-start gap-3.5">
-            <div className={`w-12 h-12 rounded-full border-2 text-sm font-extrabold flex items-center justify-center shrink-0 shadow-2xs ${
-              (selectedNode.progressPercent || 100) === 100
-                ? 'bg-emerald-50 border-emerald-500 text-emerald-600'
-                : 'bg-amber-50 border-orange-400 text-orange-600'
-            }`}>
-              {selectedNode.progressPercent || 60}%
+            <div className="learning-progress-circle shadow-2xs">
+              <LearningProgressValue nodes={[selectedNode]} />
             </div>
             <div>
               <h3 className="font-extrabold text-slate-900 text-base leading-snug">{selectedNode.title}</h3>
@@ -284,35 +285,39 @@ export default function MindMapPage() {
             <h4 className="font-bold text-slate-800 text-xs">前置知识</h4>
             <div className="space-y-2">
               {selectedNode.prerequisites.length > 0 ? (
-                selectedNode.prerequisites.map((preId, idx) => {
+                selectedNode.prerequisites.map((preId) => {
                   const preNode = getNodeById(preId);
-                  const isFinished = idx === 0 || preNode?.status === 'completed';
+                  const prerequisiteProgress = preNode ? getNodePercent(preNode) : 0;
+                  const isFinished = prerequisiteProgress === 100;
+                  const isInProgress = prerequisiteProgress > 0 && prerequisiteProgress < 100;
 
                   return (
-                    <div key={preId} className="flex items-center justify-between p-3 bg-[#F8FAFC] rounded-xl text-xs border border-slate-100">
+                    <button key={preId} type="button" onClick={() => preNode && setSelectedNodeId(preNode.id)} className="w-full flex items-center justify-between p-3 bg-[#F8FAFC] rounded-xl text-xs border border-slate-100 text-left hover:bg-slate-100 transition-colors">
                       <div className="flex items-center gap-2.5 font-medium text-slate-700">
                         {isFinished ? (
                           <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                        ) : (
+                        ) : isInProgress ? (
                           <span className="w-4 h-4 rounded-full border-2 border-orange-500 flex items-center justify-center shrink-0">
                             <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
                           </span>
+                        ) : (
+                          <span className="w-4 h-4 rounded-full border-2 border-slate-300 shrink-0" />
                         )}
-                        <span className="font-semibold text-slate-800">{preNode?.title || '线性代数'}</span>
+                        <span className="font-semibold text-slate-800">{preNode?.title || preId}</span>
                       </div>
-                      <span className={`font-extrabold text-[11px] ${isFinished ? 'text-emerald-600' : 'text-orange-500'}`}>
-                        {isFinished ? '已完成' : '进行中'}
+                      <span className={`font-extrabold text-[11px] ${isFinished ? 'text-emerald-600' : isInProgress ? 'text-orange-500' : 'text-slate-400'}`}>
+                        {isFinished ? '已完成' : isInProgress ? `${prerequisiteProgress}%` : '未开始'}
                       </span>
-                    </div>
+                    </button>
                   );
                 })
               ) : (
                 <div className="flex items-center justify-between p-3 bg-[#F8FAFC] rounded-xl text-xs border border-slate-100">
                   <div className="flex items-center gap-2.5 font-medium text-slate-700">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <span className="font-semibold text-slate-800">Python 基础环境</span>
+                    <span className="font-semibold text-slate-800">无需前置文档</span>
                   </div>
-                  <span className="font-extrabold text-[11px] text-emerald-600">已完成</span>
+                  <span className="font-extrabold text-[11px] text-emerald-600">可开始</span>
                 </div>
               )}
             </div>
@@ -323,8 +328,9 @@ export default function MindMapPage() {
             <h4 className="font-bold text-slate-800 text-xs">下一步知识</h4>
             <div className="space-y-2">
               {nextNodes.length > 0 ? (
-                nextNodes.map((nextNode: any, idx: number) => {
-                  const isNextInProgress = idx === 0;
+                nextNodes.map((nextNode: any) => {
+                  const nextProgress = getNodePercent(nextNode);
+                  const isNextInProgress = nextProgress > 0 && nextProgress < 100;
 
                   return (
                     <div
@@ -344,8 +350,8 @@ export default function MindMapPage() {
                       </div>
 
                       <div className="flex items-center gap-1 shrink-0">
-                        <span className={`font-bold text-[11px] ${isNextInProgress ? 'text-orange-500' : 'text-slate-400'}`}>
-                          {isNextInProgress ? '进行中' : '未开始'}
+                        <span className={`font-bold text-[11px] ${nextProgress === 100 ? 'text-emerald-600' : isNextInProgress ? 'text-orange-500' : 'text-slate-400'}`}>
+                          {nextProgress === 100 ? '已完成' : isNextInProgress ? `${nextProgress}%` : '未开始'}
                         </span>
                         <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
                       </div>
@@ -358,11 +364,10 @@ export default function MindMapPage() {
                     <span className="w-4 h-4 rounded-full border-2 border-orange-500 flex items-center justify-center shrink-0">
                       <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
                     </span>
-                    <span className="font-semibold text-slate-800">激活函数与模型评估</span>
+                    <span className="font-semibold text-slate-800">当前文档暂无后续关联</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <span className="font-bold text-[11px] text-orange-500">进行中</span>
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="font-bold text-[11px] text-slate-400">继续探索</span>
                   </div>
                 </div>
               )}
@@ -380,7 +385,7 @@ export default function MindMapPage() {
                 <span className="font-extrabold text-slate-800">相关笔记</span>
               </div>
               <div className="flex items-center gap-1.5 text-slate-500 font-bold">
-                <span>{relatedNoteNodes.length || 3}</span>
+                <span>{relatedNoteNodes.length}</span>
                 <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${
                   isRelatedExpanded ? 'rotate-90 text-teal-600' : 'rotate-0'
                 }`} />
@@ -396,7 +401,7 @@ export default function MindMapPage() {
               }`}
             >
               <div className="overflow-hidden space-y-2 px-1">
-                {relatedNoteNodes.slice(0, 3).map((n) => (
+                {relatedNoteNodes.length > 0 ? relatedNoteNodes.map((n) => (
                   <Link
                     key={n.id}
                     href={n.route}
@@ -405,7 +410,7 @@ export default function MindMapPage() {
                     <span className="font-semibold text-slate-800 group-hover:text-teal-600 truncate">{n.title}</span>
                     <BookOpen className="w-3.5 h-3.5 text-teal-600 shrink-0" />
                   </Link>
-                ))}
+                )) : <div className="rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-500">当前文档暂无关联文档。</div>}
               </div>
             </div>
           </div>
@@ -418,7 +423,7 @@ export default function MindMapPage() {
             className="w-full flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm py-3 rounded-xl shadow-md transition-all"
           >
             <Play className="w-4 h-4 fill-white" />
-            继续学习
+            {selectedProgress > 0 ? '继续学习' : '开始学习'}
           </Link>
           <button className="w-full flex items-center justify-center gap-1.5 text-slate-500 hover:text-slate-800 text-xs font-medium py-1.5 transition-colors">
             <Star className="w-3.5 h-3.5 text-slate-400" />

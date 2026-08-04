@@ -1,19 +1,20 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { ConceptCard } from '@/components/mdx/ConceptCard';
 import { RunnableCodeBlock } from '@/components/mdx/RunnableCodeBlock';
-import { getNodeById, getGlobalGraphNodes, getHierarchicalModuleTree } from '@/lib/graph';
+import { DocumentTaskProgress, readDocumentProgress, writeDocumentProgress } from '@/components/mdx/TaskCheckbox';
+import { getNodeById, getGlobalGraphNodes, getCurriculumModules, getHierarchicalModuleTree } from '@/lib/graph';
 import {
   ChevronRight,
+  ChevronRightIcon,
   ChevronDown,
   Clock,
   Check,
   CheckSquare,
   Bookmark,
-  ChevronRightIcon,
   BookOpen
 } from 'lucide-react';
 
@@ -33,6 +34,14 @@ export const NoteReaderClient: React.FC<NoteReaderClientProps> = ({
   const currentRoute = `/learn/${slug.join('/')}`;
   const allNodes = getGlobalGraphNodes();
   const currentNode = allNodes.find((n) => n.route === currentRoute) || allNodes[0];
+  const currentModule = getCurriculumModules().find((module) => module.id === currentNode.module);
+  // The reader tree is mounted by app/learn/layout.tsx; retain these values for the
+  // legacy hidden markup until the old server-rendered block is removed.
+  const hiddenModuleGroup = getHierarchicalModuleTree().find((module) => module.id === currentNode.module) || getHierarchicalModuleTree()[0];
+  const hiddenModuleNodes = allNodes.filter((node) => node.module === currentNode.module && node.route.startsWith('/learn/'));
+  const hiddenModuleTotal = hiddenModuleNodes.length;
+  const hiddenModuleCompleted = 0;
+  const hiddenModulePercent = 0;
 
   const title = frontmatter?.title || currentNode.title;
   const summary = frontmatter?.summary || currentNode.summary;
@@ -55,12 +64,97 @@ export const NoteReaderClient: React.FC<NoteReaderClientProps> = ({
 
   const [activeTocId, setActiveTocId] = useState(toc[0]?.id || 'sec-1');
 
+  useEffect(() => {
+    let frameId = 0;
+    const updateActiveHeading = () => {
+      const headingStates = toc.map((item) => {
+        const element = document.getElementById(`heading-${item.title}`);
+        return element ? { id: item.id, top: element.getBoundingClientRect().top } : null;
+      }).filter(Boolean) as { id: string; top: number }[];
+
+      if (headingStates.length === 0) return;
+      const anchor = 128;
+      const passed = headingStates.filter((heading) => heading.top <= anchor);
+      const current = passed[passed.length - 1] || headingStates[0];
+      setActiveTocId((previous) => (previous === current.id ? previous : current.id));
+    };
+
+    const handleScroll = () => {
+      cancelAnimationFrame(frameId);
+      frameId = requestAnimationFrame(updateActiveHeading);
+    };
+
+    updateActiveHeading();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [toc]);
+  const taskTotal = useMemo(
+    () => (rawContent.match(/^\s*[-*+]\s+\[[ xX]\]\s+/gm) || []).length,
+    [rawContent],
+  );
+  const [documentProgress, setDocumentProgress] = useState<DocumentTaskProgress>({ tasks: {}, completed: false });
+
+  useEffect(() => {
+    try {
+      void window.navigator.storage?.persist?.();
+      const key = 'ai-learning:recent-notes';
+      const saved = JSON.parse(window.localStorage.getItem(key) || '{}');
+      const history = saved && typeof saved === 'object' ? saved : {};
+      window.localStorage.setItem(key, JSON.stringify({ ...history, [currentRoute]: Date.now() }));
+    } catch {
+      // Recent-note history is an optional local enhancement.
+    }
+  }, [currentRoute]);
+
+  useEffect(() => {
+    const updateProgress = () => setDocumentProgress(readDocumentProgress(currentRoute));
+    const handleProgressUpdate = (event: Event) => {
+      const detail = (event as CustomEvent<{ pathname?: string; progress?: DocumentTaskProgress }>).detail;
+      if (detail?.pathname === currentRoute && detail.progress) setDocumentProgress(detail.progress);
+    };
+
+    updateProgress();
+    const currentProgress = readDocumentProgress(currentRoute);
+    if (currentProgress.taskTotal !== taskTotal) {
+      writeDocumentProgress(currentRoute, { ...currentProgress, taskTotal });
+    }
+    window.addEventListener('ai-learning:document-progress', handleProgressUpdate);
+    return () => window.removeEventListener('ai-learning:document-progress', handleProgressUpdate);
+  }, [currentRoute]);
+
+  const checkedTaskCount = Object.values(documentProgress.tasks).filter(Boolean).length;
+  const documentPercent = documentProgress.completed
+    ? 100
+    : taskTotal > 0
+    ? Math.round((checkedTaskCount / taskTotal) * 100)
+    : 0;
+
+  useEffect(() => {
+    if (taskTotal > 0 && checkedTaskCount === taskTotal && !documentProgress.completed) {
+      const nextProgress = { ...documentProgress, completed: true };
+      writeDocumentProgress(currentRoute, nextProgress, true, currentNode.estimatedMinutes || 25);
+      setDocumentProgress(nextProgress);
+    }
+  }, [checkedTaskCount, currentNode.estimatedMinutes, currentRoute, documentProgress, taskTotal]);
+
+  const markDocumentCompleted = () => {
+    if (!documentProgress.completed && !window.confirm('确认将本篇文档标记为已完成？')) return;
+    const nextProgress = { ...documentProgress, completed: !documentProgress.completed };
+    writeDocumentProgress(currentRoute, nextProgress, true, currentNode.estimatedMinutes || 25);
+    setDocumentProgress(nextProgress);
+  };
+
   // Smooth Scroll Navigation to Heading on TOC Click
   const handleTocClick = (item: { id: string; title: string }) => {
     setActiveTocId(item.id);
     let target = document.getElementById(`heading-${item.title}`) || document.getElementById(item.id);
     if (!target) {
-      const headings = Array.from(document.querySelectorAll('h2, h3'));
+      const headings = Array.from(document.querySelectorAll<HTMLElement>('h2, h3'));
       target = headings.find((h) => h.textContent?.trim().includes(item.title)) || null;
     }
     if (target) {
@@ -112,31 +206,22 @@ export const NoteReaderClient: React.FC<NoteReaderClientProps> = ({
     time: `${n.estimatedMinutes || 25} 分钟`,
   }));
 
-  // 4. Real Module Chapters & Real Completion Progress
-  const moduleTree = getHierarchicalModuleTree();
-  const currentModuleGroup = moduleTree.find((m) => m.id === currentNode.module) || moduleTree[0];
-  const moduleNodes = allNodes.filter((n) => n.module === currentNode.module);
-
-  const moduleTotal = moduleNodes.length;
-  const moduleCompleted = moduleNodes.filter((n) => n.status === 'completed' || n.progressPercent === 100).length;
-  const modulePercent = moduleTotal > 0 ? Math.round((moduleCompleted / moduleTotal) * 100) : 100;
-
   return (
     <div className="flex flex-col md:flex-row gap-6 w-full items-start">
       {/* Left Sidebar: Sticky Collapsible Module Chapter Index */}
-      <div className="w-full md:w-64 xl:w-72 shrink-0 space-y-4 sticky top-20 self-start">
+      <div className="hidden">
         <Card className="p-4 space-y-4 border border-slate-200/80 shadow-sm">
           <h2 className="font-extrabold text-slate-800 text-sm border-b border-slate-100 pb-3 flex items-center justify-between">
-            <span className="truncate">{currentModuleGroup.title}</span>
+            <span className="truncate">{hiddenModuleGroup.title}</span>
             <span className="text-[10px] bg-slate-100 text-slate-500 font-bold px-2 py-0.5 rounded-full shrink-0">
-              {moduleTotal} 章节
+              {hiddenModuleTotal} 章节
             </span>
           </h2>
 
           {/* Module Chapter Tree */}
           <div className="space-y-3 text-xs max-h-[72vh] overflow-y-auto pr-1">
-            {currentModuleGroup.submodules.length > 0 ? (
-              currentModuleGroup.submodules.map((sub) => (
+            {hiddenModuleGroup.submodules.length > 0 ? (
+              hiddenModuleGroup.submodules.map((sub) => (
                 <div key={sub.id} className="space-y-1">
                   <div className="font-bold text-slate-700 py-1 flex items-center gap-1.5 cursor-pointer">
                     <ChevronDown className="w-3.5 h-3.5 text-teal-600 shrink-0" />
@@ -158,7 +243,7 @@ export const NoteReaderClient: React.FC<NoteReaderClientProps> = ({
                           <span className="truncate">{n.title}</span>
                           <span
                             className={`w-2 h-2 rounded-full shrink-0 ${
-                              isActive ? 'bg-teal-600 shadow-sm' : 'bg-slate-300'
+                            isActive ? 'bg-teal-600 shadow-sm' : 'bg-slate-300'
                             }`}
                           />
                         </Link>
@@ -169,7 +254,7 @@ export const NoteReaderClient: React.FC<NoteReaderClientProps> = ({
               ))
             ) : (
               <div className="space-y-1">
-                {moduleNodes.map((n) => {
+                {hiddenModuleNodes.map((n) => {
                   const isActive = n.id === currentNode.id;
                   return (
                     <Link
@@ -198,16 +283,16 @@ export const NoteReaderClient: React.FC<NoteReaderClientProps> = ({
           <div className="pt-4 border-t border-slate-100 space-y-3">
             <div className="flex justify-between items-baseline">
               <span className="text-xs text-slate-500 font-bold">本模块进度</span>
-              <span className="text-xl font-black text-teal-600">{modulePercent}%</span>
+              <span className="text-xl font-black text-teal-600">{hiddenModulePercent}%</span>
             </div>
             <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
               <div
                 className="bg-teal-500 h-full transition-all duration-500"
-                style={{ width: `${modulePercent}%` }}
+                style={{ width: `${hiddenModulePercent}%` }}
               />
             </div>
             <div className="text-[11px] text-slate-400 font-medium">
-              已完成 {moduleCompleted} / {moduleTotal} 个章节
+              已完成 {hiddenModuleCompleted} / {hiddenModuleTotal} 个章节
             </div>
 
             <Link
@@ -234,7 +319,7 @@ export const NoteReaderClient: React.FC<NoteReaderClientProps> = ({
                 </Link>
                 <span>/</span>
                 <Link href="/map" className="hover:text-teal-600 font-bold truncate">
-                  {currentModuleGroup.title}
+                  {currentModule?.title || currentNode.module}
                 </Link>
                 <span>/</span>
                 <span className="text-slate-800 font-bold truncate">{title}</span>
@@ -261,13 +346,13 @@ export const NoteReaderClient: React.FC<NoteReaderClientProps> = ({
                   <Clock className="w-3.5 h-3.5" /> 预计阅读 {currentNode.estimatedMinutes || 25} 分钟
                 </span>
                 <span className="text-teal-600 flex items-center gap-1 font-bold">
-                  <Check className="w-4 h-4" /> 已加入学习路线
+                  <Check className="w-4 h-4" /> 学习进度 {documentPercent}%
                 </span>
               </div>
 
-              <button className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-md transition-all">
+              <button onClick={markDocumentCompleted} className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-md transition-all">
                 <CheckSquare className="w-4 h-4" />
-                标记为已完成
+                {documentProgress.completed ? '取消完成标记' : '标记为已完成'}
               </button>
             </div>
           </div>
@@ -303,13 +388,13 @@ export const NoteReaderClient: React.FC<NoteReaderClientProps> = ({
           </h3>
           <div className="space-y-1 text-xs max-h-[35vh] overflow-y-auto pr-1">
             {toc.map((item, idx) => {
-              const isActive = activeTocId === item.id || idx === 0;
+              const isActive = activeTocId === item.id;
               const isSubHeading = item.level === 3;
               return (
                 <div
                   key={item.id}
                   onClick={() => handleTocClick(item)}
-                  className={`py-1.5 rounded-lg cursor-pointer transition-all flex items-center gap-2 text-xs font-normal ${
+                  className={`py-1.5 rounded-lg cursor-pointer transition-all duration-300 flex items-center gap-2 text-xs font-normal ${
                     isSubHeading ? 'pl-6 text-slate-500' : 'pl-2 text-slate-700'
                   } ${
                     isActive

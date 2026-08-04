@@ -8,8 +8,12 @@ export interface CurriculumModule {
   icon: string;
   color: string;
   totalNotes: number;
-  completedNotes: number;
-  progressPercent: number;
+  submodules?: {
+    id: string;
+    title: string;
+    notesCount: number;
+    completedCount: number;
+  }[];
 }
 
 export interface MindMapNodeData {
@@ -22,11 +26,14 @@ export interface MindMapNodeData {
   estimatedMinutes: number;
   prerequisites: string[];
   next: string[];
+  relatedNotes?: string[];
   tags: string[];
   status?: NodeStatus;
   summary?: string;
   progressPercent?: number;
   position?: { x: number; y: number };
+  hidden?: boolean;
+  layoutGroup?: string;
 }
 
 export interface MDXFrontmatter {

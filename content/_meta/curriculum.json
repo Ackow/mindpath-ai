@@ -9,8 +9,6 @@
       "icon": "book-open",
       "color": "blue",
       "totalNotes": 12,
-      "completedNotes": 6,
-      "progressPercent": 50,
       "submodules": [
         {
           "id": "python",
@@ -38,9 +36,7 @@
       "description": "经典机器学习算法与模型，掌握从数据到模型的核心流程。",
       "icon": "trending-up",
       "color": "emerald",
-      "totalNotes": 18,
-      "completedNotes": 9,
-      "progressPercent": 48
+      "totalNotes": 18
     },
     {
       "id": "deep-learning",
@@ -48,9 +44,7 @@
       "description": "神经网络基础与进阶，理解深度学习的原理与实践。",
       "icon": "cpu",
       "color": "orange",
-      "totalNotes": 15,
-      "completedNotes": 5,
-      "progressPercent": 36
+      "totalNotes": 15
     },
     {
       "id": "vision",
@@ -58,9 +52,7 @@
       "description": "图像处理、目标检测、分割与视觉理解等核心技术。",
       "icon": "image",
       "color": "sky",
-      "totalNotes": 10,
-      "completedNotes": 3,
-      "progressPercent": 28
+      "totalNotes": 10
     },
     {
       "id": "llm",
@@ -68,9 +60,7 @@
       "description": "Transformer 架构与大模型原理，掌握预训练与微调方法。",
       "icon": "layers",
       "color": "purple",
-      "totalNotes": 14,
-      "completedNotes": 4,
-      "progressPercent": 31
+      "totalNotes": 14
     },
     {
       "id": "rag",
@@ -78,9 +68,7 @@
       "description": "检索增强生成与智能体应用，构建更强大的 AI 系统。",
       "icon": "message-square",
       "color": "teal",
-      "totalNotes": 9,
-      "completedNotes": 2,
-      "progressPercent": 24
+      "totalNotes": 9
     }
   ]
 }

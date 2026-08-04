@@ -11,13 +11,15 @@ import { ConceptCard } from '@/components/mdx/ConceptCard';
 import { RunnableCodeBlock } from '@/components/mdx/RunnableCodeBlock';
 import { NotebookLifecycle } from '@/components/animations/NotebookLifecycle';
 import { FlowControlAnimation } from '@/components/animations/FlowControlAnimation';
+import { LoopFlowAnimation } from '@/components/animations/LoopFlowAnimation';
 import { NeuronLab } from '@/components/animations/NeuronLab';
 import { CodeCopyButton } from '@/components/mdx/CodeCopyButton';
 import { TaskCheckbox } from '@/components/mdx/TaskCheckbox';
 
 function remarkSimpleTable() {
   return (tree: any) => {
-    visit(tree, 'paragraph', (node: any, index: number, parent: any) => {
+    visit(tree, 'paragraph', (node: any, index: number | null, parent: any) => {
+      if (!parent || index === null) return;
       const text = node.children
         ?.map((child: any) => (typeof child.value === 'string' ? child.value : ''))
         .join('');
@@ -50,6 +52,7 @@ export const mdxComponents = {
   RunnableCodeBlock,
   NotebookLifecycle,
   FlowControlAnimation,
+  LoopFlowAnimation,
   NeuronLab,
   a: (props: any) => (
     <a
@@ -109,7 +112,7 @@ export const mdxComponents = {
     if (!taskMatch) return <li className="text-slate-700 leading-relaxed font-normal pl-1" {...props} />;
 
     const { children: _children, ...liProps } = props;
-    const taskText = firstChild.slice(taskMatch[0].length);
+    const taskText = typeof firstChild === 'string' ? firstChild.slice(taskMatch[0].length) : '';
     return (
       <li className="text-slate-700 leading-relaxed font-normal pl-1 list-none -ml-6" {...liProps}>
         <TaskCheckbox checked={taskMatch[1].toLowerCase() === 'x'} />

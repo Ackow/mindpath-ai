@@ -16,6 +16,116 @@
 
 全路线包含 35 个核心章节。完成阶段 0～4 即可独立完成传统机器学习项目；完成阶段 5 后再选择一个专项深入，避免并行学习过多方向。
 
+## 知识地图与文档关系配置规范
+
+知识地图采用“文档 frontmatter 为事实来源、`global.json` 为生成产物、少量覆盖配置负责视觉调整”的模式。新增或修改文章时，优先维护 MDX 开头的 YAML 字段，不直接手工维护 `maps/global.json` 的重复信息。
+
+### 1. 文档 frontmatter
+
+每篇文章应配置：
+
+```yaml
+id: py-basics
+title: 变量、类型与表达式
+module: foundations
+submodule: python
+order: 2
+difficulty: beginner
+prerequisites: [py-environment]
+estimatedMinutes: 20
+tags: [Python, 变量, 数据类型]
+summary: 强类型与动态类型机制、基本数据类型和表达式。
+```
+
+| 字段 | 作用 |
+|---|---|
+| `id` | 全局唯一文档/节点 ID |
+| `title` | 文章标题、地图节点和目录标题 |
+| `module`、`submodule` | 归属课程模块，必须对应 `curriculum.json` 中的 ID |
+| `order` | 同一专题内的显示顺序 |
+| `difficulty` | `beginner`、`intermediate` 或 `advanced` |
+| `prerequisites` | 硬性学习前置，生成 `前置 → 当前` 有向边 |
+| `estimatedMinutes`、`tags`、`summary` | 阅读时长、检索筛选和卡片导读 |
+| `symbols` | 可选术语/公式符号表，是笔记页右侧“核心概念术语表”或“核心公式符号表”的数据源，不参与地图生成 |
+
+### 2. 文档之间的关系
+
+在 frontmatter 中统一使用下列关系字段：
+
+```yaml
+prerequisites: [py-environment]
+relatedNotes: [py-data-structures, math-07-vector-matrix]
+nextNotes: [py-control-flow]
+```
+
+- `prerequisites`：学习依赖关系。引用的文档必须先学，是知识地图的有向边来源。
+- `relatedNotes`：主题关联关系。用于右侧“关联推荐笔记”和搜索推荐，不参与拓扑排序。
+- `nextNotes`：可选的作者推荐后续关系。若未填写，生成器会根据其他文章的 `prerequisites` 反向推导后续节点；仅在需要表达“推荐但非硬前置”的分支时填写。
+
+规则：`prerequisites` 不允许引用自身或形成环；`nextNotes` 与反向推导结果去重；删除或重命名文档前必须更新全部关系引用；`relatedNotes` 可单向或双向。
+
+### 3. 地图布局与显示覆盖
+
+默认坐标由生成器根据模块、依赖层级与 `order` 计算。需要人工微调时，可在 frontmatter 中增加：
+
+```yaml
+map:
+  hidden: false
+  layoutGroup: python-core
+  position: {x: 660, y: 20}
+  collapsedByDefault: false
+  accent: teal
+```
+
+- `hidden`：是否从地图隐藏，默认 `false`；隐藏文章仍可通过路由访问。
+- `layoutGroup`：稳定的自动布局分组。
+- `position`：可选人工坐标覆盖；未填写时自动布局。
+- `collapsedByDefault`：模块或子模块首次进入地图时的折叠状态。
+- `accent`：节点视觉色彩语义名，不在文章中直接写 CSS。
+
+坐标优先级：`maps/overrides.json` > frontmatter `map.position` > 自动布局结果。
+
+### 4. `global.json` 自动生成
+
+`maps/global.json` 是派生文件，由 `scripts/generate-graph.mjs` 扫描全部 `content/**/*.mdx` 后生成。生成器负责：
+
+1. 校验 ID 唯一性和必填字段。
+2. 依据文件路径生成真实文章路由。
+3. 依据 `prerequisites` 生成边，并反向计算 `next`。
+4. 按 `module`、`submodule`、`order` 生成默认布局。
+5. 合并 frontmatter `map` 与 `maps/overrides.json` 的视觉覆盖。
+6. 检查无效引用、循环依赖、重复路由和孤立节点。
+
+派生节点示例：
+
+```json
+{
+  "id": "py-basics",
+  "route": "/learn/foundations/python/02-py-basics",
+  "prerequisites": ["py-environment"],
+  "next": ["py-control-flow", "py-data-structures"],
+  "position": {"x": 660, "y": 20}
+}
+```
+
+`route`、`next`、依赖边和坐标均可重新生成。用户的任务勾选和完成状态不写回 `global.json`，而保存为浏览器中的单文档进度 JSON。
+
+### 5. 模块目录与工作流
+
+`content/_meta/curriculum.json` 继续负责阶段、模块文案、图标、颜色和计划章节数；MDX 文件代表实际已存在的文章。生成/校验必须报告计划与文章的差异：未创建文章、未归属模块、或不存在的 `module`/`submodule` 都应明确报错或提示。
+
+```text
+修改或新增 MDX frontmatter
+        ↓
+npm run generate:graph
+        ↓
+npm run validate:content
+        ↓
+git diff --check
+```
+
+生成器与校验器应在 CI 中运行。提交时审查源 MDX、`curriculum.json` 和必要的 `maps/overrides.json`；`global.json` 的变化必须能由命令稳定复现。
+
 ## 阶段 0：编程、数学与数据基础（6 章）
 
 ### 0.1 Python 与科学计算

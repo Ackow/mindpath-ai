@@ -1,11 +1,15 @@
 ---
 id: py-basics
-title: 变量、类型与表达式
+title: 02.变量、类型与表达式
 module: foundations
 submodule: python
 order: 2
 difficulty: beginner
 prerequisites: [py-environment]
+relatedNotes: [py-data-structures, py-control-flow]
+nextNotes: [py-control-flow]
+map:
+  layoutGroup: foundations-python
 estimatedMinutes: 20
 tags: [Python, 变量, 数据类型]
 summary: 强类型与动态类型机制、数值、布尔、字符串处理与运算符优先级。
@@ -126,6 +130,16 @@ print("setosa" in cleaned)`}
 
 常用方法：`strip()` 去除首尾空白，`split()` 分割，`join()` 拼接，`replace()` 替换，`lower()`/`upper()` 统一大小写。文本标签进入模型前，应先明确是否需要这些清洗，否则 `"Cat"` 和 `"cat"` 可能被当作两个类别。
 
+### 2.4 用 f-string 展示变量
+
+f-string 以 `f` 开头，把花括号中的表达式求值后放进字符串。它很适合打印训练配置和观察中间结果；格式说明写在冒号后面，例如 `:.2f` 表示保留两位小数。
+
+```python
+epoch = 3
+loss = 0.123456
+print(f"epoch={epoch}, loss={loss:.2f}")  # epoch=3, loss=0.12
+```
+
 ## 3. 运算符与表达式
 
 ### 3.1 算术运算符
@@ -176,6 +190,19 @@ print(is_valid, split in allowed)
 ```
 
 Python 支持链式比较 `0.0 <= probability <= 1.0`，比写两个 `and` 更易读。不要把 `and` 当成 NumPy 数组的逐元素逻辑运算；后续学习 NumPy 时应使用 `&`、`|` 并为每个条件加括号。
+
+`==` 比较两个对象的内容，`is` 比较它们是否就是同一个对象。初学阶段最可靠的规则是：只用 `is None` 和 `is not None` 判断缺失值，不要用 `is` 比较数字或字符串。
+
+```python
+first = [1, 2]
+second = [1, 2]
+alias = first
+
+print(first == second)  # True: 内容相同
+print(first is second)  # False: 是两份不同的列表
+print(first is alias)   # True: alias 指向 first
+print(None is None)     # True: None 是单例对象
+```
 
 ### 3.3 运算符优先级
 

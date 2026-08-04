@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, BookOpen, Clock, Search, Tag } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
@@ -12,14 +12,9 @@ interface SearchClientProps {
 
 export const SearchClient: React.FC<SearchClientProps> = ({ entries }) => {
   const [query, setQuery] = useState('');
-  const [activeTag, setActiveTag] = useState<string | null>(null);
-  const tags = useMemo(
-    () => Array.from(new Set(entries.flatMap((entry) => entry.tags || []))).sort((left, right) => left.localeCompare(right, 'zh-CN')),
-    [entries],
-  );
   const filtered = entries.filter((entry) => {
     const searchable = `${entry.title} ${entry.summary || ''} ${(entry.tags || []).join(' ')}`.toLowerCase();
-    return searchable.includes(query.trim().toLowerCase()) && (!activeTag || (entry.tags || []).includes(activeTag));
+    return searchable.includes(query.trim().toLowerCase());
   });
 
   return (
@@ -37,13 +32,6 @@ export const SearchClient: React.FC<SearchClientProps> = ({ entries }) => {
             className="w-full pl-12 pr-4 py-3 bg-white rounded-xl border border-slate-200 shadow-card outline-none text-slate-800 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition-all"
           />
         </div>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
-        <button onClick={() => setActiveTag(null)} className={`px-3 py-1.5 rounded-lg border ${!activeTag ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-slate-600 border-slate-200'}`}>全部</button>
-        {tags.map((tag) => (
-          <button key={tag} onClick={() => setActiveTag(activeTag === tag ? null : tag)} className={`px-3 py-1.5 rounded-lg border ${activeTag === tag ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>{tag}</button>
-        ))}
       </div>
 
       <div className="space-y-4 pt-2">

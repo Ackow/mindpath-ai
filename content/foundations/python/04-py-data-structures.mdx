@@ -1,22 +1,332 @@
 ---
 id: py-data-structures
-title: 核心数据结构
+title: 04.核心数据结构
 module: foundations
 submodule: python
 order: 4
 difficulty: beginner
 prerequisites: [py-basics]
-estimatedMinutes: 30
-tags: [List, Tuple, Dict, Set]
-summary: List 列表、Tuple 元组、Dict 字典与 Set 集合的操作复杂度、哈希表查找原理与深浅拷贝。
+relatedNotes: [py-control-flow, py-functions]
+nextNotes: [py-functions]
+map:
+  layoutGroup: foundations-python
+estimatedMinutes: 35
+tags: [Python, List, Tuple, Dict, Set, 数据结构]
+summary: 掌握 list、tuple、dict、set 的选择、访问、修改、遍历、拷贝与 AI 数据组织方式。
+symbols:
+  - symbol: list
+    mean: 可变、有序、允许重复的序列
+  - symbol: tuple
+    mean: 不可变、有序的序列
+  - symbol: dict
+    mean: 键到值的映射
+  - symbol: set
+    mean: 不重复元素的集合
 ---
 
-# 04. 核心数据结构
+## 本节要解决什么问题？
 
-选择正确的数据结构直接决定算法运行的时间复杂度。
+AI 程序会同时处理样本列表、模型配置、类别编码、训练指标和去重后的标签。它们都可以用“容器”保存，但容器的行为不同：列表适合按顺序保存样本，字典适合通过名字查找值，集合适合判断成员和去重，元组适合表示不希望被修改的一组值。
+
+完成本节后，你应能：
+
+- 创建、访问、修改和遍历 `list`、`tuple`、`dict`、`set`。
+- 使用索引、切片、解包、`enumerate` 和 `.items()` 读取数据。
+- 根据“顺序、是否重复、是否修改、是否按键查找”选择数据结构。
+- 解释浅拷贝与深拷贝，避免嵌套配置被意外修改。
+- 用字典保存配置和指标，用列表保存样本与训练历史。
+
+<ConceptCard title="先问四个问题" type="intuition">
+选择容器前先问：需要保留顺序吗？允许重复吗？后续会修改吗？需要通过一个名字快速查找吗？顺序、重复、可变性和查找方式通常比“我记得哪个 API”更能帮助你做出正确选择。
+</ConceptCard>
+
+## 1. 四种容器的对照
+
+| 类型 | 是否有序 | 是否可变 | 是否允许重复 | 常见 AI 用途 |
+|---|---|---|---|---|
+| `list` | 是 | 是 | 是 | 样本、标签、loss 历史、batch |
+| `tuple` | 是 | 否 | 是 | 图像尺寸、坐标、不可变记录 |
+| `dict` | 按插入顺序保存键 | 是 | 键不能重复 | 配置、指标、类别编码、样本字段 |
+| `set` | 不承诺索引顺序 | 是 | 否 | 去重标签、成员判断、集合运算 |
 
 ```python
-# 字典键的 O(1) 查找性能
-sample_labels = {"cat": 0, "dog": 1, "bird": 2}
-print("类别编码:", sample_labels.get("dog"))
+samples = ["cat", "dog", "cat"]       # list：保留重复项
+image_size = (224, 224, 3)              # tuple：尺寸通常不应被改写
+metrics = {"accuracy": 0.91, "loss": 0.24}  # dict：通过键查找
+unique_labels = {"cat", "dog"}         # set：每个元素只保留一次
+
+print(samples, image_size, metrics, unique_labels)
 ```
+
+不要把“看起来像一组值”作为唯一依据。比如模型配置更适合字典，因为 `config["learning_rate"]` 比 `config[3]` 更能表达含义。
+
+## 2. `list`：有序且可修改的序列
+
+列表支持整数索引，索引从 0 开始；负索引从末尾开始。切片使用半开区间，`items[start:stop]` 包含 `start`，不包含 `stop`。
+
+```python
+scores = [0.82, 0.67, 0.93, 0.51]
+print(scores[0])       # 0.82
+print(scores[-1])      # 0.51
+print(scores[1:3])    # [0.67, 0.93]
+print(scores[:2])     # 前两个
+print(scores[::2])    # 步长为 2
+```
+
+### 2.1 修改、追加与删除
+
+```python
+history = [0.9, 0.6]
+history.append(0.4)       # 末尾加入一个元素
+history.extend([0.3, 0.2])  # 加入多个元素
+history[0] = 0.8          # 按索引修改
+last = history.pop()      # 删除并返回最后一个元素
+history.remove(0.6)       # 删除第一个匹配值
+print(history, last)
+```
+
+`remove(value)` 找不到值时会抛出 `ValueError`；不确定元素是否存在时先用 `if value in values`。不要在遍历列表时直接删除当前元素，这可能跳过下一个元素；先构造新列表通常更安全。
+
+```python
+raw_labels = ["cat", "", None, "dog"]
+clean_labels = [label for label in raw_labels if label]
+print(clean_labels)  # ['cat', 'dog']
+```
+
+### 2.2 列表方法与复杂度直觉
+
+`append` 追加到末尾通常很快；`insert(0, value)` 和 `pop(0)` 需要移动其他元素，在大列表上成本更高。当前阶段只需形成一个原则：频繁从两端进出时，后续可以学习 `collections.deque`。
+
+## 3. `tuple`：不希望被修改的记录
+
+元组使用圆括号，也可以省略圆括号但保留逗号。它支持索引和切片，但不能进行元素赋值、追加或删除。
+
+```python
+image_size = (224, 224, 3)
+height, width, channels = image_size  # 解包
+print(width, height, channels)
+
+# image_size[0] = 256  # TypeError：tuple 不可变
+```
+
+单元素元组必须写逗号：`(42,)`。没有逗号的 `(42)` 只是整数表达式。元组不可变不代表内部对象一定不可变：如果元组里放了列表，列表仍然可以被修改，因此嵌套数据仍要谨慎。
+
+```python
+record = ("cat", [0.8, 0.7])
+record[1].append(0.6)
+print(record)
+```
+
+元组适合表达“结构固定”的返回值和配置，例如 `(height, width)`；如果字段需要按名字访问，可以考虑字典或后续学习的 `dataclass`。
+
+## 4. `dict`：通过键查找值
+
+字典把键映射到值。键必须是可哈希对象，常见键是字符串、整数和元组；列表、字典和集合不能作为键。Python 3.7+ 保证字典按插入顺序保留键，但字典的核心用途仍是按键查找，不应依赖位置。
+
+```python
+config = {
+    "learning_rate": 0.001,
+    "batch_size": 32,
+    "device": "cpu",
+}
+
+print(config["learning_rate"])
+print(config.get("seed", 42))  # 不存在时返回默认值
+config["batch_size"] = 64     # 修改已有键
+config["epochs"] = 10         # 添加新键
+```
+
+`config["missing"]` 找不到键会抛出 `KeyError`；`config.get("missing")` 返回 `None`，可以传入默认值。配置读取时，明确区分“缺少配置”和“配置值恰好为 `None`”。
+
+### 4.1 遍历键、值和键值对
+
+```python
+for key in config:
+    print("键:", key)
+
+for value in config.values():
+    print("值:", value)
+
+for key, value in config.items():
+    print(f"{key} = {value}")
+```
+
+### 4.2 统计与嵌套数据
+
+```python
+labels = ["cat", "dog", "cat", "bird", "dog", "cat"]
+counts = {}
+for label in labels:
+    counts[label] = counts.get(label, 0) + 1
+print(counts)  # {'cat': 3, 'dog': 2, 'bird': 1}
+
+sample = {
+    "id": 7,
+    "features": [5.1, 3.5, 1.4, 0.2],
+    "meta": {"split": "train", "source": "iris"},
+}
+print(sample["features"][0])
+print(sample["meta"]["split"])
+```
+
+嵌套字典很灵活，但层级过深会降低可读性。读取外部 JSON 后，应在边界处检查关键键是否存在，再交给后续函数处理。
+
+## 5. `set`：去重和成员判断
+
+集合没有稳定的索引位置，不能写 `items[0]`。它适合判断某个元素是否出现过，以及计算并集、交集和差集。
+
+```python
+raw_labels = ["cat", "dog", "cat", "bird"]
+labels = set(raw_labels)
+print(labels)
+print("cat" in labels)  # 快速成员判断
+
+train_labels = {"cat", "dog"}
+test_labels = {"dog", "bird"}
+print(train_labels & test_labels)  # 交集：{'dog'}
+print(train_labels | test_labels)  # 并集
+print(test_labels - train_labels)  # 测试集独有类别
+```
+
+集合去重会丢失原始顺序。如果既要去重又要保留第一次出现的顺序，可以使用 `dict.fromkeys(values)`：
+
+```python
+labels = ["cat", "dog", "cat", "bird"]
+ordered_unique = list(dict.fromkeys(labels))
+print(ordered_unique)  # ['cat', 'dog', 'bird']
+```
+
+## 6. 解包、浅拷贝与深拷贝
+
+### 6.1 解包让代码表达结构
+
+```python
+first, second, *remaining = [10, 20, 30, 40]
+print(first, second, remaining)
+
+features = {"width": 224, "height": 224}
+print({**features, "channels": 3})  # 合并字典并创建新字典
+```
+
+解包数量不匹配会抛出 `ValueError`。使用 `*rest` 接收不定数量的剩余项，使用 `**mapping` 合并字典时要注意同名键会被后面的值覆盖。
+
+### 6.2 赋值不是复制
+
+```python
+original = [[1, 2], [3, 4]]
+alias = original       # 两个名字指向同一个列表
+alias[0].append(99)
+print(original)        # [[1, 2, 99], [3, 4]]
+
+shallow = original.copy()  # 只复制最外层列表
+shallow[0].append(100)
+print(original)             # 内层列表仍然共享
+```
+
+嵌套结构需要完全独立时使用 `copy.deepcopy`：
+
+```python
+from copy import deepcopy
+
+template = {"layers": [{"units": 32}, {"units": 16}]}
+experiment = deepcopy(template)
+experiment["layers"][0]["units"] = 64
+print(template["layers"][0]["units"])    # 32
+print(experiment["layers"][0]["units"])  # 64
+```
+
+深拷贝不是万能的：文件句柄、线程锁和某些第三方对象可能不能被复制。配置和样本数据通常只包含字典、列表、数字和字符串，适合使用 `deepcopy`；大型 NumPy 数组则应理解视图与复制的成本。
+
+## 7. AI 场景：组织一个训练实验
+
+下面示例把配置、类别编码、训练样本和指标历史放在合适的容器里：
+
+<RunnableCodeBlock title="组织一个最小训练实验">
+{`config = {
+    "learning_rate": 0.01,
+    "batch_size": 2,
+    "epochs": 3,
+}
+
+label_to_id = {"cat": 0, "dog": 1}
+samples = [
+    {"id": 1, "label": "cat", "features": [0.2, 0.8]},
+    {"id": 2, "label": "dog", "features": [0.7, 0.3]},
+]
+
+loss_history = []
+for epoch in range(config["epochs"]):
+    loss = round(1.0 / (epoch + 2), 3)
+    loss_history.append(loss)
+
+unique_labels = set(sample["label"] for sample in samples)
+print("类别编码:", label_to_id)
+print("标签集合:", unique_labels)
+print("损失历史:", loss_history)`}
+</RunnableCodeBlock>
+
+这里的字典保存带名字的配置和样本字段，列表保存有顺序的样本与训练历史，集合检查数据中出现过哪些类别。真正训练时，NumPy 数组或 pandas DataFrame 更适合大规模数值和表格运算；Python 容器主要负责组织边界和元数据。
+
+## 小实验：统计标签并检查数据泄漏
+
+目标：统计一批样本的标签数量，并找出验证集里训练集没有出现过的标签。
+
+```python
+train_labels = ["cat", "dog", "cat", "dog"]
+valid_labels = ["cat", "bird", "dog"]
+
+train_set = set(train_labels)
+valid_set = set(valid_labels)
+unseen = valid_set - train_set
+
+counts = {}
+for label in train_labels:
+    counts[label] = counts.get(label, 0) + 1
+
+print("训练集计数:", counts)
+print("验证集新增类别:", unseen)
+```
+
+变式：把 `valid_labels` 改成没有新类别的列表；再把 `train_labels` 改成包含重复值的列表，观察集合和字典分别保留了什么信息。
+
+## 常见错误排查
+
+| 现象 | 原因 | 处理方式 |
+|---|---|---|
+| `IndexError: list index out of range` | 索引超过列表范围 | 先检查 `len(values)`，或用 `for` 遍历 |
+| `KeyError` | 字典中不存在该键 | 使用 `get()` 或先用 `if key in mapping` 判断 |
+| `TypeError: unhashable type: 'list'` | 把列表作为集合元素或字典键 | 改用元组，或重新设计键 |
+| 修改副本影响原数据 | 赋值只创建别名，浅拷贝仍共享内层对象 | 使用 `.copy()` 或 `deepcopy()`，按嵌套层级选择 |
+| 集合输出顺序变化 | 集合不提供索引顺序保证 | 需要稳定顺序时使用列表或 `dict.fromkeys()` |
+| 遍历时删除元素导致漏项 | 列表长度和索引同时变化 | 用列表推导式构造新列表，或倒序删除 |
+| `pop(0)` 在大列表上变慢 | 删除头部需要移动剩余元素 | 频繁两端操作时考虑 `collections.deque` |
+
+## 本节检查清单
+
+- [ ] 能根据顺序、重复、可变性和查找方式选择容器。
+- [ ] 能使用列表索引、切片、追加、删除和遍历。
+- [ ] 能解释元组不可变和单元素元组的逗号规则。
+- [ ] 能使用字典的 `get()`、`items()`、`values()` 处理配置和指标。
+- [ ] 能使用集合去重、成员判断和交集/并集/差集。
+- [ ] 能区分别名、浅拷贝和深拷贝。
+- [ ] 能组织一个包含配置、样本和训练历史的小实验。
+
+## 自测
+
+1. 为什么训练历史适合用列表，学习率配置适合用字典？
+2. `scores[1:4]` 包含哪些位置？为什么切片通常使用半开区间？
+3. `config["seed"]` 和 `config.get("seed", 42)` 在键不存在时有什么区别？
+4. 为什么集合不能通过索引访问？如何在去重后保留第一次出现的顺序？
+5. `alias = original`、`original.copy()` 和 `deepcopy(original)` 对嵌套列表分别意味着什么？
+
+## 下一步
+
+下一章：[函数与作用域](/learn/foundations/python/05-py-functions)。你将把本章的数据容器交给函数处理，并学习如何通过参数和返回值组织可复用逻辑。
+
+## 参考资料
+
+- [Python 官方教程：数据结构](https://docs.python.org/3/tutorial/datastructures.html)
+- [Python 官方文档：内置类型](https://docs.python.org/3/library/stdtypes.html)
+- [Python 官方文档：字典视图对象](https://docs.python.org/3/library/stdtypes.html#dictionary-view-objects)
+- [Python 官方文档：`copy` 模块](https://docs.python.org/3/library/copy.html)
+- [Python 官方文档：`collections.deque`](https://docs.python.org/3/library/collections.html#collections.deque)
