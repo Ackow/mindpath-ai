@@ -202,7 +202,13 @@ export interface MdxNoteData {
 export async function getMdxNoteBySlug(slugArray: string[]): Promise<MdxNoteData | null> {
   try {
     const filePath = path.join(process.cwd(), 'content', ...slugArray) + '.mdx';
-    if (fs.existsSync(filePath)) {
+    let fileExists = false;
+    try {
+      fileExists = typeof fs !== 'undefined' && fs.existsSync && fs.existsSync(filePath);
+    } catch {
+      fileExists = false;
+    }
+    if (fileExists) {
       const fileContent = fs.readFileSync(filePath, 'utf8');
       const { data, content } = matter(fileContent);
 

@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
+import globalGraph from '../maps/global.json';
 
 const contentDirectory = path.join(process.cwd(), 'content');
 
@@ -16,33 +17,15 @@ export type ContentFrontmatter = {
   summary: string;
 };
 
-async function findMdxFiles(directory: string): Promise<string[]> {
-  const entries = await fs.readdir(directory, { withFileTypes: true });
-  const nestedFiles = await Promise.all(
-    entries.map(async (entry) => {
-      const entryPath = path.join(directory, entry.name);
-
-      if (entry.isDirectory()) {
-        if (entry.name.startsWith('_')) return [];
-        return findMdxFiles(entryPath);
-      }
-
-      return entry.isFile() && entry.name.endsWith('.mdx') ? [entryPath] : [];
-    }),
-  );
-
-  return nestedFiles.flat();
-}
+export type ContentIndexEntry = ContentFrontmatter & {
+  slug: string[];
+  route: string;
+};
 
 export async function getAllContentSlugs(): Promise<string[][]> {
-  const files = await findMdxFiles(contentDirectory);
-
-  return files.map((file) =>
-    path
-      .relative(contentDirectory, file)
-      .replace(/\.mdx$/, '')
-      .split(path.sep),
-  );
+  return globalGraph.nodes
+    .filter((node) => node.route.startsWith('/learn/'))
+    .map((node) => node.route.replace('/learn/', '').split('/'));
 }
 
 export async function getContentSource(slug: string[]): Promise<string | null> {
@@ -56,33 +39,30 @@ export async function getContentSource(slug: string[]): Promise<string | null> {
   if (!normalizedPath.startsWith(contentDirectory)) return null;
 
   try {
-    return await fs.readFile(normalizedPath, 'utf8');
+    if (typeof fs !== 'undefined' && fs.readFile) {
+      return await fs.readFile(normalizedPath, 'utf8');
+    }
   } catch {
     return null;
   }
+  return null;
 }
 
-export type ContentIndexEntry = ContentFrontmatter & {
-  slug: string[];
-  route: string;
-};
-
 export async function getContentIndex(): Promise<ContentIndexEntry[]> {
-  const slugs = await getAllContentSlugs();
-  const entries = await Promise.all(
-    slugs.map(async (slug) => {
-      const source = await getContentSource(slug);
-      if (!source) return null;
-      const { data } = matter(source);
-      return {
-        ...data,
-        slug,
-        route: `/learn/${slug.join('/')}`,
-      } as ContentIndexEntry;
-    }),
-  );
-
-  return entries
-    .filter((entry): entry is ContentIndexEntry => entry !== null)
+  return globalGraph.nodes
+    .filter((node) => node.route.startsWith('/learn/'))
+    .map((node) => ({
+      id: node.id,
+      title: node.title,
+      module: node.module,
+      order: 1,
+      difficulty: node.difficulty || 'beginner',
+      prerequisites: node.prerequisites || [],
+      estimatedMinutes: node.estimatedMinutes || 20,
+      tags: node.tags || [],
+      summary: node.summary || '',
+      slug: node.route.replace('/learn/', '').split('/'),
+      route: node.route,
+    }))
     .sort((left, right) => left.route.localeCompare(right.route));
 }
