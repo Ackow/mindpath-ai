@@ -13,6 +13,12 @@
     "generate:graph": "node scripts/generate-graph.mjs",
     "validate:content": "npm run generate:graph && node scripts/validate-content.mjs"
   },
+  "overrides": {
+    "next-mdx-remote": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
+  },
   "dependencies": {
     "@xyflow/react": "^12.0.0",
     "clsx": "^2.1.0",
