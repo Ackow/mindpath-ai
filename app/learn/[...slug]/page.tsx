@@ -5,7 +5,7 @@ import { getMdxNoteBySlug } from '@/lib/mdx';
 import { NoteReaderClient } from '@/components/reader/NoteReaderClient';
 
 type PageProps = {
-  params: { slug: string[] };
+  params: Promise<{ slug: string[] }>;
 };
 
 export const dynamicParams = false;
@@ -16,7 +16,8 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const mdxData = await getMdxNoteBySlug(params.slug);
+  const { slug } = await params;
+  const mdxData = await getMdxNoteBySlug(slug);
   if (!mdxData) return {};
 
   return {
@@ -26,13 +27,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function NoteReaderPage({ params }: PageProps) {
-  const mdxData = await getMdxNoteBySlug(params.slug);
+  const { slug } = await params;
+  const mdxData = await getMdxNoteBySlug(slug);
   if (!mdxData) notFound();
 
   return (
     <div className="animate-page-fade w-full">
       <NoteReaderClient
-        slug={params.slug}
+        slug={slug}
         frontmatter={mdxData.frontmatter}
         rawContent={mdxData.rawContent}
       >

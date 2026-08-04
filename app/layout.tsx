@@ -23,7 +23,7 @@ export default function RootLayout({
           <div className="max-w-[1850px] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
             <span>© 2026 AI 学习知识库 · 基于静态 React/Next.js 构建</span>
             <div className="flex gap-4">
-              <a href="https://github.com" target="_blank" rel="noreferrer" className="hover:text-slate-600 transition-colors">
+              <a href="https://github.com/Ackow/mindpath-ai" target="_blank" rel="noreferrer" className="hover:text-slate-600 transition-colors">
                 GitHub 仓库
               </a>
               <a href="/about" className="hover:text-slate-600 transition-colors">

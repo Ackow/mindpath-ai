@@ -412,7 +412,7 @@
         "py-basics"
       ],
       "next": [
-        "py-functions"
+        "py-data-structures"
       ],
       "relatedNotes": [
         "py-functions",
@@ -434,7 +434,7 @@
     },
     {
       "id": "py-data-structures",
-      "title": "核心数据结构",
+      "title": "04.核心数据结构",
       "module": "foundations",
       "submodule": "python",
       "route": "/learn/foundations/python/04-py-data-structures",
@@ -803,9 +803,9 @@
       "target": "py-control-flow"
     },
     {
-      "id": "e-next-py-control-flow-py-functions",
+      "id": "e-next-py-control-flow-py-data-structures",
       "source": "py-control-flow",
-      "target": "py-functions"
+      "target": "py-data-structures"
     },
     {
       "id": "e-depends-py-basics-py-data-structures",
@@ -815,6 +815,11 @@
     {
       "id": "e-next-py-data-structures-py-functions",
       "source": "py-data-structures",
+      "target": "py-functions"
+    },
+    {
+      "id": "e-depends-py-control-flow-py-functions",
+      "source": "py-control-flow",
       "target": "py-functions"
     },
     {

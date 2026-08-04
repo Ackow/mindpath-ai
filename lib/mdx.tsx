@@ -12,6 +12,8 @@ import { RunnableCodeBlock } from '@/components/mdx/RunnableCodeBlock';
 import { NotebookLifecycle } from '@/components/animations/NotebookLifecycle';
 import { FlowControlAnimation } from '@/components/animations/FlowControlAnimation';
 import { LoopFlowAnimation } from '@/components/animations/LoopFlowAnimation';
+import { DataStructureAnimation } from '@/components/animations/DataStructureAnimation';
+import { CopyRelationshipAnimation } from '@/components/animations/CopyRelationshipAnimation';
 import { NeuronLab } from '@/components/animations/NeuronLab';
 import { CodeCopyButton } from '@/components/mdx/CodeCopyButton';
 import { TaskCheckbox } from '@/components/mdx/TaskCheckbox';
@@ -53,6 +55,8 @@ export const mdxComponents = {
   NotebookLifecycle,
   FlowControlAnimation,
   LoopFlowAnimation,
+  DataStructureAnimation,
+  CopyRelationshipAnimation,
   NeuronLab,
   a: (props: any) => (
     <a

@@ -16,15 +16,18 @@ export const ReaderSidebar: React.FC = () => {
   const currentModuleGroup = moduleTree.find((module) => module.id === currentNode.module) || moduleTree[0];
   const moduleNodes = useMemo(() => allNodes.filter((node) => node.module === currentNode.module && node.route.startsWith('/learn/')), [allNodes, currentNode.module]);
   const [revision, setRevision] = useState(0);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
     const refresh = () => setRevision((value) => value + 1);
+    setIsHydrated(true);
     window.addEventListener('ai-learning:document-progress', refresh);
     return () => window.removeEventListener('ai-learning:document-progress', refresh);
   }, []);
 
   const progressFor = (route: string) => {
     void revision;
+    if (!isHydrated) return 0;
     const progress = readDocumentProgress(route);
     if (progress.completed) return 100;
     const total = progress.taskTotal || 0;

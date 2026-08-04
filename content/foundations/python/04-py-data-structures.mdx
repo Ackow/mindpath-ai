@@ -49,6 +49,14 @@ AI 程序会同时处理样本列表、模型配置、类别编码、训练指�
 | `dict` | 按插入顺序保存键 | 是 | 键不能重复 | 配置、指标、类别编码、样本字段 |
 | `set` | 不承诺索引顺序 | 是 | 否 | 去重标签、成员判断、集合运算 |
 
+![Python 四种核心数据结构示意图](/assets/python/data-structures-overview.png)
+
+<DataStructureAnimation />
+
+![Python 容器选择决策图](/assets/python/container-choice.png)
+
+这张图可以当作一个快速决策表：先问自己是否需要保留顺序、是否允许重复、是否会修改内容，以及是否需要按名称查找。四个问题的答案比死记类型名称更可靠。
+
 ```python
 samples = ["cat", "dog", "cat"]       # list：保留重复项
 image_size = (224, 224, 3)              # tuple：尺寸通常不应被改写
@@ -72,6 +80,10 @@ print(scores[1:3])    # [0.67, 0.93]
 print(scores[:2])     # 前两个
 print(scores[::2])    # 步长为 2
 ```
+
+![Python 列表索引与切片图](/assets/python/list-slicing.png)
+
+把切片想成一把从 `start` 放下、在 `stop` 前收起的尺子。`scores[1:3]` 取到索引 1 和 2；索引 3 只是“停止标记”，不会被取走。
 
 ### 2.1 修改、追加与删除
 
@@ -196,6 +208,12 @@ ordered_unique = list(dict.fromkeys(labels))
 print(ordered_unique)  # ['cat', 'dog', 'bird']
 ```
 
+![Python 赋值、浅拷贝与深拷贝关系图](/assets/python/copy-relationships.png)
+
+图中“箭头指向同一个对象”是理解副作用的关键：如果两个变量最终共享嵌套列表，修改其中一个变量就可能改变另一个变量看到的结果。
+
+<CopyRelationshipAnimation />
+
 ## 6. 解包、浅拷贝与深拷贝
 
 ### 6.1 解包让代码表达结构
@@ -236,6 +254,10 @@ print(experiment["layers"][0]["units"])  # 64
 ```
 
 深拷贝不是万能的：文件句柄、线程锁和某些第三方对象可能不能被复制。配置和样本数据通常只包含字典、列表、数字和字符串，适合使用 `deepcopy`；大型 NumPy 数组则应理解视图与复制的成本。
+
+![AI 训练实验中的数据组织图](/assets/python/ai-data-organization.png)
+
+在真实项目中，容器通常会组合使用，而不是“一个章节只选一种”：外层实验对象可以是字典，字典里的样本和指标历史使用列表，类别去重再交给集合。
 
 ## 7. AI 场景：组织一个训练实验
 

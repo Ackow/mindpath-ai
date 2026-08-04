@@ -39,6 +39,14 @@ export default async function DashboardPage() {
     llm: Layers,
     rag: MessageSquare,
   } as const;
+  const visualByModule = {
+    foundations: { icon: 'bg-blue-50 text-blue-600 border-blue-100', progress: 'bg-blue-500' },
+    'machine-learning': { icon: 'bg-emerald-50 text-emerald-600 border-emerald-100', progress: 'bg-emerald-500' },
+    'deep-learning': { icon: 'bg-orange-50 text-orange-600 border-orange-100', progress: 'bg-orange-500' },
+    vision: { icon: 'bg-sky-50 text-sky-600 border-sky-100', progress: 'bg-sky-500' },
+    llm: { icon: 'bg-violet-50 text-violet-600 border-violet-100', progress: 'bg-violet-500' },
+    rag: { icon: 'bg-teal-50 text-teal-600 border-teal-100', progress: 'bg-teal-500' },
+  } as const;
   const modules = curriculum
     .map((module) => {
       const notes = entries.filter((entry) => entry.module === module.id);
@@ -47,14 +55,13 @@ export default async function DashboardPage() {
         title: module.title,
         desc: module.description,
         icon: iconByModule[module.id as keyof typeof iconByModule] || BookOpen,
-        iconBg: 'bg-teal-50 text-teal-600 border-teal-100',
-        progressBg: 'bg-teal-500',
+        iconBg: visualByModule[module.id as keyof typeof visualByModule]?.icon || 'bg-slate-50 text-slate-600 border-slate-100',
+        progressBg: visualByModule[module.id as keyof typeof visualByModule]?.progress || 'bg-slate-500',
         percent: module.totalNotes > 0 ? Math.round((notes.length / module.totalNotes) * 100) : 0,
         notesCount: notes.length,
         nodes: graphNodes.filter((node) => node.module === module.id && node.route.startsWith('/learn/')),
       };
-    })
-    .filter((module) => module.notesCount > 0);
+    });
   const learningOrder = graphNodes
     .filter((node) => notesByRoute.has(node.route))
     .sort((left, right) => {
@@ -80,16 +87,16 @@ export default async function DashboardPage() {
   const progressNodes = graphNodes.filter((node) => notesByRoute.has(node.route));
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-9 py-3">
       {/* Top Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+      <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-12">
         {/* Left Welcome */}
-        <div className="lg:col-span-4 flex flex-col justify-center pr-2">
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-tight mb-3">
+        <div className="flex flex-col justify-center pr-2 lg:col-span-4">
+          <h1 className="mb-4 text-4xl font-extrabold leading-tight tracking-normal text-slate-900">
             继续构建你的 <br />
             <span className="text-teal-600">AI 知识体系</span>
           </h1>
-          <p className="text-slate-500 text-sm leading-relaxed mb-6">
+          <p className="mb-7 max-w-sm text-sm leading-7 text-slate-500">
             从数学基础到大模型，按清晰学习路线稳步前进，逐步建立完整的 AI 知识结构。
           </p>
           <div className="flex items-center gap-3">
@@ -104,7 +111,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Center Route Card */}
-        <Card className="lg:col-span-5 flex flex-col justify-between">
+        <Card className="flex min-h-[320px] flex-col justify-between p-7 lg:col-span-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-bold text-slate-800 text-base">推荐学习路线</h2>
             <Link href="/map" className="text-xs text-slate-400 hover:text-teal-600 transition-colors flex items-center gap-0.5">
@@ -112,16 +119,16 @@ export default async function DashboardPage() {
             </Link>
           </div>
 
-          <div className="flex items-center justify-between my-auto py-4 px-2 relative">
+          <div className="relative my-auto flex items-start justify-between px-2 py-7">
             {/* Connecting line */}
-            <div className="absolute top-1/2 left-10 right-10 h-0.5 bg-slate-200 -translate-y-4 -z-0" />
+            <div className="absolute left-12 right-12 top-[54px] -z-0 h-px bg-slate-200" />
 
             {currentRoute.map((item, idx) => (
               <div key={idx} className="relative z-10 flex flex-col items-center text-center">
                 <div
                   className={`w-14 h-14 rounded-full flex items-center justify-center border-2 transition-all ${
                     item.active
-                      ? 'bg-teal-500 text-white border-teal-400 shadow-glow scale-110'
+                  ? 'scale-110 border-4 border-teal-200 bg-teal-500 text-white shadow-glow'
                       : 'bg-white text-slate-400 border-slate-200'
                   }`}
                 >
@@ -143,7 +150,7 @@ export default async function DashboardPage() {
         </Card>
 
         {/* Right Library Card */}
-        <Card className="lg:col-span-3 flex flex-col justify-between">
+        <Card className="flex min-h-[320px] flex-col justify-between p-7 lg:col-span-3">
           <div className="flex items-center justify-between mb-2">
             <h2 className="font-bold text-slate-800 text-base">知识库概览</h2>
           </div>
@@ -159,15 +166,15 @@ export default async function DashboardPage() {
       </div>
 
       {/* Middle Section: Module Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
         {modules.map((mod) => {
           const Icon = mod.icon;
           return (
-            <Card key={mod.id} hoverable className="group">
-              <Link href={`/map/${mod.id}`} className="block space-y-3">
+            <Card key={mod.id} hoverable className="group min-h-[164px] p-6">
+              <Link href="/map" className="block space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${mod.iconBg}`}>
-                    <Icon className="w-5 h-5" />
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-2xl border ${mod.iconBg}`}>
+                    <Icon className="h-6 w-6" />
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-800 text-base group-hover:text-teal-600 transition-colors">
@@ -175,12 +182,12 @@ export default async function DashboardPage() {
                     </h3>
                   </div>
                 </div>
-                <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                <p className="line-clamp-2 text-xs leading-relaxed text-slate-500">
                   {mod.desc}
                 </p>
-                <div className="pt-2 flex items-center justify-between text-xs text-slate-400">
-                  <div className="w-36 bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                    <LearningProgressBar nodes={mod.nodes} />
+                <div className="flex items-center justify-between pt-2 text-xs text-slate-400">
+                  <div className="h-1.5 w-36 overflow-hidden rounded-full bg-slate-100">
+                    <LearningProgressBar nodes={mod.nodes} colorClassName={mod.progressBg} />
                   </div>
                   <LearningProgressValue nodes={mod.nodes} />
                   <span>{mod.notesCount} 篇笔记 &gt;</span>
