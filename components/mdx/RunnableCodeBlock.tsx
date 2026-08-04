@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Play, RotateCcw, Copy, Check, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface RunnableCodeBlockProps {
@@ -10,6 +10,16 @@ interface RunnableCodeBlockProps {
   code?: string;
   children?: string;
 }
+
+type WorkerMessage = {
+  type: 'status' | 'stdout' | 'stderr' | 'images' | 'result';
+  runId: number;
+  status?: 'loading' | 'running';
+  text?: string;
+  ok?: boolean;
+  error?: string;
+  images?: string[];
+};
 
 export const RunnableCodeBlock: React.FC<RunnableCodeBlockProps> = ({
   title = "用 Python 计算一个神经元的输出",
@@ -30,31 +40,57 @@ print(f"z = {z:.2f}")`,
   const [code, setCode] = useState<string>(codeToRun);
   const [output, setOutput] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState<boolean>(false);
+  const [images, setImages] = useState<string[]>([]);
   const [copied, setCopied] = useState<boolean>(false);
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const workerRef = useRef<Worker | null>(null);
+  const runIdRef = useRef(0);
+
+  useEffect(() => {
+    return () => workerRef.current?.terminate();
+  }, []);
 
   const lines = code.split('\n');
   const isLongCode = lines.length > 7;
 
   const handleRun = () => {
+    const runId = runIdRef.current + 1;
+    runIdRef.current = runId;
+    const worker = workerRef.current ?? new Worker('/pyodide-worker.js', { type: 'module' });
+    workerRef.current = worker;
     setIsRunning(true);
-    setTimeout(() => {
-      try {
-        if (code.includes('0.5') && code.includes('1.0')) {
-          setOutput('z = 1.35');
-        } else {
-          setOutput('z = 0.98');
-        }
-      } catch {
-        setOutput('z = 1.35');
+    setImages([]);
+    setOutput('正在加载浏览器 Python 运行时...');
+
+    worker.onmessage = ({ data }: MessageEvent<WorkerMessage>) => {
+      if (data.runId !== runId) return;
+      if (data.type === 'status') {
+        setOutput(data.status === 'loading' ? '正在加载 Python 依赖...' : '');
+      } else if (data.type === 'stdout' || data.type === 'stderr') {
+        setOutput((previous) => {
+          const chunk = data.text ?? '';
+          if (!chunk) return previous;
+          return `${previous ?? ''}${chunk}${chunk.endsWith('\n') ? '' : '\n'}`;
+        });
+      } else if (data.type === 'images') {
+        setImages(data.images ?? []);
+      } else if (data.type === 'result') {
+        setIsRunning(false);
+        if (!data.ok) setOutput((previous) => `${previous ? `${previous}\n` : ''}${data.error ?? 'Python 执行失败'}`);
+        else setOutput((previous) => previous || '程序运行完成（无输出）');
       }
+    };
+    worker.onerror = (error) => {
       setIsRunning(false);
-    }, 300);
+      setOutput(`运行时加载失败：${error.message}`);
+    };
+    worker.postMessage({ type: 'run', runId, code });
   };
 
   const handleReset = () => {
     setCode(codeToRun);
     setOutput(null);
+    setImages([]);
   };
 
   const handleCopy = () => {
@@ -68,10 +104,11 @@ print(f"z = {z:.2f}")`,
     const rawLines = codeText.split('\n');
     return rawLines.map((line, lineIdx) => {
       const trimmed = line.trim();
+      const lineClassName = 'min-h-[1.5em] whitespace-pre';
       if (trimmed.startsWith('#')) {
         return (
-          <div key={lineIdx} className="text-slate-500 italic">
-            {line}
+          <div key={lineIdx} className={`${lineClassName} text-slate-500 italic`}>
+            {line || ' '}
           </div>
         );
       }
@@ -79,8 +116,8 @@ print(f"z = {z:.2f}")`,
       // Regex tokenize by whitespace, operators and quotes
       const tokens = line.split(/(\s+|[(),=**"'])/);
       return (
-        <div key={lineIdx} className="whitespace-pre">
-          {tokens.map((token, tokenIdx) => {
+        <div key={lineIdx} className={lineClassName}>
+          {line ? tokens.map((token, tokenIdx) => {
             if (!token) return null;
             if (/^(import|from|as|def|return|if|else|elif|for|in|while|try|except|with|print)$/.test(token)) {
               return <span key={tokenIdx} className="text-purple-400 font-bold">{token}</span>;
@@ -98,7 +135,7 @@ print(f"z = {z:.2f}")`,
               return <span key={tokenIdx} className="text-pink-400">{token}</span>;
             }
             return <span key={tokenIdx} className="text-slate-200">{token}</span>;
-          })}
+          }) : ' '}
         </div>
       );
     });
@@ -174,9 +211,21 @@ print(f"z = {z:.2f}")`,
       {output !== null && (
         <div className="p-3.5 border-t border-slate-800 space-y-1.5" style={{ backgroundColor: '#070D1E' }}>
           <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">输出结果 (Output)</div>
-          <div className="p-3 bg-emerald-950/60 rounded-xl border border-emerald-800/60 text-emerald-400 font-mono text-xs font-bold shadow-inner">
+          <div className="p-3 bg-emerald-950/60 rounded-xl border border-emerald-800/60 text-emerald-400 font-mono text-xs font-bold shadow-inner whitespace-pre-wrap break-words">
             {output}
           </div>
+          {images.length > 0 && (
+            <div className="space-y-3 pt-1">
+              {images.map((image, index) => (
+                <img
+                  key={`${runIdRef.current}-${index}`}
+                  src={`data:image/png;base64,${image}`}
+                  alt={`Python 图像输出 ${index + 1}`}
+                  className="max-w-full rounded-lg border border-slate-700 bg-white"
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

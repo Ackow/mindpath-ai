@@ -10,45 +10,37 @@ import { visit } from 'unist-util-visit';
 import { ConceptCard } from '@/components/mdx/ConceptCard';
 import { RunnableCodeBlock } from '@/components/mdx/RunnableCodeBlock';
 import { NotebookLifecycle } from '@/components/animations/NotebookLifecycle';
+import { FlowControlAnimation } from '@/components/animations/FlowControlAnimation';
 import { NeuronLab } from '@/components/animations/NeuronLab';
 import { CodeCopyButton } from '@/components/mdx/CodeCopyButton';
+import { TaskCheckbox } from '@/components/mdx/TaskCheckbox';
 
 function remarkSimpleTable() {
   return (tree: any) => {
-    visit(tree, 'paragraph', (node: any, index: any, parent: any) => {
-      if (!node.children || node.children.length === 0) return;
+    visit(tree, 'paragraph', (node: any, index: number, parent: any) => {
+      const text = node.children
+        ?.map((child: any) => (typeof child.value === 'string' ? child.value : ''))
+        .join('');
+      const lines = text?.split('\n').map((line: string) => line.trim()).filter(Boolean) || [];
+      if (lines.length < 2 || !lines[0].startsWith('|') || !lines[0].endsWith('|')) return;
 
-      const extractText = (n: any): string => {
-        if (!n) return '';
-        if (typeof n.value === 'string') return n.value;
-        if (Array.isArray(n.children)) return n.children.map(extractText).join('');
-        return '';
-      };
+      const rows = lines.filter((line: string) => !/^\|?\s*:?-+:?\s*(\|?\s*:?-+:?\s*)*\|?$/.test(line));
+      if (rows.length === 0) return;
 
-      const text = extractText(node);
-      const lines = text.split('\n').map((l: string) => l.trim()).filter(Boolean);
+      const element = (name: string, children: any[]) => ({
+        type: 'mdxJsxFlowElement',
+        name,
+        attributes: [],
+        children,
+      });
+      const cells = (row: string, cellName: 'th' | 'td') => row
+        .split('|')
+        .slice(1, -1)
+        .map((cell: string) => element(cellName, [{ type: 'text', value: cell.trim() }]));
+      const header = element('thead', [element('tr', cells(rows[0], 'th'))]);
+      const body = element('tbody', rows.slice(1).map((row: string) => element('tr', cells(row, 'td'))));
 
-      if (lines.length >= 2 && lines[0].startsWith('|') && lines[0].endsWith('|')) {
-        const rows = lines.filter((l: string) => !l.match(/^\|?\s*:?-+:?\s*(\|?\s*:?-+:?\s*)*\|?$/));
-
-        if (rows.length > 0) {
-          const tableNode = {
-            type: 'table',
-            children: rows.map((rowStr: string) => ({
-              type: 'tableRow',
-              children: rowStr
-                .split('|')
-                .slice(1, -1)
-                .map((cellStr: string) => ({
-                  type: 'tableCell',
-                  children: [{ type: 'text', value: cellStr.trim() }],
-                })),
-            })),
-          };
-
-          parent.children.splice(index, 1, tableNode);
-        }
-      }
+      parent.children.splice(index, 1, element('table', [header, body]));
     });
   };
 }
@@ -57,6 +49,7 @@ export const mdxComponents = {
   ConceptCard,
   RunnableCodeBlock,
   NotebookLifecycle,
+  FlowControlAnimation,
   NeuronLab,
   a: (props: any) => (
     <a
@@ -74,7 +67,7 @@ export const mdxComponents = {
     return (
       <h2
         id={titleText ? `heading-${titleText}` : undefined}
-        className="text-xl font-bold text-slate-900 border-l-4 border-teal-600 pl-4 mt-9 mb-4 scroll-mt-20"
+        className="text-xl font-bold text-slate-900 border-l-4 border-teal-600 pl-4 mt-12 mb-6 scroll-mt-20"
         {...props}
       />
     );
@@ -86,7 +79,7 @@ export const mdxComponents = {
     return (
       <h3
         id={titleText ? `heading-${titleText}` : undefined}
-        className="text-lg font-bold text-slate-800 mt-7 mb-3 scroll-mt-20"
+        className="text-lg font-bold text-slate-800 mt-9 mb-5 scroll-mt-20"
         {...props}
       />
     );
@@ -97,19 +90,34 @@ export const mdxComponents = {
   // Unordered & Ordered Lists with Explicit Bullet & Number Styling
   ul: (props: any) => (
     <ul
-      className="pl-6 space-y-2.5 my-5 text-slate-700 text-base"
+      className="pl-6 space-y-3.5 my-8 text-slate-700 text-base"
       style={{ listStyleType: 'disc' }}
       {...props}
     />
   ),
   ol: (props: any) => (
     <ol
-      className="pl-6 space-y-2.5 my-5 text-slate-700 text-base font-semibold"
+      className="pl-6 space-y-3.5 my-8 text-slate-700 text-base font-semibold"
       style={{ listStyleType: 'decimal' }}
       {...props}
     />
   ),
-  li: (props: any) => <li className="text-slate-700 leading-relaxed font-normal pl-1" {...props} />,
+  li: (props: any) => {
+    const children = React.Children.toArray(props.children);
+    const firstChild = children[0];
+    const taskMatch = typeof firstChild === 'string' ? firstChild.match(/^\[([ xX])\]\s+/) : null;
+    if (!taskMatch) return <li className="text-slate-700 leading-relaxed font-normal pl-1" {...props} />;
+
+    const { children: _children, ...liProps } = props;
+    const taskText = firstChild.slice(taskMatch[0].length);
+    return (
+      <li className="text-slate-700 leading-relaxed font-normal pl-1 list-none -ml-6" {...liProps}>
+        <TaskCheckbox checked={taskMatch[1].toLowerCase() === 'x'} />
+        {taskText}
+        {children.slice(1)}
+      </li>
+    );
+  },
 
   // High-Contrast Grid Table with Explicit Cell Borders
   table: (props: any) => (

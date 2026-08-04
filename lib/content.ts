@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
+import matter from 'gray-matter';
 
 const contentDirectory = path.join(process.cwd(), 'content');
 
@@ -59,4 +60,29 @@ export async function getContentSource(slug: string[]): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+export type ContentIndexEntry = ContentFrontmatter & {
+  slug: string[];
+  route: string;
+};
+
+export async function getContentIndex(): Promise<ContentIndexEntry[]> {
+  const slugs = await getAllContentSlugs();
+  const entries = await Promise.all(
+    slugs.map(async (slug) => {
+      const source = await getContentSource(slug);
+      if (!source) return null;
+      const { data } = matter(source);
+      return {
+        ...data,
+        slug,
+        route: `/learn/${slug.join('/')}`,
+      } as ContentIndexEntry;
+    }),
+  );
+
+  return entries
+    .filter((entry): entry is ContentIndexEntry => entry !== null)
+    .sort((left, right) => left.route.localeCompare(right.route));
 }

@@ -6,18 +6,176 @@ submodule: python
 order: 3
 difficulty: beginner
 prerequisites: [py-basics]
-estimatedMinutes: 25
-tags: [控制流, 列表推导式, 字典推导式]
-summary: if-elif-else 条件分支、for/while 循环控制、列表/字典推导式的高效简洁表达。
+estimatedMinutes: 30
+tags: [Python, 控制流, 条件分支, 循环, 推导式]
+summary: 用条件、循环和推导式把输入数据转换为可解释、可测试的处理流程。
 ---
 
-# 03. 控制流与推导式
+## 本节要解决什么问题？
 
-推导式 (Comprehension) 是 Python 最具特色的 Pythonic 简洁语法。
+模型训练脚本通常不是一条直线：需要先检查输入，再按条件选择策略，最后遍历批次并汇总结果。本节把这种“根据状态选择下一步”的思维翻译成 Python 语法。完成后，你应能写出清晰的分支、可终止的循环，并用推导式表达简单的数据转换。
 
-<RunnableCodeBlock title="列表推导式与条件筛选">
-{`data = [1.2, -0.5, 3.4, -2.1, 0.8]
-# 相当于激活函数 ReLU
+<ConceptCard title="先画路径，再写语句" type="intuition">
+把每个条件看成一个决策节点，把每次循环看成一次状态更新。先写清楚“何时进入、何时退出、每轮改变什么”，再选择 `if`、`for` 或 `while`，能显著减少死循环和遗漏分支。
+</ConceptCard>
+
+## 1. 条件分支：让程序做出选择
+
+`if`、`elif`、`else` 使用布尔表达式决定代码块是否执行。缩进是语法的一部分，同一分支中的语句必须保持一致缩进。
+
+```python
+score = 72
+
+if score >= 90:
+    result = "优秀"
+elif score >= 60:
+    result = "及格"
+else:
+    result = "需要复习"
+
+print(result)
+```
+
+条件应尽量表达一个业务判断；复杂判断可以先拆成有名字的布尔变量：
+
+```python
+has_data = len(samples) > 0
+has_labels = len(labels) == len(samples)
+ready = has_data and has_labels
+```
+
+<FlowControlAnimation />
+
+动画中的青色圆点代表当前执行位置。点击播放或逐步按钮，观察命中 `elif` 后为什么不会再次执行 `else`，以及 `for` 如何回到循环头部。这个交互遵循设计文档中的 `StepAnimation` 约定：步骤数据与文字说明同步，支持播放、暂停、前后步、重置和倍速。
+
+### 1.1 真值、短路与边界
+
+空容器、`0`、`None` 会被当作假值；非空容器和非零数字通常是真值。`and` 与 `or` 会短路，因此可以安全地把前置检查放在前面：
+
+```python
+items = ["cat", "dog"]
+if items and items[0] == "cat":
+    print("第一项是 cat")
+```
+
+用 `is None` 判断缺失值，不要把 `is` 当作普通相等比较：`==` 比较内容，`is` 比较是否为同一个对象。
+
+## 2. 循环：重复执行并维护状态
+
+### 2.1 `for`：遍历已知序列
+
+`for` 适合遍历列表、字典、字符串或 `range`。循环体内只维护当前项和必要的累积状态：
+
+```python
+losses = [0.9, 0.6, 0.4]
+total = 0.0
+for loss in losses:
+    total += loss
+print(total / len(losses))
+```
+
+需要索引时优先使用 `enumerate`，同时遍历两个序列时使用 `zip`：
+
+```python
+for index, loss in enumerate(losses, start=1):
+    print(f"step={index}, loss={loss:.2f}")
+```
+
+### 2.2 `while`：直到条件不再成立
+
+`while` 适合重试、读取队列或迭代未知次数的过程。循环体必须改变退出条件，并设置上限或超时，避免无限循环：
+
+```python
+attempt = 0
+while attempt < 3:
+    attempt += 1
+    print(f"第 {attempt} 次尝试")
+```
+
+### 2.3 `break`、`continue` 与 `else`
+
+`continue` 跳过当前轮，`break` 立即离开循环。循环 `else` 只在循环自然结束、没有触发 `break` 时执行：
+
+```python
+for value in [2, 4, 7, 8]:
+    if value % 2:
+        print("找到奇数", value)
+        break
+else:
+    print("全部是偶数")
+```
+
+## 3. 推导式：把简单循环写成表达式
+
+列表推导式的基本结构是 `[表达式 for 变量 in 序列 if 条件]`。先写出等价的普通循环，再压缩为推导式，便于检查逻辑：
+
+```python
+data = [1.2, -0.5, 3.4, -2.1, 0.8]
 relu_output = [x if x > 0 else 0 for x in data]
-print("ReLU 模拟滤波:", relu_output)`}
+print("ReLU 模拟滤波:", relu_output)
+```
+
+字典推导式适合构造键值映射，集合推导式会自动去重：
+
+```python
+probabilities = [0.12, 0.51, 0.93, 0.48]
+labels = {i: ("positive" if p >= 0.5 else "negative") for i, p in enumerate(probabilities)}
+unique_labels = {label for label in labels.values()}
+print(labels, unique_labels)
+```
+
+条件超过一层、表达式需要多行或包含副作用时，改回普通循环。可读性比少写几行代码更重要。
+
+## 小实验：批量筛选并汇总
+
+运行下面的代码，修改 `threshold`，观察通过筛选的样本和均值如何变化：
+
+<RunnableCodeBlock title="用条件和循环汇总样本">
+{`scores = [0.42, 0.81, 0.67, 0.39, 0.93]
+threshold = 0.6
+
+passed = []
+for score in scores:
+    if score >= threshold:
+        passed.append(score)
+
+average = sum(passed) / len(passed) if passed else 0.0
+print("通过数量:", len(passed))
+print("通过均值:", round(average, 3))`}
 </RunnableCodeBlock>
+
+## 常见错误排查
+
+| 现象 | 原因 | 处理方式 |
+|---|---|---|
+| 分支结果与预期不符 | 条件顺序错误，宽条件抢先命中 | 先写更具体的条件，再写兜底 `else` |
+| 循环永不结束 | `while` 条件依赖的变量没有更新 | 在循环体中明确更新，并设置最大轮数 |
+| `IndexError` | 直接访问可能为空的列表 | 先判断容器是否为空，或使用 `for` 遍历 |
+| 推导式难以阅读 | 嵌套条件或副作用过多 | 拆成普通循环和具名中间变量 |
+| 字典遍历拿不到键和值 | 只遍历了键 | 使用 `for key, value in mapping.items()` |
+
+## 本节检查清单
+
+- [ ] 能用 `if/elif/else` 表达互斥的业务分支。
+- [ ] 能选择 `for` 或 `while`，并说明循环的退出条件。
+- [ ] 能正确使用 `break`、`continue` 和 `enumerate`。
+- [ ] 能把简单循环转换为列表或字典推导式。
+- [ ] 能运行小实验并解释阈值改变带来的结果变化。
+
+## 自测
+
+1. `if`、`elif` 和 `else` 的执行顺序是什么？
+2. 如何保证一个 `while` 循环最终会停止？
+3. `break` 与 `continue` 分别改变哪一层控制流？
+4. 把 `for x in values: if x > 0: result.append(x)` 改写成列表推导式。
+5. 什么时候应该放弃推导式，改用普通循环？
+
+## 下一步
+
+下一章：[核心数据结构](/learn/foundations/python/04-py-data-structures)。你将把本节的遍历和分支应用到列表、字典、集合与嵌套数据上。
+
+## 参考资料
+
+- [Python 官方教程：控制流工具](https://docs.python.org/3/tutorial/controlflow.html)
+- [Python 语言参考：复合语句](https://docs.python.org/3/reference/compound_stmts.html)
+- [Python 官方教程：数据结构](https://docs.python.org/3/tutorial/datastructures.html#list-comprehensions)
