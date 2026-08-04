@@ -7,6 +7,16 @@ const contentDir = path.join(rootDir, 'content');
 const curriculumPath = path.join(contentDir, '_meta', 'curriculum.json');
 const overridesPath = path.join(rootDir, 'maps', 'overrides.json');
 const outputPath = path.join(rootDir, 'maps', 'global.json');
+const outPath = path.join(rootDir, 'out');
+
+if (fs.existsSync(outPath)) {
+  try {
+    fs.rmSync(outPath, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+  } catch (e) {
+    // Ignore lock warnings
+  }
+}
+
 
 function findMdxFiles(directory) {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -139,6 +149,15 @@ function main() {
   const graph = { nodes, edges };
   fs.writeFileSync(outputPath, `${JSON.stringify(graph, null, 2)}\n`, 'utf8');
   console.log(`Generated ${path.relative(rootDir, outputPath)} with ${nodes.length} nodes and ${edges.length} edges.`);
+
+  const contentStore = {};
+  for (const filePath of files) {
+    const relativeSlug = path.relative(contentDir, filePath).replace(/\\/g, '/').replace(/\.mdx$/, '');
+    contentStore[relativeSlug] = fs.readFileSync(filePath, 'utf8');
+  }
+  const contentStorePath = path.join(rootDir, 'maps', 'content-store.json');
+  fs.writeFileSync(contentStorePath, `${JSON.stringify(contentStore, null, 2)}\n`, 'utf8');
+  console.log(`Generated ${path.relative(rootDir, contentStorePath)} containing ${Object.keys(contentStore).length} MDX documents.`);
 }
 
 try {

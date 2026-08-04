@@ -128,10 +128,10 @@ html.dark .border-slate-200\/80 {
 
 /* MDX Content Generous Spacing */
 .mdx-content h2 {
-  margin-top: 4rem;
-  margin-bottom: 1.75rem;
+  margin-top: 4.5rem;
+  margin-bottom: 2rem;
   border-left: 4px solid #0d9488;
-  padding-left: 1rem;
+  padding-left: 1.125rem;
   font-size: 1.75rem;
   font-weight: 800;
   line-height: 1.4;
@@ -139,33 +139,36 @@ html.dark .border-slate-200\/80 {
 }
 
 .mdx-content h3 {
-  margin-top: 3rem;
+  margin-top: 3.5rem;
   margin-bottom: 1.5rem;
   font-size: 1.35rem;
   font-weight: 750;
   color: #1e293b;
 }
 
-.mdx-content p,
-.mdx-content ul,
-.mdx-content ol,
-.mdx-content table,
-.mdx-content pre {
-  margin-top: 2rem;
-  margin-bottom: 2rem;
+/* Ensure ample vertical gap when H3 follows H2 directly */
+.mdx-content h2 + h3,
+h2 + h3 {
+  margin-top: 2.25rem !important;
 }
 
 .mdx-content p,
-.mdx-content li,
-.mdx-content th,
-.mdx-content td {
-  font-size: 1.05rem;
-  line-height: 1.85;
+.mdx-content table,
+.mdx-content pre {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .mdx-content ul,
 .mdx-content ol {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
   padding-left: 1.75rem;
+}
+
+.mdx-content li {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
 }
 
 .mdx-content ul { list-style: disc; }

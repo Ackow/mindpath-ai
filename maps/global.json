@@ -30,7 +30,7 @@
       "module": "foundations",
       "route": "/map/foundations",
       "difficulty": "beginner",
-      "estimatedMinutes": 560,
+      "estimatedMinutes": 565,
       "prerequisites": [
         "root"
       ],
@@ -467,31 +467,34 @@
     },
     {
       "id": "py-functions",
-      "title": "函数与作用域",
+      "title": "05.函数、作用域与函数式工具",
       "module": "foundations",
       "submodule": "python",
       "route": "/learn/foundations/python/05-py-functions",
       "difficulty": "beginner",
-      "estimatedMinutes": 30,
+      "estimatedMinutes": 35,
       "prerequisites": [
         "py-control-flow",
         "py-data-structures"
       ],
       "next": [
         "py-modules",
-        "py-numpy"
+        "py-files-debugging"
       ],
       "relatedNotes": [
         "py-modules",
-        "py-numpy"
+        "py-files-debugging"
       ],
       "tags": [
+        "Python",
         "函数",
-        "闭包",
+        "作用域",
         "lambda",
-        "作用域"
+        "map/filter",
+        "类型标注",
+        "docstring"
       ],
-      "summary": "位置/关键字参数、*args与**kwargs、LEGB作用域法则、闭包与高阶函数。",
+      "summary": "位置/关键字参数、*args与**kwargs、LEGB作用域法则与可变默认参数陷阱、lambda与map/filter适用边界、docstring与类型标注，以及将 AI 流程拆分为可测试函数。",
       "position": {
         "x": 460,
         "y": 95
@@ -828,9 +831,9 @@
       "target": "py-modules"
     },
     {
-      "id": "e-next-py-functions-py-numpy",
+      "id": "e-next-py-functions-py-files-debugging",
       "source": "py-functions",
-      "target": "py-numpy"
+      "target": "py-files-debugging"
     },
     {
       "id": "e-next-py-modules-py-files-debugging",
@@ -841,6 +844,11 @@
       "id": "e-next-py-files-debugging-py-pandas",
       "source": "py-files-debugging",
       "target": "py-pandas"
+    },
+    {
+      "id": "e-depends-py-functions-py-numpy",
+      "source": "py-functions",
+      "target": "py-numpy"
     },
     {
       "id": "e-next-py-numpy-py-visualization",

@@ -4,11 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/generate-graph.mjs && next build",
     "start": "next start",
-    "cf:build": "opennextjs-cloudflare build",
-    "preview": "npm run cf:build && wrangler dev",
-    "deploy": "npm run cf:build && wrangler deploy",
+    "cf:build": "npm run build",
+    "preview": "npm run build && wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
     "lint": "next lint",
     "generate:graph": "node scripts/generate-graph.mjs",
     "validate:content": "npm run generate:graph && node scripts/validate-content.mjs"
@@ -38,7 +38,6 @@
     "tailwind-merge": "^2.2.1"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "^1.20.2",
     "@types/katex": "^0.16.7",
     "@types/node": "^20.11.0",
     "@types/react": "^19.1.10",

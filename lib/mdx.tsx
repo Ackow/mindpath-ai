@@ -17,6 +17,7 @@ import { CopyRelationshipAnimation } from '@/components/animations/CopyRelations
 import { NeuronLab } from '@/components/animations/NeuronLab';
 import { CodeCopyButton } from '@/components/mdx/CodeCopyButton';
 import { TaskCheckbox } from '@/components/mdx/TaskCheckbox';
+import contentStore from '../maps/content-store.json';
 
 function remarkSimpleTable() {
   return (tree: any) => {
@@ -74,7 +75,7 @@ export const mdxComponents = {
     return (
       <h2
         id={titleText ? `heading-${titleText}` : undefined}
-        className="text-xl font-bold text-slate-900 border-l-4 border-teal-600 pl-4 mt-12 mb-6 scroll-mt-20"
+        className="text-xl font-bold text-slate-900 border-l-4 border-teal-600 pl-4.5 mt-16 mb-8 scroll-mt-20"
         {...props}
       />
     );
@@ -86,7 +87,7 @@ export const mdxComponents = {
     return (
       <h3
         id={titleText ? `heading-${titleText}` : undefined}
-        className="text-lg font-bold text-slate-800 mt-9 mb-5 scroll-mt-20"
+        className="text-lg font-bold text-slate-800 mt-12 mb-6 scroll-mt-20"
         {...props}
       />
     );
@@ -97,14 +98,14 @@ export const mdxComponents = {
   // Unordered & Ordered Lists with Explicit Bullet & Number Styling
   ul: (props: any) => (
     <ul
-      className="pl-6 space-y-3.5 my-8 text-slate-700 text-base"
+      className="pl-6 space-y-1.5 my-2.5 text-slate-700 text-base"
       style={{ listStyleType: 'disc' }}
       {...props}
     />
   ),
   ol: (props: any) => (
     <ol
-      className="pl-6 space-y-3.5 my-8 text-slate-700 text-base font-semibold"
+      className="pl-6 space-y-1.5 my-2.5 text-slate-700 text-base font-semibold"
       style={{ listStyleType: 'decimal' }}
       {...props}
     />
@@ -201,15 +202,10 @@ export interface MdxNoteData {
 
 export async function getMdxNoteBySlug(slugArray: string[]): Promise<MdxNoteData | null> {
   try {
-    const filePath = path.join(process.cwd(), 'content', ...slugArray) + '.mdx';
-    let fileExists = false;
-    try {
-      fileExists = typeof fs !== 'undefined' && fs.existsSync && fs.existsSync(filePath);
-    } catch {
-      fileExists = false;
-    }
-    if (fileExists) {
-      const fileContent = fs.readFileSync(filePath, 'utf8');
+    const slugKey = slugArray.join('/');
+    const fileContent = (contentStore as Record<string, string>)[slugKey];
+
+    if (fileContent) {
       const { data, content } = matter(fileContent);
 
       let contentNode: React.ReactNode = null;
@@ -227,7 +223,7 @@ export async function getMdxNoteBySlug(slugArray: string[]): Promise<MdxNoteData
         });
         contentNode = compiled.content;
       } catch (e) {
-        console.error('MDX compile error for:', filePath, e);
+        console.error('MDX compile error for:', slugKey, e);
       }
 
       return {

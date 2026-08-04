@@ -10,6 +10,8 @@
 /.next/
 /.next-dev/
 /out/
+/maps/content-store.json
+
 
 # production
 /build
