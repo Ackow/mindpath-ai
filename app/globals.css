@@ -226,3 +226,24 @@ h2 + h3 {
 
 .mdx-content th { background: #f8fafc; font-weight: 700; }
 .mdx-content tr:last-child td { border-bottom: 0; }
+/* MDX math may render a standalone formula as an inline KaTeX node in a paragraph. */
+.katex {
+  font-size: 1.5em;
+}
+
+.katex-display,
+p:has(> .katex:only-child),
+p:has(> .math:only-child) {
+  overflow-x: auto;
+  overflow-y: hidden;
+  text-align: center;
+}
+
+.katex-display > .katex,
+p:has(> .katex:only-child) > .katex,
+p:has(> .math:only-child) > .math {
+  display: block;
+  margin-inline: auto;
+  padding-block: 0.25rem;
+  font-size: 1.5em;
+}

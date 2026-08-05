@@ -92,7 +92,7 @@ print(f"z = {z:.2f}")`,
   };
 
   const handleReset = () => {
-    setCode(codeToRun);
+    setCode(rawCode);
     setOutput(null);
     setImages([]);
   };
@@ -156,21 +156,21 @@ print(f"z = {z:.2f}")`,
           <button
             onClick={handleRun}
             disabled={isRunning}
-            className="flex items-center gap-1 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all shadow-xs"
+            className="flex items-center gap-1 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer"
           >
             <Play className="w-3.5 h-3.5 fill-white" />
             {isRunning ? '运行中...' : '运行'}
           </button>
           <button
             onClick={handleReset}
-            className="flex items-center gap-1 text-slate-300 hover:text-white text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 transition-colors"
+            className="flex items-center gap-1 text-slate-300 hover:text-white text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 transition-colors cursor-pointer"
           >
             <RotateCcw className="w-3 h-3" />
             重置
           </button>
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1 text-slate-300 hover:text-white text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 transition-colors"
+            className="flex items-center gap-1 text-slate-300 hover:text-white text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 transition-colors cursor-pointer"
           >
             {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
             {copied ? '已复制' : '复制'}
@@ -178,15 +178,26 @@ print(f"z = {z:.2f}")`,
         </div>
       </div>
 
-      {/* Syntax Highlighted Editor Display */}
+      {/* Syntax Highlighted Editable Editor Display */}
       <div className={`relative p-4 font-mono text-xs leading-relaxed transition-all ${
         isLongCode && !isExpanded ? 'max-h-48 overflow-hidden' : 'max-h-none overflow-x-auto'
       }`} style={{ backgroundColor: '#0B132B' }}>
-        {renderHighlightedPython(code)}
+        {/* Real-time Syntax Highlight Layer */}
+        <div className="pointer-events-none select-none min-h-[4em]">
+          {renderHighlightedPython(code)}
+        </div>
+
+        {/* Transparent Interactive Editable Layer */}
+        <textarea
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          spellCheck={false}
+          className="absolute inset-0 w-full h-full p-4 font-mono text-xs leading-relaxed bg-transparent text-transparent caret-teal-300 resize-none outline-none whitespace-pre overflow-hidden z-10 selection:bg-teal-900/60 selection:text-transparent"
+        />
 
         {/* Mask when Collapsed */}
         {isLongCode && !isExpanded && (
-          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#0B132B] to-transparent pointer-events-none" />
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#0B132B] to-transparent pointer-events-none z-20" />
         )}
       </div>
 

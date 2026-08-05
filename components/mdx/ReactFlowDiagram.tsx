@@ -24,11 +24,40 @@ function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialE
   const nodesMap = new Map<string, { label: string }>();
   const rawEdges: { source: string; target: string; label?: string }[] = [];
 
-  const cleanLabel = (text: string) => {
-    return text
-      .replace(/<br\s*\/?>/gi, '\n') // 替换 <br/> 为换行符
-      .replace(/^["'\[\({]+|["'\]\)}]+$/g, '')
-      .trim();
+  const cleanLabelText = (text: string) => {
+    return text.replace(/<br\s*\/?>/gi, '\n').trim();
+  };
+
+  const parseNodePart = (part: string): { id: string; label: string } | null => {
+    const trimmed = part.trim();
+    if (!trimmed) return null;
+
+    // 1. 匹配标准带引号节点: ID["文本"] 或 ID['文本'] 或 ID("文本")
+    const quotedMatch = trimmed.match(/^([A-Za-z0-9_.-]+)\s*(?:\[|\()\s*["'](.*?)["']\s*(?:\]|\))$/s);
+    if (quotedMatch) {
+      const id = quotedMatch[1];
+      const label = cleanLabelText(quotedMatch[2]);
+      return { id, label };
+    }
+
+    // 2. 匹配 Mermaid 各种包围形状: ID[文本], ID(文本), ID([文本]), ID[(文本)], ID{{文本}}
+    const shapeMatch = trimmed.match(/^([A-Za-z0-9_.-]+)\s*(?:\[\[|\[\(|\[\(\(|\[|\["|\(\(|\(\[|\(|\{\{|\{)(.*?)(?:\)\)|\]\)|\]\)\)|\]|"\]|\)\)|\]\)|"|\)|\}\}|\})$/s);
+    if (shapeMatch) {
+      const id = shapeMatch[1];
+      let rawLabel = shapeMatch[2].trim();
+      if ((rawLabel.startsWith('"') && rawLabel.endsWith('"')) || (rawLabel.startsWith("'") && rawLabel.endsWith("'"))) {
+        rawLabel = rawLabel.slice(1, -1);
+      }
+      return { id, label: cleanLabelText(rawLabel) };
+    }
+
+    // 3. 纯 ID 无描述
+    const bareMatch = trimmed.match(/^([A-Za-z0-9_.-]+)$/);
+    if (bareMatch) {
+      return { id: bareMatch[1], label: bareMatch[1] };
+    }
+
+    return null;
   };
 
   for (const line of lines) {
@@ -45,31 +74,21 @@ function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialE
     const arrowMatch = line.match(/(.+?)\s*(?:-->|---|--\s*(.*?)\s*-->|--\s*(.*?)\s*---)\s*(.+)/);
     if (arrowMatch) {
       const leftPart = arrowMatch[1].trim();
-      const edgeLabel = (arrowMatch[2] || arrowMatch[3]) ? cleanLabel(arrowMatch[2] || arrowMatch[3]) : undefined;
+      const edgeLabel = (arrowMatch[2] || arrowMatch[3]) ? cleanLabelText(arrowMatch[2] || arrowMatch[3]) : undefined;
       const rightPart = arrowMatch[4].trim();
 
-      const parseNodePart = (part: string) => {
-        const match = part.match(/^([A-Za-z0-9_-]+)(?:\[|\["|\("|"|\()?(.*?)(?:\]|"\]|"\)|\))?$/);
-        if (match && match[2]) {
-          const id = match[1];
-          const label = cleanLabel(match[2]) || id;
-          nodesMap.set(id, { label });
-          return id;
-        } else {
-          const id = part.replace(/[^A-Za-z0-9_-]/g, '');
-          if (id) {
-            if (!nodesMap.has(id)) nodesMap.set(id, { label: cleanLabel(part) || id });
-            return id;
-          }
-        }
-        return null;
-      };
+      const sourceObj = parseNodePart(leftPart);
+      const targetObj = parseNodePart(rightPart);
 
-      const sourceId = parseNodePart(leftPart);
-      const targetId = parseNodePart(rightPart);
+      if (sourceObj) {
+        if (!nodesMap.has(sourceObj.id)) nodesMap.set(sourceObj.id, { label: sourceObj.label });
+      }
+      if (targetObj) {
+        if (!nodesMap.has(targetObj.id)) nodesMap.set(targetObj.id, { label: targetObj.label });
+      }
 
-      if (sourceId && targetId) {
-        rawEdges.push({ source: sourceId, target: targetId, label: edgeLabel });
+      if (sourceObj && targetObj) {
+        rawEdges.push({ source: sourceObj.id, target: targetObj.id, label: edgeLabel });
       }
     }
   }

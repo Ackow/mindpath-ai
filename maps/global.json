@@ -30,7 +30,7 @@
       "module": "foundations",
       "route": "/map/foundations",
       "difficulty": "beginner",
-      "estimatedMinutes": 565,
+      "estimatedMinutes": 595,
       "prerequisites": [
         "root"
       ],
@@ -152,7 +152,7 @@
       "difficulty": "beginner",
       "estimatedMinutes": 25,
       "prerequisites": [
-        "math-07-vector-matrix",
+        "math-01-vector-matrix",
         "math-10-optimization-descent"
       ],
       "next": [],
@@ -168,22 +168,22 @@
       }
     },
     {
-      "id": "math-07-vector-matrix",
+      "id": "math-vector-matrix",
       "title": "向量、矩阵与线性变换",
       "module": "foundations",
       "submodule": "math",
-      "route": "/learn/foundations/math/07-vector-matrix",
+      "route": "/learn/foundations/math/01-vector-matrix",
       "difficulty": "beginner",
       "estimatedMinutes": 30,
       "prerequisites": [
         "py-numpy"
       ],
       "next": [
-        "math-08-eigen-svd"
+        "math-eigen-svd"
       ],
       "relatedNotes": [
         "py-numpy",
-        "math-08-eigen-svd"
+        "math-eigen-svd"
       ],
       "tags": [
         "线性代数",
@@ -192,21 +192,21 @@
       ],
       "summary": "向量空间、点积、范数、矩阵乘法、秩与线性变换直觉。",
       "position": {
-        "x": 1120,
-        "y": 95
+        "x": 720,
+        "y": 40
       },
       "layoutGroup": "foundations-math"
     },
     {
-      "id": "math-08-eigen-svd",
+      "id": "math-eigen-svd",
       "title": "特征值分解与 SVD 降维",
       "module": "foundations",
       "submodule": "math",
-      "route": "/learn/foundations/math/08-eigen-svd",
+      "route": "/learn/foundations/math/02-eigen-svd",
       "difficulty": "intermediate",
       "estimatedMinutes": 35,
       "prerequisites": [
-        "math-07-vector-matrix"
+        "math-vector-matrix"
       ],
       "next": [],
       "relatedNotes": [
@@ -220,8 +220,8 @@
       ],
       "summary": "特征值与特征向量的几何意义、奇异值分解 SVD 及其在低秩近似与 PCA 中的应用。",
       "position": {
-        "x": 1320,
-        "y": 95
+        "x": 920,
+        "y": 40
       },
       "layoutGroup": "foundations-math"
     },
@@ -268,7 +268,7 @@
       ],
       "next": [],
       "relatedNotes": [
-        "math-08-eigen-svd",
+        "math-02-eigen-svd",
         "py-numpy"
       ],
       "tags": [
@@ -573,7 +573,7 @@
     },
     {
       "id": "py-numpy",
-      "title": "NumPy 数值计算",
+      "title": "08.NumPy 数值计算与向量化",
       "module": "foundations",
       "submodule": "python",
       "route": "/learn/foundations/python/08-py-numpy",
@@ -583,21 +583,21 @@
         "py-functions"
       ],
       "next": [
-        "math-07-vector-matrix",
-        "py-visualization",
-        "py-ml-workflow"
+        "py-pandas",
+        "py-visualization"
       ],
       "relatedNotes": [
-        "math-07-vector-matrix",
-        "py-visualization"
+        "py-visualization",
+        "py-pandas"
       ],
       "tags": [
         "NumPy",
         "ndarray",
         "广播",
-        "向量化"
+        "向量化",
+        "矩阵乘法"
       ],
-      "summary": "ndarray 创建、维度变化 (Reshape)、广播规则 (Broadcasting) 与矩阵运算 (@)。",
+      "summary": "掌握 NumPy 核心数组 ndarray、维度变换、广播机制 (Broadcasting) 与纯向量化矩阵计算，为机器学习与深度学习前向传播打下坚实基础。",
       "position": {
         "x": 1060,
         "y": 95
@@ -606,29 +606,33 @@
     },
     {
       "id": "py-pandas",
-      "title": "pandas 数据处理",
+      "title": "09.pandas 数据处理与特征清洗",
       "module": "foundations",
       "submodule": "python",
       "route": "/learn/foundations/python/09-py-pandas",
       "difficulty": "intermediate",
-      "estimatedMinutes": 35,
+      "estimatedMinutes": 40,
       "prerequisites": [
-        "py-files-debugging"
+        "py-numpy"
       ],
       "next": [
         "py-visualization",
         "py-ml-workflow"
       ],
       "relatedNotes": [
+        "py-numpy",
         "py-visualization",
         "py-ml-workflow"
       ],
       "tags": [
-        "pandas",
+        "Pandas",
         "DataFrame",
-        "GroupBy"
+        "EDA",
+        "数据清洗",
+        "GroupBy",
+        "One-Hot"
       ],
-      "summary": "Series 与 DataFrame 索引、缺失值填充 (fillna)、GroupBy 分组聚合与数据合并 (merge)。",
+      "summary": "掌握 Pandas 核心结构 Series 与 DataFrame、EDA 数据探索最小检查、缺失值清洗、GroupBy 聚合与 AI 数据预处理流水线。",
       "position": {
         "x": 460,
         "y": 150
@@ -637,12 +641,12 @@
     },
     {
       "id": "py-visualization",
-      "title": "可视化",
+      "title": "10.Matplotlib 与 Seaborn 数据可视化",
       "module": "foundations",
       "submodule": "python",
       "route": "/learn/foundations/python/10-py-visualization",
-      "difficulty": "beginner",
-      "estimatedMinutes": 25,
+      "difficulty": "intermediate",
+      "estimatedMinutes": 35,
       "prerequisites": [
         "py-numpy",
         "py-pandas"
@@ -657,9 +661,11 @@
       "tags": [
         "Matplotlib",
         "Seaborn",
-        "数据可视化"
+        "数据可视化",
+        "Loss曲线",
+        "混淆矩阵"
       ],
-      "summary": "Figure 与 Axes 架构、折线图、散点图、直方图与 Seaborn 统计特征热力图。",
+      "summary": "掌握 Matplotlib 面向对象 Figure 与 Axes 架构模式、折线图/散点图/直方图/热图绘制，以及 AI 实验中损失曲线与混淆矩阵的可视化方法。",
       "position": {
         "x": 660,
         "y": 150
@@ -668,12 +674,12 @@
     },
     {
       "id": "py-ml-workflow",
-      "title": "AI 数据与实验工作流",
+      "title": "11.AI 数据与实验工作流规范",
       "module": "foundations",
       "submodule": "python",
       "route": "/learn/foundations/python/11-py-ml-workflow",
       "difficulty": "intermediate",
-      "estimatedMinutes": 30,
+      "estimatedMinutes": 40,
       "prerequisites": [
         "py-numpy",
         "py-pandas",
@@ -689,9 +695,11 @@
       "tags": [
         "实验工作流",
         "特征缩放",
-        "数据切分"
+        "数据切分",
+        "数据泄露",
+        "Pipeline"
       ],
-      "summary": "训练集/测试集切分、特征归一化与标准化、交叉验证与可复现随机种子设置。",
+      "summary": "掌握标准 AI 实验工作流：数据集划分、分层抽样、特征归一化与标准化、数据泄露 (Data Leakage) 防范、Pipeline 构建与交叉验证。",
       "position": {
         "x": 860,
         "y": 150
@@ -700,12 +708,12 @@
     },
     {
       "id": "py-iris-project",
-      "title": "鸢尾花分类小项目",
+      "title": "12.综合实战：鸢尾花分类小项目",
       "module": "foundations",
       "submodule": "python",
       "route": "/learn/foundations/python/12-py-iris-project",
       "difficulty": "intermediate",
-      "estimatedMinutes": 40,
+      "estimatedMinutes": 45,
       "prerequisites": [
         "py-ml-workflow"
       ],
@@ -717,9 +725,10 @@
       "tags": [
         "实战项目",
         "Iris",
-        "scikit-learn"
+        "scikit-learn",
+        "分类任务"
       ],
-      "summary": "经典鸢尾花 (Iris) 数据集加载、数据清洗、KNN/逻辑回归分类建模与准确率评估实战。",
+      "summary": "阶段 0 综合大作业：端到端实现鸢尾花 (Iris) 数据集加载、EDA 观察、Pipeline 构建、模型训练、多指标评估与错判分析。",
       "position": {
         "x": 1060,
         "y": 150
@@ -759,8 +768,8 @@
       "target": "rag"
     },
     {
-      "id": "e-depends-math-07-vector-matrix-dl-neuron",
-      "source": "math-07-vector-matrix",
+      "id": "e-depends-math-01-vector-matrix-dl-neuron",
+      "source": "math-01-vector-matrix",
       "target": "dl-neuron"
     },
     {
@@ -769,14 +778,14 @@
       "target": "dl-neuron"
     },
     {
-      "id": "e-depends-py-numpy-math-07-vector-matrix",
+      "id": "e-depends-py-numpy-math-01-vector-matrix",
       "source": "py-numpy",
-      "target": "math-07-vector-matrix"
+      "target": "math-01-vector-matrix"
     },
     {
-      "id": "e-next-math-07-vector-matrix-math-08-eigen-svd",
-      "source": "math-07-vector-matrix",
-      "target": "math-08-eigen-svd"
+      "id": "e-next-math-01-vector-matrix-math-02-eigen-svd",
+      "source": "math-01-vector-matrix",
+      "target": "math-02-eigen-svd"
     },
     {
       "id": "e-depends-py-basics-math-09-calculus-gradient",
@@ -859,14 +868,14 @@
       "target": "py-numpy"
     },
     {
+      "id": "e-next-py-numpy-py-pandas",
+      "source": "py-numpy",
+      "target": "py-pandas"
+    },
+    {
       "id": "e-next-py-numpy-py-visualization",
       "source": "py-numpy",
       "target": "py-visualization"
-    },
-    {
-      "id": "e-next-py-numpy-py-ml-workflow",
-      "source": "py-numpy",
-      "target": "py-ml-workflow"
     },
     {
       "id": "e-next-py-pandas-py-visualization",
@@ -881,6 +890,11 @@
     {
       "id": "e-next-py-visualization-py-ml-workflow",
       "source": "py-visualization",
+      "target": "py-ml-workflow"
+    },
+    {
+      "id": "e-depends-py-numpy-py-ml-workflow",
+      "source": "py-numpy",
       "target": "py-ml-workflow"
     },
     {

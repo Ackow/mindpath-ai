@@ -1,6 +1,28 @@
 const PYODIDE_VERSION = '0.26.2';
 let pyodide = null;
 let activeRun = null;
+let matplotlibFontReady = false;
+
+async function configureMatplotlibFont(runtime) {
+  if (matplotlibFontReady) return;
+
+  const fontUrl = new URL('/fonts/NotoSansSC-Regular.otf', self.location.origin);
+  const response = await fetch(fontUrl);
+  if (!response.ok) throw new Error('无法加载 Matplotlib 中文字体资源。');
+
+  runtime.FS.writeFile('/tmp/NotoSansSC-Regular.otf', new Uint8Array(await response.arrayBuffer()));
+  await runtime.runPythonAsync(`
+from matplotlib import font_manager, rcParams
+
+_mindpath_font_path = '/tmp/NotoSansSC-Regular.otf'
+font_manager.fontManager.addfont(_mindpath_font_path)
+_mindpath_font_name = font_manager.FontProperties(fname=_mindpath_font_path).get_name()
+rcParams['font.family'] = 'sans-serif'
+rcParams['font.sans-serif'] = [_mindpath_font_name]
+rcParams['axes.unicode_minus'] = False
+`);
+  matplotlibFontReady = true;
+}
 
 async function getPyodide() {
   if (!pyodide) {
@@ -40,6 +62,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 plt.close("all")
 `);
+      await configureMatplotlibFont(runtime);
     }
     self.postMessage({ type: 'status', runId, status: 'running' });
     await runtime.runPythonAsync(data.code);

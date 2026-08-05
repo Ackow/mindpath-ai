@@ -45,7 +45,7 @@ export const ConceptCard: React.FC<ConceptCardProps> = ({
         <Icon className={`w-4 h-4 ${current.iconColor}`} />
         <h4 className={`font-bold text-xs ${current.titleColor}`}>{title}</h4>
       </div>
-      <div className="text-xs text-slate-700 leading-relaxed pl-6">{children}</div>
+      <div className="text-xs text-slate-700 leading-relaxed pl-6 [&>p]:my-1 [&>p:first-child]:mt-0 [&>p:last-child]:mb-0 [&>ul]:my-1 [&>ul]:space-y-1 [&>ol]:my-1 [&>ol]:space-y-1">{children}</div>
     </div>
   );
 };

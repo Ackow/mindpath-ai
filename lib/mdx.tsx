@@ -19,10 +19,13 @@ import { ImportResolutionAnimation } from '@/components/animations/ImportResolut
 import { ExceptionPipelineAnimation } from '@/components/animations/ExceptionPipelineAnimation';
 import { ClassInheritanceAnimation } from '@/components/animations/ClassInheritanceAnimation';
 import { PdbDebuggerAnimation } from '@/components/animations/PdbDebuggerAnimation';
+import { VectorProjectionLab } from '@/components/animations/VectorProjectionLab';
+import { SvdRankLab } from '@/components/animations/SvdRankLab';
 import { ReactFlowDiagram } from '@/components/mdx/ReactFlowDiagram';
 import { MermaidDiagram } from '@/components/mdx/MermaidDiagram';
 import { CodeCopyButton } from '@/components/mdx/CodeCopyButton';
 import { TaskCheckbox } from '@/components/mdx/TaskCheckbox';
+import { ZoomableImage } from '@/components/mdx/ZoomableImage';
 import contentStore from '../maps/content-store.json';
 
 function remarkSimpleTable() {
@@ -69,8 +72,11 @@ export const mdxComponents = {
   ExceptionPipelineAnimation,
   ClassInheritanceAnimation,
   PdbDebuggerAnimation,
+  VectorProjectionLab,
+  SvdRankLab,
   ReactFlowDiagram,
   MermaidDiagram,
+  img: (props: any) => <ZoomableImage {...props} />,
   // 增加分割线上下充裕边距，彻底切断 margin 塌陷
   hr: (props: any) => (
     <div className="py-12 my-6 clear-both">
@@ -182,8 +188,14 @@ export const mdxComponents = {
     const langMatch = rawClassName.match(/language-(\w+)/);
     const lang = langMatch ? langMatch[1] : (rawClassName.replace('hljs', '').trim() || 'code');
 
-    // 捕获 ```mermaid 自动替换为支持拖拽与滚轮缩放的 React Flow 流程图
+    // 智能分流检测:
+    // 如果包含 subgraph (结构对比框) 或 classDiagram，交由 MermaidDiagram 原生渲染完美保留分组子容器
+    // 普通流程图交由 ReactFlowDiagram 渲染享受拖拽与滚轮缩放
     if (lang === 'mermaid') {
+      const isStructureSubgraph = codeString.includes('subgraph') || codeString.includes('classDiagram');
+      if (isStructureSubgraph) {
+        return <MermaidDiagram chart={codeString} />;
+      }
       return <ReactFlowDiagram chart={codeString} />;
     }
 
