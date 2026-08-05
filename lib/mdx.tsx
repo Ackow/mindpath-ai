@@ -15,6 +15,12 @@ import { LoopFlowAnimation } from '@/components/animations/LoopFlowAnimation';
 import { DataStructureAnimation } from '@/components/animations/DataStructureAnimation';
 import { CopyRelationshipAnimation } from '@/components/animations/CopyRelationshipAnimation';
 import { NeuronLab } from '@/components/animations/NeuronLab';
+import { ImportResolutionAnimation } from '@/components/animations/ImportResolutionAnimation';
+import { ExceptionPipelineAnimation } from '@/components/animations/ExceptionPipelineAnimation';
+import { ClassInheritanceAnimation } from '@/components/animations/ClassInheritanceAnimation';
+import { PdbDebuggerAnimation } from '@/components/animations/PdbDebuggerAnimation';
+import { ReactFlowDiagram } from '@/components/mdx/ReactFlowDiagram';
+import { MermaidDiagram } from '@/components/mdx/MermaidDiagram';
 import { CodeCopyButton } from '@/components/mdx/CodeCopyButton';
 import { TaskCheckbox } from '@/components/mdx/TaskCheckbox';
 import contentStore from '../maps/content-store.json';
@@ -59,6 +65,18 @@ export const mdxComponents = {
   DataStructureAnimation,
   CopyRelationshipAnimation,
   NeuronLab,
+  ImportResolutionAnimation,
+  ExceptionPipelineAnimation,
+  ClassInheritanceAnimation,
+  PdbDebuggerAnimation,
+  ReactFlowDiagram,
+  MermaidDiagram,
+  // 增加分割线上下充裕边距，彻底切断 margin 塌陷
+  hr: (props: any) => (
+    <div className="py-12 my-6 clear-both">
+      <hr className="border-t-2 border-slate-200 my-0" {...props} />
+    </div>
+  ),
   a: (props: any) => (
     <a
       className="text-teal-700 font-extrabold underline underline-offset-4 hover:text-teal-900 hover:bg-teal-50 px-1 py-0.5 rounded transition-all"
@@ -67,27 +85,27 @@ export const mdxComponents = {
       {...props}
     />
   ),
-  h1: (props: any) => <h1 className="text-2xl font-extrabold text-slate-900 mt-8 mb-4 scroll-mt-20" {...props} />,
+  h1: (props: any) => <h1 className="text-2xl font-extrabold text-slate-900 mt-14 mb-6 scroll-mt-24" {...props} />,
 
-  // H2 Heading with scroll-mt-20 for exact top offset alignment
+  // H2 Heading with exact line-height border matching and comfortable padding
   h2: (props: any) => {
     const titleText = typeof props.children === 'string' ? props.children.trim() : '';
     return (
       <h2
         id={titleText ? `heading-${titleText}` : undefined}
-        className="text-xl font-bold text-slate-900 border-l-4 border-teal-600 pl-4.5 mt-16 mb-8 scroll-mt-20"
+        className="text-xl font-bold text-slate-900 border-l-4 border-teal-600 pl-3.5 mt-14 mb-6 leading-snug scroll-mt-24 clear-both"
         {...props}
       />
     );
   },
 
-  // H3 Heading with scroll-mt-20 for exact top offset alignment
+  // H3 Heading with scroll-mt-24 and breathing margin
   h3: (props: any) => {
     const titleText = typeof props.children === 'string' ? props.children.trim() : '';
     return (
       <h3
         id={titleText ? `heading-${titleText}` : undefined}
-        className="text-lg font-bold text-slate-800 mt-12 mb-6 scroll-mt-20"
+        className="text-lg font-bold text-slate-800 mt-12 mb-5 pt-3 scroll-mt-24 clear-both"
         {...props}
       />
     );
@@ -98,14 +116,14 @@ export const mdxComponents = {
   // Unordered & Ordered Lists with Explicit Bullet & Number Styling
   ul: (props: any) => (
     <ul
-      className="pl-6 space-y-1.5 my-2.5 text-slate-700 text-base"
+      className="pl-6 space-y-3.5 my-8 text-slate-700 text-base"
       style={{ listStyleType: 'disc' }}
       {...props}
     />
   ),
   ol: (props: any) => (
     <ol
-      className="pl-6 space-y-1.5 my-2.5 text-slate-700 text-base font-semibold"
+      className="pl-6 space-y-3.5 my-8 text-slate-700 text-base font-semibold"
       style={{ listStyleType: 'decimal' }}
       {...props}
     />
@@ -155,14 +173,19 @@ export const mdxComponents = {
     return <code className="bg-slate-100 text-teal-700 px-1.5 py-0.5 rounded font-mono text-xs border border-slate-200" {...props} />;
   },
 
-  // 100% Dark Background Code Block Box
+  // Code Block Box with React Flow Diagram Auto-Detection
   pre: (props: any) => {
     const rawCode = props.children?.props?.children;
-    const codeString = typeof rawCode === 'string' ? rawCode.trim() : '';
+    const codeString = typeof rawCode === 'string' ? rawCode.trim() : (typeof rawCode === 'object' ? String(rawCode) : '');
 
     const rawClassName = props.children?.props?.className || '';
     const langMatch = rawClassName.match(/language-(\w+)/);
     const lang = langMatch ? langMatch[1] : (rawClassName.replace('hljs', '').trim() || 'code');
+
+    // 捕获 ```mermaid 自动替换为支持拖拽与滚轮缩放的 React Flow 流程图
+    if (lang === 'mermaid') {
+      return <ReactFlowDiagram chart={codeString} />;
+    }
 
     return (
       <div className="my-6 rounded-2xl overflow-hidden border border-slate-800 shadow-md" style={{ backgroundColor: '#0d1117' }}>
@@ -177,8 +200,9 @@ export const mdxComponents = {
     );
   },
 
+  // 加大 blockquote 提示框底部的内补与外边距，切断与下级标题的紧挨现象
   blockquote: (props: any) => (
-    <blockquote className="border-l-4 border-amber-400 bg-amber-50/60 p-4 rounded-r-xl my-5 text-slate-700 italic" {...props} />
+    <blockquote className="border-l-4 border-amber-400 bg-amber-50/60 p-4 rounded-r-xl my-8 mb-12 text-slate-700 italic block clear-both" {...props} />
   ),
 };
 
@@ -203,7 +227,24 @@ export interface MdxNoteData {
 export async function getMdxNoteBySlug(slugArray: string[]): Promise<MdxNoteData | null> {
   try {
     const slugKey = slugArray.join('/');
-    const fileContent = (contentStore as Record<string, string>)[slugKey];
+    let fileContent: string | null = null;
+
+    // 开发模式 (npm run dev) 下优先读取磁盘真实 MDX 文件，实现 HMR 秒级实时热重载
+    if (process.env.NODE_ENV === 'development') {
+      try {
+        const filePath = path.join(process.cwd(), 'content', ...slugArray) + '.mdx';
+        if (typeof fs !== 'undefined' && fs.existsSync && fs.existsSync(filePath)) {
+          fileContent = fs.readFileSync(filePath, 'utf8');
+        }
+      } catch {
+        fileContent = null;
+      }
+    }
+
+    // 生产/Cloudflare Edge 模式下自动从编译打包好的 contentStore 离线存储中读取
+    if (!fileContent) {
+      fileContent = (contentStore as Record<string, string>)[slugKey] || null;
+    }
 
     if (fileContent) {
       const { data, content } = matter(fileContent);

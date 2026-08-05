@@ -198,42 +198,8 @@ export default async function DashboardPage() {
         })}
       </div>
 
-      {/* Bottom Section: Recent Notes */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-bold text-slate-800 text-lg">最近学习的笔记</h2>
-          <Link href="/map" className="text-xs font-medium text-slate-400 hover:text-teal-600 flex items-center gap-1 transition-colors">
-            查看全部 &rarr;
-          </Link>
-        </div>
-
-        <RecentNotes notes={entries} />
-        <div className="hidden">
-          {recentNotes.map((note, idx) => (
-            <Card key={idx} hoverable className="flex flex-col justify-between">
-              <Link href={`/learn/${note.slug}`} className="space-y-3 block">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-bold text-slate-800 text-sm hover:text-teal-600 transition-colors line-clamp-1">
-                    {note.title}
-                  </h3>
-                  <button aria-label="书签" className="text-slate-300 hover:text-slate-500">
-                    <Bookmark className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${note.badgeClass}`}>
-                    {note.module}
-                  </span>
-                  <span className="text-[11px] text-slate-400">{note.time}</span>
-                </div>
-                <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">
-                  {note.summary}
-                </p>
-              </Link>
-            </Card>
-          ))}
-        </div>
-      </div>
+      {/* Bottom Section: Recent Notes (Renders only when valid learning history exists) */}
+      <RecentNotes notes={entries} />
     </div>
   );
 }

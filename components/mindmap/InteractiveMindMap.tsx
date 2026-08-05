@@ -124,9 +124,8 @@ export const InteractiveMindMap: React.FC<InteractiveMindMapProps> = ({ nodes, s
     let groupTop = nextTop;
     for (const group of groups) {
       const groupCollapsed = isCollapsed || collapsedNodes.includes(group.id);
-      // Keep each branch's vertical anchor stable. Collapsing hides the right
-      // branch instead of reflowing every following branch up or down.
-      const height = Math.max(CARD_HEIGHT, group.nodes.length * LEAF_GAP);
+      // Dynamically shrink height when group is collapsed so sibling nodes reflow up
+      const height = groupCollapsed ? CARD_HEIGHT : Math.max(CARD_HEIGHT, group.nodes.length * LEAF_GAP);
       groupLayouts.push({
         ...group,
         moduleId: module.id,
@@ -134,10 +133,10 @@ export const InteractiveMindMap: React.FC<InteractiveMindMapProps> = ({ nodes, s
         centerY: groupTop + height / 2,
         isCollapsed: groupCollapsed,
       });
-      groupTop += height + 32;
+      groupTop += height + 36;
     }
 
-    const bottom = Math.max(nextTop + CARD_HEIGHT, groupTop - 32);
+    const bottom = Math.max(nextTop + CARD_HEIGHT, groupTop - 36);
     const layout = {
       ...module,
       top: nextTop + Math.max(0, (bottom - nextTop - CARD_HEIGHT) / 2),
@@ -145,7 +144,7 @@ export const InteractiveMindMap: React.FC<InteractiveMindMapProps> = ({ nodes, s
       isCollapsed,
       groups: groupLayouts,
     };
-    nextTop = bottom + MODULE_GAP;
+    nextTop = bottom + (isCollapsed ? 44 : MODULE_GAP);
     return layout;
   });
 
@@ -287,7 +286,9 @@ export const InteractiveMindMap: React.FC<InteractiveMindMapProps> = ({ nodes, s
       <div className="absolute bottom-5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-4 whitespace-nowrap rounded-full border border-slate-200 bg-white/95 px-5 py-2.5 text-xs font-semibold text-slate-700 shadow-lg backdrop-blur-md">
         <button type="button" onClick={() => setZoomLevel((value) => Math.min(2.5, value + 0.15))} title="放大" className="hover:text-teal-700"><ZoomIn className="h-4 w-4" /></button>
         <button type="button" onClick={() => setZoomLevel((value) => Math.max(0.3, value - 0.15))} title="缩小" className="hover:text-teal-700"><ZoomOut className="h-4 w-4" /></button>
-        <button type="button" onClick={() => { setZoomLevel(DEFAULT_ZOOM); setPanOffset(DEFAULT_PAN); }} title="重置视图" className="flex items-center gap-1.5 hover:text-teal-700"><Maximize2 className="h-4 w-4" /><span>{Math.round(zoomLevel * 100)}%</span></button>
+        <button type="button" onClick={() => { setZoomLevel(DEFAULT_ZOOM); setPanOffset(DEFAULT_PAN); setCollapsedNodes([]); }} title="重置视图与全展开" className="flex items-center gap-1.5 hover:text-teal-700"><Maximize2 className="h-4 w-4" /><span>重置 ({Math.round(zoomLevel * 100)}%)</span></button>
+        <span className="h-4 w-px bg-slate-200" />
+        <button type="button" onClick={() => setCollapsedNodes((curr) => curr.length > 0 ? [] : moduleLayouts.flatMap(m => [m.id, ...m.groups.map(g => g.id)]))} className="flex items-center gap-1.5 hover:text-teal-700"><span>{collapsedNodes.length > 0 ? '全量展开' : '折叠分支'}</span></button>
         <span className="h-4 w-px bg-slate-200" />
         <button type="button" onClick={() => setShowDependencies((value) => !value)} className={showDependencies ? 'flex items-center gap-1.5 text-amber-700' : 'flex items-center gap-1.5 text-slate-500'}><Share2 className="h-4 w-4" /><span>{showDependencies ? '隐藏依赖关系' : '显示依赖关系'}</span></button>
       </div>

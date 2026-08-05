@@ -33,19 +33,22 @@ export async function getContentSource(slug: string[]): Promise<string | null> {
     return null;
   }
 
-  const sourcePath = path.join(contentDirectory, ...slug) + '.mdx';
-  const normalizedPath = path.normalize(sourcePath);
+  const slugKey = slug.join('/');
 
-  if (!normalizedPath.startsWith(contentDirectory)) return null;
-
-  try {
-    if (typeof fs !== 'undefined' && fs.readFile) {
-      return await fs.readFile(normalizedPath, 'utf8');
+  if (process.env.NODE_ENV === 'development') {
+    try {
+      const sourcePath = path.join(contentDirectory, ...slug) + '.mdx';
+      const normalizedPath = path.normalize(sourcePath);
+      if (normalizedPath.startsWith(contentDirectory) && typeof fs !== 'undefined' && fs.readFile) {
+        const fileContent = await fs.readFile(normalizedPath, 'utf8');
+        if (fileContent) return fileContent;
+      }
+    } catch {
+      // ignore
     }
-  } catch {
-    return null;
   }
-  return null;
+
+  return (contentStore as Record<string, string>)[slugKey] || null;
 }
 
 export async function getContentIndex(): Promise<ContentIndexEntry[]> {

@@ -36,8 +36,11 @@ print(f"z = {z:.2f}")`,
   code: suppliedCode,
   children,
 }) => {
-  const codeToRun = children || suppliedCode || initialCode;
-  const [code, setCode] = useState<string>(codeToRun);
+  const rawCode = (typeof children === 'string' && children.trim())
+    ? children
+    : (typeof suppliedCode === 'string' && suppliedCode.trim() ? suppliedCode : initialCode);
+
+  const [code, setCode] = useState<string>(rawCode);
   const [output, setOutput] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [images, setImages] = useState<string[]>([]);
@@ -50,7 +53,8 @@ print(f"z = {z:.2f}")`,
     return () => workerRef.current?.terminate();
   }, []);
 
-  const lines = code.split('\n');
+  const safeCode = typeof code === 'string' ? code : String(code || '');
+  const lines = safeCode.split('\n');
   const isLongCode = lines.length > 7;
 
   const handleRun = () => {
@@ -99,12 +103,13 @@ print(f"z = {z:.2f}")`,
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Dynamic Python Token Syntax Highlighter
+  // Dynamic Python Token Syntax Highlighter (Restored Original Rainbow Highlighting)
   const renderHighlightedPython = (codeText: string) => {
-    const rawLines = codeText.split('\n');
+    const safeText = typeof codeText === 'string' ? codeText : String(codeText || '');
+    const rawLines = safeText.split('\n');
     return rawLines.map((line, lineIdx) => {
       const trimmed = line.trim();
-      const lineClassName = 'min-h-[1.5em] whitespace-pre';
+      const lineClassName = 'min-h-[1.5em] whitespace-pre font-mono';
       if (trimmed.startsWith('#')) {
         return (
           <div key={lineIdx} className={`${lineClassName} text-slate-500 italic`}>
@@ -113,16 +118,16 @@ print(f"z = {z:.2f}")`,
         );
       }
 
-      // Regex tokenize by whitespace, operators and quotes
-      const tokens = line.split(/(\s+|[(),=**"'])/);
+      // Safe Tokenization preserving indentation and spacing
+      const tokens = line.split(/(\s+|[(),=**"':.])/);
       return (
         <div key={lineIdx} className={lineClassName}>
           {line ? tokens.map((token, tokenIdx) => {
             if (!token) return null;
-            if (/^(import|from|as|def|return|if|else|elif|for|in|while|try|except|with|print)$/.test(token)) {
+            if (/^(import|from|as|def|class|return|if|else|elif|for|in|while|try|except|finally|with|print|raise)$/.test(token)) {
               return <span key={tokenIdx} className="text-purple-400 font-bold">{token}</span>;
             }
-            if (/^(np|plt|numpy|matplotlib|pyplot|linspace|plot|xlabel|ylabel|title|legend|grid|show|array|arange|exp|dot|mean|std|fit|score|predict|read_csv|describe|fillna|merge|groupby|figure|show)$/.test(token)) {
+            if (/^(dataclass|field|asdict|parse_args|add_argument|ArgumentParser|Path|exists|mkdir|write_text|read_text|dumps|loads|dump|load)$/.test(token)) {
               return <span key={tokenIdx} className="text-sky-300 font-semibold">{token}</span>;
             }
             if (/^-?\d+\.?\d*$/.test(token)) {
@@ -131,8 +136,8 @@ print(f"z = {z:.2f}")`,
             if (/^(".*?"|'.*?')$/.test(token)) {
               return <span key={tokenIdx} className="text-amber-300 font-medium">{token}</span>;
             }
-            if (/^[=**+-/:]$/.test(token)) {
-              return <span key={tokenIdx} className="text-pink-400">{token}</span>;
+            if (/^[=**+\-/:.@]$/.test(token)) {
+              return <span key={tokenIdx} className="text-pink-400 font-bold">{token}</span>;
             }
             return <span key={tokenIdx} className="text-slate-200">{token}</span>;
           }) : ' '}

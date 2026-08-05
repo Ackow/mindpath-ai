@@ -503,7 +503,7 @@
     },
     {
       "id": "py-modules",
-      "title": "模块、包与配置",
+      "title": "06.模块、包与配置",
       "module": "foundations",
       "submodule": "python",
       "route": "/learn/foundations/python/06-py-modules",
@@ -520,12 +520,16 @@
         "py-environment"
       ],
       "tags": [
+        "Python",
         "模块",
         "包",
         "import",
-        "sys.path"
+        "sys.path",
+        "面向对象",
+        "dataclass",
+        "argparse"
       ],
-      "summary": "__init__.py 机制、相对与绝对导入、sys.path 搜索路径与 argparse/yaml 配置解析。",
+      "summary": "__init__.py 机制、绝对与相对导入、sys.path 搜索路径、类与继承基础（面向 AI 库 API 理解）、dataclass 与 argparse 配置解析，以及 if __name__ == '__main__' 规范入口。",
       "position": {
         "x": 660,
         "y": 95
@@ -534,7 +538,7 @@
     },
     {
       "id": "py-files-debugging",
-      "title": "文件、异常、调试与测试",
+      "title": "07.文件、异常、调试与测试",
       "module": "foundations",
       "submodule": "python",
       "route": "/learn/foundations/python/07-py-files-debugging",
@@ -551,12 +555,16 @@
         "py-ml-workflow"
       ],
       "tags": [
+        "Python",
         "文件IO",
+        "pathlib",
         "异常处理",
         "pdb",
-        "pytest"
+        "pytest",
+        "logging",
+        "调试"
       ],
-      "summary": "with 上下文管理器、try-except-finally、pdb 断点调试与 pytest 单元测试基础。",
+      "summary": "pathlib 现代路径处理、文本/CSV/JSON UTF-8 健壮读写、with 上下文管理器、try-except-finally 异常拦截、logging 日志记录、pdb 调试与 pytest 单元测试基础。",
       "position": {
         "x": 860,
         "y": 95
