@@ -23,10 +23,6 @@ summary: 用条件、循环和推导式把输入数据转换为可解释、可�
 把每个条件看成一个决策节点，把每次循环看成一次状态更新。先写清楚“何时进入、何时退出、每轮改变什么”，再选择 `if`、`for` 或 `while`，能显著减少死循环和遗漏分支。
 </ConceptCard>
 
-下面这张流程图把本章最常见的执行路径放在一起：条件分支只选择一条路径，循环则在每轮结束后回到循环头，直到自然结束或遇到 `break`。
-
-阅读代码时，可以沿着箭头逐步追踪：每个菱形只回答一个问题，每条箭头都应该能解释“下一行会执行什么”。
-
 ## 1. 条件分支：让程序做出选择
 
 `if`、`elif`、`else` 使用布尔表达式决定代码块是否执行。缩进是语法的一部分，同一分支中的语句必须保持一致缩进。
@@ -105,7 +101,7 @@ Python 用缩进表示代码块。推荐统一使用 4 个空格，`elif` 和 `e
 
 <FlowControlAnimation />
 
-这个动画只演示本节最容易混淆的 `if / elif / else`，不混入循环。高亮流程图节点代表当前执行位置；可以手动输入“分数”和“及格阈值”，再点击播放或逐步按钮：分数为 95 会走 `if` 的“优秀”路径，72 会走 `elif` 的“及格”路径，低于阈值则走 `else`。切换到下一步时，只有刚刚走过的那条箭头会出现流动效果；每个节点还会显示正在执行的代码和它对控制流的影响。
+这个动画只演示本节最容易混淆的 `if / elif / else`，高亮流程图节点代表当前执行位置；可以手动输入“分数”和“及格阈值”，再点击播放或逐步按钮：分数为 95 会走 `if` 的“优秀”路径，72 会走 `elif` 的“及格”路径，低于阈值则走 `else`。
 
 ### 1.3 真值、短路与边界
 
@@ -113,7 +109,7 @@ Python 用缩进表示代码块。推荐统一使用 4 个空格，`elif` 和 `e
 
 ```python
 items = ["cat", "dog"]
-if items and items[0] == "cat":
+if items and items[0] == "cat":		# items非空并且一项为"cat"
     print("第一项是 cat")
 ```
 
@@ -130,10 +126,46 @@ if items and items[0] == "cat":
 ```python
 losses = [0.9, 0.6, 0.4]
 total = 0.0
+# 遍历losses列表每一项，累加到total
 for loss in losses:
     total += loss
 print(total / len(losses))
 ```
+
+- **enumerate()**：
+
+  - 作用：遍历同时拿到**下标+元素**
+
+  - 语法：`enumerate(可迭代对象，start=0)`，start为下标从几开始，默认为0
+
+  - ```python
+    for idx, val in enumerate(nums, start=1):
+        print(idx, val)
+    """
+    1 10
+    2 20
+    3 30
+    """
+    ```
+
+- **zip()**：
+
+  - 作用：**并行打包多个序列，按位置配对**，短的序列决定最终长度（最短对齐）
+
+  - 语法：
+
+  - ```python
+    a = [1,2,3]
+    b = ["x","y","z"]
+    
+    for va, vb in zip(a,b):
+        print(va, vb)
+    """
+    1 x
+    2 y
+    3 z
+    """
+    ```
 
 需要索引时优先使用 `enumerate`，同时遍历两个序列时使用 `zip`：
 
@@ -255,12 +287,14 @@ print("ReLU 模拟滤波:", relu_output)
 
 字典推导式适合构造键值映射，集合推导式会自动去重：
 
-```python
+<RunnableCodeBlock title="表达式循环">
+{`
 probabilities = [0.12, 0.51, 0.93, 0.48]
 labels = {i: ("positive" if p >= 0.5 else "negative") for i, p in enumerate(probabilities)}
 unique_labels = {label for label in labels.values()}
 print(labels, unique_labels)
-```
+`}
+</RunnableCodeBlock>
 
 推导式也可以带筛选条件，筛选条件写在 `for` 后面；如果同时需要转换和筛选，先读成普通语言再写代码：
 
@@ -404,7 +438,7 @@ for epoch in range(1, 3):
 
 ## 下一步
 
-下一章：[核心数据结构](/learn/foundations/python/04-py-data-structures)。你将把本节的遍历和分支应用到列表、字典、集合与嵌套数据上。
+下一章：[04.核心数据结构](/learn/foundations/python/04-py-data-structures)。你将把本节的遍历和分支应用到列表、字典、集合与嵌套数据上。
 
 ## 参考资料
 

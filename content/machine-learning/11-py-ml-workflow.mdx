@@ -1,15 +1,15 @@
 ---
 id: py-ml-workflow
-title: 11.AI 数据与实验工作流规范
-module: foundations
-submodule: python
-order: 11
+title: 03. AI 数据与实验工作流规范
+module: machine-learning
+submodule: overview
+order: 3
 difficulty: intermediate
 prerequisites: [py-numpy, py-pandas, py-visualization]
 relatedNotes: [py-iris-project, py-files-debugging]
 nextNotes: [py-iris-project]
 map:
-  layoutGroup: foundations-python
+  layoutGroup: machine-learning
 estimatedMinutes: 40
 tags: [实验工作流, 特征缩放, 数据切分, 数据泄露, Pipeline]
 summary: 掌握标准 AI 实验工作流：数据集划分、分层抽样、特征归一化与标准化、数据泄露 (Data Leakage) 防范、Pipeline 构建与交叉验证。
@@ -126,7 +126,7 @@ print(f"Stratified 测试集类别 1 比例: {np.mean(y_test == 1):.1%}")`}
 
 **数据泄露 (Data Leakage)** 是机器学习中最隐蔽、危害最大的错误：在模型训练或数据预处理阶段，测试集（或未来）的信息“泄漏”给了训练过程。
 
-![数据预处理中 Data Leakage 错误示范 vs 正确隔离示范](/assets/python/data-leakage.png)
+![防数据泄漏流程图](/assets/python/data_leakage_flowchart.png)
 
 ```mermaid
 graph TD
@@ -222,7 +222,7 @@ Scikit-Learn 提供了 **`Pipeline`** 容器，将所有的特征转换器 (Tran
 {`from sklearn.pipeline import make_pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 import numpy as np
 
@@ -237,11 +237,11 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
 
-# 3. 构建无缝 Pipeline (缺失值中位数填补 -> Z-score 标准化 -> 随机森林分类器)
+# 3. 构建无缝 Pipeline (缺失值中位数填补 -> Z-score 标准化 -> 逻辑回归分类器)
 pipeline = make_pipeline(
     SimpleImputer(strategy='median'),
     StandardScaler(),
-    RandomForestClassifier(n_estimators=50, random_state=42)
+    LogisticRegression(random_state=42)
 )
 
 # 4. 训练整个 Pipeline (内部自动完成防泄露预处理 + 模型拟合)
@@ -249,7 +249,7 @@ pipeline.fit(X_train, y_train)
 
 # 5. 评估测试集性能
 test_acc = pipeline.score(X_test, y_test)
-print(f"Pipeline 自动预处理与模型训练成功！")
+print("Pipeline 自动预处理与模型训练成功！")
 print(f"测试集准确率 Accuracy: {test_acc:.4f}")
 
 # 6. 新样本预测 (无需手动填补或缩放，Pipeline 自动接管)

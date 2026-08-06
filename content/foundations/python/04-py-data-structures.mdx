@@ -218,19 +218,24 @@ print(ordered_unique)  # ['cat', 'dog', 'bird']
 
 ### 6.1 解包让代码表达结构
 
-```python
+<RunnableCodeBlock title="解包">
+{`
 first, second, *remaining = [10, 20, 30, 40]
 print(first, second, remaining)
 
 features = {"width": 224, "height": 224}
 print({**features, "channels": 3})  # 合并字典并创建新字典
-```
+`}
+
+</RunnableCodeBlock>
 
 解包数量不匹配会抛出 `ValueError`。使用 `*rest` 接收不定数量的剩余项，使用 `**mapping` 合并字典时要注意同名键会被后面的值覆盖。
 
 ### 6.2 赋值不是复制
 
-```python
+<RunnableCodeBlock title=" 赋值不是复制">
+
+{`
 original = [[1, 2], [3, 4]]
 alias = original       # 两个名字指向同一个列表
 alias[0].append(99)
@@ -239,11 +244,15 @@ print(original)        # [[1, 2, 99], [3, 4]]
 shallow = original.copy()  # 只复制最外层列表
 shallow[0].append(100)
 print(original)             # 内层列表仍然共享
-```
+`}
+
+</RunnableCodeBlock>
 
 嵌套结构需要完全独立时使用 `copy.deepcopy`：
 
-```python
+<RunnableCodeBlock title="使用 copy.deepcopy">
+
+{`
 from copy import deepcopy
 
 template = {"layers": [{"units": 32}, {"units": 16}]}
@@ -251,7 +260,8 @@ experiment = deepcopy(template)
 experiment["layers"][0]["units"] = 64
 print(template["layers"][0]["units"])    # 32
 print(experiment["layers"][0]["units"])  # 64
-```
+`}
+</RunnableCodeBlock>
 
 深拷贝不是万能的：文件句柄、线程锁和某些第三方对象可能不能被复制。配置和样本数据通常只包含字典、列表、数字和字符串，适合使用 `deepcopy`；大型 NumPy 数组则应理解视图与复制的成本。
 
@@ -343,7 +353,7 @@ print("验证集新增类别:", unseen)
 
 ## 下一步
 
-下一章：[函数与作用域](/learn/foundations/python/05-py-functions)。你将把本章的数据容器交给函数处理，并学习如何通过参数和返回值组织可复用逻辑。
+下一章：[05.函数与作用域](/learn/foundations/python/05-py-functions)。你将把本章的数据容器交给函数处理，并学习如何通过参数和返回值组织可复用逻辑。
 
 ## 参考资料
 

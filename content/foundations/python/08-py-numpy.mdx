@@ -88,18 +88,18 @@ arr = np.arange(12)               # [0, 1, ..., 11]
 arr_2d = arr.reshape(3, 4)        # 变形为 3 行 4 列
 arr_T = arr_2d.T                  # 转置为 4 行 3 列 (.T)
 
-print("reshape(3, 4) 结果:\n", arr_2d)
+print("reshape(3, 4) 结果:\\n", arr_2d)
 
 # 2. 二维数组切片 [row_slice, col_slice]
 # 提取第 0~1 行，第 1~2 列的子矩阵
 sub_matrix = arr_2d[0:2, 1:3]
-print("\n子矩阵切片 [0:2, 1:3]:\n", sub_matrix)
+print("\\n子矩阵切片 [0:2, 1:3]:\\n", sub_matrix)
 
 # 3. 条件布尔过滤 (Masking)
 # 筛选出所有大于 5 的元素并归零
 mask = arr_2d > 5
 arr_2d[mask] = 0
-print("\n布尔过滤后 (大于5设为0):\n", arr_2d)`}
+print("\\n布尔过滤后 (大于5设为0):\\n", arr_2d)`}
 </RunnableCodeBlock>
 
 ---
@@ -160,7 +160,7 @@ b = np.array([10.0, 20.0])
 # 广播加法：b 被沿着第 0 轴“复制/扩展”3 次与 X 相加
 Z = X + b
 
-print("广播加法 Z = X + b 的结果:\n", Z)`}
+print("广播加法 Z = X + b 的结果:\\n", Z)`}
 </RunnableCodeBlock>
 
 ---
@@ -186,8 +186,8 @@ element_wise = A * B
 # 2. 矩阵乘法 (@)
 matrix_dot = A @ B  # 等价于 np.dot(A, B)
 
-print("逐元素相乘 (*):\n", element_wise)
-print("\n矩阵乘法 (@):\n", matrix_dot)`}
+print("逐元素相乘 (*):\\n", element_wise)
+print("\\n矩阵乘法 (@):\\n", matrix_dot)`}
 </RunnableCodeBlock>
 
 ---
@@ -227,7 +227,7 @@ col_std = np.std(data, axis=0)
 normalized_data = (data - col_mean) / col_std
 
 print("每列特征均值:", col_mean)
-print("标准化后的矩阵:\n", np.round(normalized_data, 2))`}
+print("标准化后的矩阵:\\n", np.round(normalized_data, 2))`}
 </RunnableCodeBlock>
 
 ---
@@ -296,7 +296,6 @@ print(f"\n=== 平均交叉熵损失 Loss: {loss:.4f} ===")`}
 - [ ] 能熟练推演广播机制 (Broadcasting) 的尾部右对齐与 1 维度拉伸匹配规则。
 - [ ] 能准确区分逐元素乘法 `*` 与矩阵点积 `@` (`np.dot`) 的线性代数意义。
 - [ ] 理解 `axis=0` (跨行纵向压缩) 与 `axis=1` (跨列横向压缩) 的区别。
-- [ ] 会使用 `np.random.default_rng(seed)` 固定随机种子保证 AI 实验可复现。
 
 ---
 

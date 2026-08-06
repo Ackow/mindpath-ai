@@ -18,15 +18,21 @@
         },
         {
           "id": "math",
-          "title": "线性代数与微积分",
-          "notesCount": 4,
-          "completedCount": 4
+          "title": "数学基础（线代、微积分与概率统计）",
+          "notesCount": 15,
+          "completedCount": 15
         },
         {
-          "id": "probability",
-          "title": "概率与统计",
-          "notesCount": 2,
-          "completedCount": 2
+          "id": "data",
+          "title": "数据处理与特征工程",
+          "notesCount": 5,
+          "completedCount": 5
+        },
+        {
+          "id": "engineering",
+          "title": "实验与工程习惯",
+          "notesCount": 4,
+          "completedCount": 4
         }
       ]
     },
@@ -36,7 +42,33 @@
       "description": "经典机器学习算法与模型，掌握从数据到模型的核心流程。",
       "icon": "trending-up",
       "color": "emerald",
-      "totalNotes": 18
+      "totalNotes": 18,
+      "submodules": [
+        {
+          "id": "overview",
+          "title": "机器学习通识",
+          "notesCount": 4,
+          "completedCount": 4
+        },
+        {
+          "id": "supervised",
+          "title": "监督学习算法",
+          "notesCount": 6,
+          "completedCount": 0
+        },
+        {
+          "id": "evaluation",
+          "title": "模型评估与诊断",
+          "notesCount": 4,
+          "completedCount": 0
+        },
+        {
+          "id": "unsupervised",
+          "title": "无监督学习算法",
+          "notesCount": 4,
+          "completedCount": 0
+        }
+      ]
     },
     {
       "id": "deep-learning",

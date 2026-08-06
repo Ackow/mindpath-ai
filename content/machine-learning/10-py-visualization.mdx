@@ -1,15 +1,15 @@
 ---
 id: py-visualization
-title: 10.Matplotlib 与 Seaborn 数据可视化
-module: foundations
-submodule: python
-order: 10
+title: 02. Matplotlib 与 Seaborn 数据可视化
+module: machine-learning
+submodule: overview
+order: 2
 difficulty: intermediate
 prerequisites: [py-numpy, py-pandas]
 relatedNotes: [py-ml-workflow, py-iris-project]
 nextNotes: [py-ml-workflow]
 map:
-  layoutGroup: foundations-python
+  layoutGroup: machine-learning
 estimatedMinutes: 35
 tags: [Matplotlib, Seaborn, 数据可视化, Loss曲线, 混淆矩阵]
 summary: 掌握 Matplotlib 面向对象 Figure 与 Axes 架构模式、折线图/散点图/直方图/热图绘制，以及 AI 实验中损失曲线与混淆矩阵的可视化方法。
@@ -29,10 +29,8 @@ symbols:
 在 AI 与数据科学流程中，“一图胜千言”。纯粹的数据表格和张量很难让人一眼看出规律，而数据可视化 (Data Visualization) 是模型开发全生命周期不可或缺的“后视镜”与“仪表盘”：
 
 1. **探索性数据分析 (EDA)**：观察高维特征分布、寻找特征间的线性/非线性相关性、识别离群异常点 (Outliers)。
-2. **训练过程诊断 (Training Diagnostics)**：绘制训练集与验证集的损失曲线 (Loss Curves) 和准确率变化，快速诊断模型是发生过拟合 (Overfitting) 还是欠拟合 (Underfitting)。
-3. **模型评估与误差分析 (Error Analysis)**：通过混淆矩阵 (Confusion Matrix) 热力图直观定位模型容易混淆的类别。
-
-**Matplotlib** 是 Python 数据可视化的基石底座，而 **Seaborn** 则基于 Matplotlib 进行了高阶封装，提供了极具现代感和统计学特性的简洁 API。
+2. **训练过程诊断 (Training Diagnostics)**：绘制训练集与验证集的损失曲线 (Loss Curves) 和准确率变化，快速诊断模型状态。
+3. **模型评估与误差分析 (Error Analysis)**：通过热力图直观定位分类预测结果。
 
 ---
 
@@ -48,6 +46,8 @@ symbols:
 - **`Axes` (子图/坐标系)**：真正承载具体图表的图像区域，拥有独立的 X/Y 轴 (Axis)、刻度 (Ticks)、标题和绘制图形。
 - **`Axis` (坐标轴)**：负责刻度线、刻度标签以及网格线的生成与样式。
 </ConceptCard>
+
+<MatplotlibParamsLab />
 
 ```mermaid
 graph TD
@@ -208,17 +208,68 @@ print(f"原始特征偏度: {np.mean(raw_feature):.2f}, Log变换后分布更接
 </RunnableCodeBlock>
 
 ### 2.4 Seaborn 热力图 (Heatmap)：混淆矩阵与 Pearson 相关矩阵
+### 3.4 混淆矩阵 (Confusion Matrix) 热力图
 
-热力图是用颜色深浅呈现矩阵数值大小的工具，在 AI 领域有两大标准场景：
-1. **Pearson 特征相关系数矩阵**：排查特征间的高多重共线性 (Multicollinearity)。
-2. **混淆矩阵 (Confusion Matrix)**：分析多分类模型在哪些类别上容易“眼花犯错”。
+<ConceptCard title="💡 后续机器学习预告：混淆矩阵 (Confusion Matrix)" type="tip">
+在后续【阶段 1 机器学习】分类算法中，我们将使用混淆矩阵评估模型的预测对错。在 Python 阶段，我们重点掌握如何使用 `sns.heatmap()` 将二维矩阵转化为直观的热力图！
+</ConceptCard>
+
+![混淆矩阵热力图示例](/assets/python/confusion_matrix.png)
 
 <RunnableCodeBlock title="实战：混淆矩阵 Confusion Matrix 热力图绘制">
-{`import seaborn as sns
+{`import matplotlib.pyplot as plt
+import numpy as np
+
+# 1. 模拟 3 分类模型的混淆矩阵 (True Labels vs Predicted Labels)
+conf_matrix = np.array([
+    [45,  3,  2],   # 类别 0 (Setosa) 真实样本 50 个
+    [ 4, 42,  4],   # 类别 1 (Versicolor) 真实样本 50 个
+    [ 1,  6, 43]    # 类别 2 (Virginica) 真实样本 50 个
+])
+
+class_names = ["Setosa", "Versicolor", "Virginica"]
+
+fig, ax = plt.subplots(figsize=(6, 5))
+
+# 2. 使用 Matplotlib 原生 imshow 绘制渐变热力图
+im = ax.imshow(conf_matrix, cmap='Blues')
+
+# 3. 添加右侧颜色数值标尺 (Colorbar)
+cbar = fig.colorbar(im, ax=ax)
+
+# 4. 在各个单元格中心显式填入数字标注
+for i in range(len(class_names)):
+    for j in range(len(class_names)):
+        count = conf_matrix[i, j]
+        # 对角线高数值使用白色字，其余使用黑色字
+        color = "white" if count > 20 else "black"
+        ax.text(j, i, str(count), ha="center", va="center", color=color, fontweight="bold")
+
+# 5. 配置坐标轴刻度与标签
+ax.set_xticks(range(len(class_names)))
+ax.set_yticks(range(len(class_names)))
+ax.set_xticklabels(class_names)
+ax.set_yticklabels(class_names)
+
+ax.set_title("Confusion Matrix Heatmap (Matplotlib)", fontsize=12, fontweight="bold")
+ax.set_xlabel("Predicted Label", fontsize=10)
+ax.set_ylabel("True Label", fontsize=10)
+
+plt.tight_layout()
+plt.show()
+print("混淆矩阵热力图绘制完毕：主对角线 45, 42, 43 为预测正确样本。")`}
+</RunnableCodeBlock>
+
+#### 本地环境扩展：Seaborn 混淆矩阵官方标准写法 (`sns.heatmap`)
+
+在本地 IDE、Jupyter Notebook 或服务器 Python 环境中，推荐直接使用 Seaborn 官方极其优雅的 `sns.heatmap()` 实现混淆矩阵可视化：
+
+```python
+import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 
-# 模拟 3 分类模型的混淆矩阵 (True Labels vs Predicted Labels)
+# 1. 模拟 3 分类模型的混淆矩阵 (True Labels vs Predicted Labels)
 conf_matrix = np.array([
     [45,  3,  2],   # 类别 0 实际有 50 个样本
     [ 4, 42,  4],   # 类别 1 实际有 50 个样本
@@ -226,10 +277,9 @@ conf_matrix = np.array([
 ])
 
 class_names = ["Setosa", "Versicolor", "Virginica"]
-
 fig, ax = plt.subplots(figsize=(6, 5))
 
-# 使用 Seaborn 绘制带数值标注的热力图
+# 2. 使用 Seaborn 一键绘制带数值标注的热力图
 sns.heatmap(
     conf_matrix, 
     annot=True,         # 显示单元格具体数值
@@ -241,39 +291,143 @@ sns.heatmap(
     ax=ax
 )
 
-ax.set_title("Confusion Matrix Heatmap", fontsize=12)
+ax.set_title("Confusion Matrix Heatmap (Seaborn Standard)", fontsize=12, fontweight="bold")
 ax.set_xlabel("Predicted Label", fontsize=10)
 ax.set_ylabel("True Label", fontsize=10)
 
 plt.tight_layout()
-print("混淆矩阵热力图绘制完毕：对角线数值越高代表预测越准确。")`}
-</RunnableCodeBlock>
+plt.show()
+print("Seaborn 混淆矩阵绘制完毕：主对角线数值越高代表预测越准确。")
+```
 
-### 2.5 Seaborn Pairplot：多维特征两两协同分布
+### 2.5 多特征散点矩阵可视化 (Pandas scatter_matrix)
 
-当数据集包含 4~6 个连续数值特征时，手动逐个画散点图效率极低。`sns.pairplot()` 能够一键生成特征矩阵对角线（单特征分布）与非对角线（两两特征散点图）的综合全景图。
+当数据集包含 3~6 个连续数值特征时，手动逐个画散点图效率极低。Pandas 内置的 **`pd.plotting.scatter_matrix()`** 能够一键生成特征矩阵对角线（单特征分布/KDE 密度）与非对角线（两两特征相关性散点图）的全景图，且完全基于 Matplotlib 原生渲染，在浏览器端可 100% 顺畅执行！
 
-<RunnableCodeBlock title="实战：Seaborn Pairplot 多特征两两矩阵可视化">
-{`import seaborn as sns
-import pandas as pd
+<RunnableCodeBlock title="实战：Pandas scatter_matrix 多特征两两散点矩阵">
+{`import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
-# 构建示例 DataFrame
+# 1. 构建示例 DataFrame (包含 3 个连续特征)
 np.random.seed(0)
 n = 100
 df_demo = pd.DataFrame({
     'Feature_A': np.random.normal(10, 2, n),
     'Feature_B': np.random.normal(5, 1, n),
-    'Feature_C': np.random.normal(10, 2, n) + np.random.normal(5, 1, n) * 0.8,
-    'Target': np.random.choice(['Group1', 'Group2'], size=n)
+    'Feature_C': np.random.normal(10, 2, n) + np.random.normal(5, 1, n) * 0.8
 })
 
-# 注：sns.pairplot 返回的是 PairGrid 画布对象
-grid = sns.pairplot(df_demo, hue='Target', palette='Set1', corner=True)
-grid.fig.suptitle("Multi-Feature Pairwise Distribution", y=1.02)
+# 2. 使用 Pandas 内置的 scatter_matrix 绘制全景图
+# diagonal='hist' 使用原生直方图呈现对角线分布 (无需 scipy 扩展包，100% 兼容浏览器)
+pd.plotting.scatter_matrix(
+    df_demo, 
+    diagonal='hist',   # 对角线呈现单特征直方图 (无需 scipy)
+    color='#0d9488',   # 散点颜色 (Teal)
+    alpha=0.7, 
+    figsize=(7, 7)
+)
 
-print("Pairplot 结构示意展示完毕 (非对角线呈现相关性，对角线呈现 KDE 分布)。")`}
+plt.suptitle("Multi-Feature Pairwise Distribution (Pandas Scatter Matrix)", y=0.93, fontsize=11, fontweight='bold')
+plt.tight_layout()
+plt.show()
+print("散点矩阵绘制完毕：对角线呈现单特征直方图分布，非对角线呈现两两相关性。")`}
 </RunnableCodeBlock>
+
+<ConceptCard title="本地 Python 离线环境最佳实践：Seaborn & Pearson 相关系数矩阵" type="note">
+在本地 IDE、Jupyter Notebook 或服务器 Python 环境中（已安装 `seaborn` 和 `scipy`），可以直接使用工业级的高阶可视化 API：
+</ConceptCard>
+
+#### 1. 本地 Seaborn 混淆矩阵与 Pearson 相关系数矩阵热力图
+
+```python
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# --- A. Pearson 皮尔逊相关系数矩阵 (Pearson Correlation Matrix) ---
+np.random.seed(42)
+df_features = pd.DataFrame({
+    'Petal_Length': np.random.normal(5, 1, 100),
+    'Petal_Width': np.random.normal(2, 0.5, 100),
+    'Sepal_Length': np.random.normal(6, 1, 100),
+    'Sepal_Width': np.random.normal(3, 0.5, 100)
+})
+
+# 计算特征间两两 Pearson 相关系数矩阵 (-1 ~ +1)
+pearson_corr = df_features.corr(method='pearson')
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+
+# 绘制 Pearson 相关系数热力图 (使用极性发散色盘)
+sns.heatmap(
+    pearson_corr, 
+    annot=True,         # 显示皮尔逊相关系数值 (r)
+    fmt='.2f',          # 保留 2 位小数
+    cmap='vlag',        # 极性发散色盘 (正相关红/负相关蓝)
+    vmin=-1, vmax=1,
+    square=True,
+    cbar_kws={'label': 'Pearson Correlation (r)'},
+    ax=ax1
+)
+ax1.set_title("Pearson Correlation Matrix Heatmap", fontsize=12, fontweight='bold')
+
+# --- B. Seaborn 3 分类混淆矩阵热力图 ---
+conf_matrix = np.array([
+    [45,  3,  2],
+    [ 4, 42,  4],
+    [ 1,  6, 43]
+])
+class_names = ["Setosa", "Versicolor", "Virginica"]
+
+sns.heatmap(
+    conf_matrix, 
+    annot=True,         # 填入具体分类样本数
+    fmt='d', 
+    cmap='Blues', 
+    xticklabels=class_names,
+    yticklabels=class_names,
+    cbar=True,
+    ax=ax2
+)
+ax2.set_title("Confusion Matrix Heatmap (Seaborn)", fontsize=12, fontweight='bold')
+ax2.set_xlabel("Predicted Label")
+ax2.set_ylabel("True Label")
+
+plt.tight_layout()
+plt.show()
+```
+
+#### 2. 本地 Seaborn Pairplot 多特征带类别分类全景图
+
+```python
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# 构建包含类别标签的数据集
+np.random.seed(0)
+n = 100
+df_iris = pd.DataFrame({
+    'Petal_Length': np.random.normal(5, 1.5, n),
+    'Petal_Width': np.random.normal(2, 0.5, n),
+    'Sepal_Length': np.random.normal(6, 1.2, n),
+    'Species': np.random.choice(['Setosa', 'Versicolor'], size=n)
+})
+
+# 本地 Seaborn 一键生成对角线 KDE 密度 + 非对角线按类别着色的散点全景图
+grid = sns.pairplot(
+    df_iris, 
+    hue='Species',      # 按花卉类别颜色区分
+    palette='Set1',     # 经典高对比调色盘
+    corner=True,        # 隐藏右上角重复的对称三角区
+    diag_kind='kde'     # 对角线使用核密度估计 (KDE)
+)
+grid.fig.suptitle("Seaborn Pairplot Feature Distributions", y=1.02, fontsize=12, fontweight='bold')
+plt.show()
+```
 
 ---
 

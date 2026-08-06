@@ -64,7 +64,7 @@ loss = calculate_loss(1.0, 0.8)
 print(f"Loss: {loss:.4f}")  # Loss: 0.0400
 ```
 
-在处理边界条件时，推荐使用**卫语句（Guard Clause）**提前返回，避免深层嵌套的 `if-else`：
+在处理边界条件时，推荐使用 **卫语句（Guard Clause）** 提前返回，避免深层嵌套的 `if-else`：
 
 ```python
 def safe_divide(numerator: float, denominator: float) -> float | None:
@@ -195,6 +195,7 @@ print(acc(5))   # 15
 > [!WARNING]
 > **避坑防范：内置名称遮蔽 (Built-in Shadowing)**
 > 切勿将变量或参数命名为内置函数名（如 `len`, `list`, `dict`, `str`, `type`, `input` 等）。这会把内置名称遮蔽掉，导致后续代码调用内置函数报错：
+>
 > ```python
 > list = [1, 2, 3]    # 危险！遮蔽了内置类型 list
 > # new_data = list("abc")  # TypeError: 'list' object is not callable
@@ -241,14 +242,16 @@ print("Good 2:", record_loss_good(0.3))  # [0.3]` }
 - **`*args`**：将多余的**位置实参**打包为一个**元组 (tuple)**。
 - **`**kwargs`**：将多余的**关键字实参**打包为一个**字典 (dict)**。
 
-```python
+<RunnableCodeBlock title="*args与 **kwargs机制">
+{`
 def log_experiment(experiment_name: str, *metrics, **hyperparams):
     print(f"实验名称: {experiment_name}")
     print(f"位置指标 (*args): {metrics} (类型: {type(metrics).__name__})")
     print(f"超参数 (**kwargs): {hyperparams} (类型: {type(hyperparams).__name__})")
 
 log_experiment("ResNet-50", 0.92, 0.89, lr=0.001, batch_size=32, optimizer="Adam")
-```
+`}
+</RunnableCodeBlock>
 
 ---
 
@@ -258,7 +261,8 @@ log_experiment("ResNet-50", 0.92, 0.89, lr=0.001, batch_size=32, optimizer="Adam
 
 ![*args 与 **kwargs 参数打包与解包图](/assets/python/args-kwargs-unpacking.png)
 
-```python
+<RunnableCodeBlock title="实参解包">
+{`
 def create_model(input_dim: int, hidden_dim: int, output_dim: int, lr: float = 0.01):
     return f"Model[{input_dim}->{hidden_dim}->{output_dim}], LR={lr}"
 
@@ -268,7 +272,8 @@ config = {"lr": 0.005}
 # 使用 * 解包列表作为位置参数，使用 ** 解包字典作为关键字参数
 model_info = create_model(*dims, **config)
 print(model_info)  # Model[784->128->10], LR=0.005
-```
+`}
+</RunnableCodeBlock>
 
 ---
 
@@ -423,45 +428,6 @@ print("数据流水线评估结果:", metrics)`}
 
 ---
 
-## 小实验：编写可配置且带历史记录的模型评估器
-
-**目标**：编写一个支持配置自定义指标、防踩可变默认参数陷阱、并能维护评估历史日志的高阶评估器。
-
-```python
-from typing import Callable, Optional
-
-def create_evaluator(
-    metric_fn: Callable[[list[int], list[int]], float],
-    log_history: Optional[list[dict]] = None
-):
-    """闭包高阶评估器制造函数。"""
-    if log_history is None:
-        log_history = []  # 安全创建独立历史列表
-
-    def evaluate(epoch: int, y_true: list[int], y_pred: list[int]) -> float:
-        score = metric_fn(y_true, y_pred)
-        record = {"epoch": epoch, "score": score}
-        log_history.append(record)
-        print(f"[Epoch {epoch}] 评估得分: {score:.4f} (累计日志条数: {len(log_history)})")
-        return score
-
-    return evaluate, log_history
-
-# 自定义 Accuracy 指标函数
-def accuracy_metric(y_true: list[int], y_pred: list[int]) -> float:
-    return sum(t == p for t, p in zip(y_true, y_pred)) / len(y_true)
-
-# 实例化评估器
-eval_fn, history_logs = create_evaluator(accuracy_metric)
-
-eval_fn(1, [1, 0, 1], [1, 0, 0])  # 0.6667
-eval_fn(2, [1, 0, 1], [1, 0, 1])  # 1.0000
-
-print("最终完整历史日志:", history_logs)
-```
-
----
-
 ## 常见错误排查
 
 | 现象 / 报错信息 | 常见根本原因 | 规范处理方式 |
@@ -485,7 +451,6 @@ print("最终完整历史日志:", history_logs)
 - [ ] 能在函数定义中使用 `*args` 和 `**kwargs`，并在实参传递时进行展开解包。
 - [ ] 能理清 `lambda`、`map`、`filter` 与列表推导式的适用场景边界。
 - [ ] 能为函数编写 Google 风格 Docstring 与静态 Type Hints。
-- [ ] 能将 AI 数据加载、处理、预测与评估拆分为模块化独立函数。
 
 ---
 
@@ -501,7 +466,7 @@ print("最终完整历史日志:", history_logs)
 
 ## 下一步
 
-下一章：[模块、包与第三方库](/learn/foundations/python/06-py-modules)。你将学习如何把本章编写的独立函数拆分保存到不同的 `.py` 模块中，并通过 `import` 组织大中型 AI 项目。
+下一章：[06.模块、包与第三方库](/learn/foundations/python/06-py-modules)。你将学习如何把本章编写的独立函数拆分保存到不同的 `.py` 模块中，并通过 `import` 组织大中型 AI 项目。
 
 ---
 

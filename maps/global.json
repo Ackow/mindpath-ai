@@ -30,7 +30,7 @@
       "module": "foundations",
       "route": "/map/foundations",
       "difficulty": "beginner",
-      "estimatedMinutes": 595,
+      "estimatedMinutes": 1595,
       "prerequisites": [
         "root"
       ],
@@ -50,7 +50,7 @@
       "module": "machine-learning",
       "route": "/map/machine-learning",
       "difficulty": "beginner",
-      "estimatedMinutes": 0,
+      "estimatedMinutes": 155,
       "prerequisites": [
         "root"
       ],
@@ -148,12 +148,13 @@
       "id": "dl-neuron",
       "title": "单个人工神经元",
       "module": "deep-learning",
+      "submodule": "basic",
       "route": "/learn/deep-learning/neuron",
       "difficulty": "beginner",
       "estimatedMinutes": 25,
       "prerequisites": [
-        "math-01-vector-matrix",
-        "math-10-optimization-descent"
+        "math-vector-matrix",
+        "math-loss-logistic-regression"
       ],
       "next": [],
       "relatedNotes": [],
@@ -165,32 +166,327 @@
       "position": {
         "x": 460,
         "y": 480
-      }
+      },
+      "layoutGroup": "deep-learning"
+    },
+    {
+      "id": "data-audit-eda",
+      "title": "01. 数据字典、质量审计与 EDA 清单",
+      "module": "foundations",
+      "submodule": "data",
+      "route": "/learn/foundations/data/01-data-audit-eda",
+      "difficulty": "beginner",
+      "estimatedMinutes": 50,
+      "prerequisites": [
+        "math-hypothesis-testing-ab"
+      ],
+      "next": [
+        "data-splitting-strategies"
+      ],
+      "relatedNotes": [
+        "math-hypothesis-testing-ab",
+        "data-splitting-strategies"
+      ],
+      "tags": [
+        "数据工程",
+        "数据字典",
+        "数据质量审计",
+        "异常值",
+        "EDA",
+        "UCI Adult"
+      ],
+      "summary": "掌握数据字典建设规范，熟练进行 5 大数据质量审计（缺失、重复、类型错配、异常值 IQR 判定、标签质量），并生成标准化 EDA 报告。",
+      "position": {
+        "x": 980,
+        "y": 40
+      },
+      "layoutGroup": "foundations-data"
+    },
+    {
+      "id": "data-splitting-strategies",
+      "title": "02. 随机、分层、分组与时间序列切分",
+      "module": "foundations",
+      "submodule": "data",
+      "route": "/learn/foundations/data/02-data-splitting-strategies",
+      "difficulty": "intermediate",
+      "estimatedMinutes": 55,
+      "prerequisites": [
+        "data-audit-eda"
+      ],
+      "next": [
+        "data-leakage-preprocessing"
+      ],
+      "relatedNotes": [
+        "data-audit-eda",
+        "data-leakage-preprocessing"
+      ],
+      "tags": [
+        "数据集划分",
+        "分层抽样",
+        "GroupSplit",
+        "时间序列切分",
+        "数据泄漏"
+      ],
+      "summary": "掌握训练集、验证集与测试集的职责边界，灵活运用随机、分层、分组与时间序列切分策略防范信息泄漏。",
+      "position": {
+        "x": 1180,
+        "y": 40
+      },
+      "layoutGroup": "foundations-data"
+    },
+    {
+      "id": "data-leakage-preprocessing",
+      "title": "03. 预处理、编码与防数据泄漏铁律",
+      "module": "foundations",
+      "submodule": "data",
+      "route": "/learn/foundations/data/03-data-leakage-preprocessing",
+      "difficulty": "intermediate",
+      "estimatedMinutes": 55,
+      "prerequisites": [
+        "data-splitting-strategies"
+      ],
+      "next": [
+        "data-feature-engineering-selection"
+      ],
+      "relatedNotes": [
+        "data-splitting-strategies",
+        "data-feature-engineering-selection"
+      ],
+      "tags": [
+        "预处理",
+        "数据泄漏",
+        "StandardScaler",
+        "One-Hot编码",
+        "Data Leakage",
+        "fit_transform"
+      ],
+      "summary": "掌握缺失值填补、特征缩放与类别编码，严守“所有 Transformer 的 fit 只能作用于训练集”防数据泄漏铁律。",
+      "position": {
+        "x": 1380,
+        "y": 40
+      },
+      "layoutGroup": "foundations-data"
+    },
+    {
+      "id": "data-feature-engineering-selection",
+      "title": "04. 特征构造、多重共线性与类别不平衡消融",
+      "module": "foundations",
+      "submodule": "data",
+      "route": "/learn/foundations/data/04-feature-engineering-selection",
+      "difficulty": "intermediate",
+      "estimatedMinutes": 60,
+      "prerequisites": [
+        "data-leakage-preprocessing"
+      ],
+      "next": [
+        "data-column-transformer-pipeline"
+      ],
+      "relatedNotes": [
+        "data-leakage-preprocessing",
+        "data-column-transformer-pipeline"
+      ],
+      "tags": [
+        "特征工程",
+        "特征构造",
+        "多重共线性",
+        "VIF",
+        "类别不平衡",
+        "特征消融"
+      ],
+      "summary": "掌握业务特征衍生、VIF 多重共线性诊断与类别不平衡处理，使用特征消融实验（Ablation Study）评估特征有效性。",
+      "position": {
+        "x": 1580,
+        "y": 40
+      },
+      "layoutGroup": "foundations-data"
+    },
+    {
+      "id": "data-column-transformer-pipeline",
+      "title": "05. ColumnTransformer, Pipeline 与模型持久化",
+      "module": "foundations",
+      "submodule": "data",
+      "route": "/learn/foundations/data/05-column-transformer-pipeline",
+      "difficulty": "intermediate",
+      "estimatedMinutes": 60,
+      "prerequisites": [
+        "data-feature-engineering-selection"
+      ],
+      "next": [
+        "eng-project-structure-config"
+      ],
+      "relatedNotes": [
+        "data-feature-engineering-selection",
+        "eng-project-structure-config"
+      ],
+      "tags": [
+        "Pipeline",
+        "ColumnTransformer",
+        "交叉验证",
+        "模型持久化",
+        "Joblib",
+        "scikit-learn"
+      ],
+      "summary": "掌握 ColumnTransformer 异构特征差异化预处理，使用 Pipeline 封装端到端流线，结合交叉验证与 Joblib 模型安全持久化。",
+      "position": {
+        "x": 980,
+        "y": 95
+      },
+      "layoutGroup": "foundations-data"
+    },
+    {
+      "id": "eng-project-structure-config",
+      "title": "01. 规范仓库结构、YAML 配置与随机性控制",
+      "module": "foundations",
+      "submodule": "engineering",
+      "route": "/learn/foundations/engineering/01-project-structure-config",
+      "difficulty": "beginner",
+      "estimatedMinutes": 50,
+      "prerequisites": [
+        "data-column-transformer-pipeline"
+      ],
+      "next": [
+        "eng-testing-data-code"
+      ],
+      "relatedNotes": [
+        "data-column-transformer-pipeline",
+        "eng-testing-data-code"
+      ],
+      "tags": [
+        "工程习惯",
+        "仓库结构",
+        "YAML配置",
+        "随机种子",
+        "可复现性",
+        "Cookiecutter"
+      ],
+      "summary": "掌握规范的数据科学仓库目录结构，使用 YAML 配置文件解耦模型超参数，并通过固定全局随机种子保证实验可复现性。",
+      "position": {
+        "x": 1240,
+        "y": 40
+      },
+      "layoutGroup": "foundations-engineering"
+    },
+    {
+      "id": "eng-testing-data-code",
+      "title": "02. 模块化代码重构与 pytest 5大契约测试",
+      "module": "foundations",
+      "submodule": "engineering",
+      "route": "/learn/foundations/engineering/02-testing-data-code",
+      "difficulty": "intermediate",
+      "estimatedMinutes": 55,
+      "prerequisites": [
+        "eng-project-structure-config"
+      ],
+      "next": [
+        "eng-experiment-tracking-error-analysis"
+      ],
+      "relatedNotes": [
+        "eng-project-structure-config",
+        "eng-experiment-tracking-error-analysis"
+      ],
+      "tags": [
+        "pytest",
+        "契约测试",
+        "模块化重构",
+        "自动化测试",
+        "数据质量契约"
+      ],
+      "summary": "掌握项目代码模块化拆分与函数解耦，使用 pytest 编写 5 大有意义工程契约测试，建立数据与模型的质量防御网。",
+      "position": {
+        "x": 1440,
+        "y": 40
+      },
+      "layoutGroup": "foundations-engineering"
+    },
+    {
+      "id": "eng-experiment-tracking-error-analysis",
+      "title": "03. 结构化实验记录 runs/ 与误分类错误分析",
+      "module": "foundations",
+      "submodule": "engineering",
+      "route": "/learn/foundations/engineering/03-experiment-tracking-error-analysis",
+      "difficulty": "intermediate",
+      "estimatedMinutes": 60,
+      "prerequisites": [
+        "eng-testing-data-code"
+      ],
+      "next": [
+        "eng-reproducible-pipeline-report"
+      ],
+      "relatedNotes": [
+        "eng-testing-data-code",
+        "eng-reproducible-pipeline-report"
+      ],
+      "tags": [
+        "实验跟踪",
+        "runs记录",
+        "错误分析",
+        "GitCommit",
+        "数据哈希",
+        "误分类分析"
+      ],
+      "summary": "掌握结构化实验日志记录（runs/ 目录、Git Commit、数据哈希、超参数），并手写误分类错误分析 (Error Analysis) 提取诊断归因。",
+      "position": {
+        "x": 1640,
+        "y": 40
+      },
+      "layoutGroup": "foundations-engineering"
+    },
+    {
+      "id": "eng-reproducible-pipeline-report",
+      "title": "04. 端到端从零复现、多模型基线对比与报告",
+      "module": "foundations",
+      "submodule": "engineering",
+      "route": "/learn/foundations/engineering/04-reproducible-pipeline-report",
+      "difficulty": "intermediate",
+      "estimatedMinutes": 60,
+      "prerequisites": [
+        "eng-experiment-tracking-error-analysis"
+      ],
+      "next": [],
+      "relatedNotes": [
+        "eng-experiment-tracking-error-analysis"
+      ],
+      "tags": [
+        "工程终章",
+        "端到端可复现",
+        "多模型基线",
+        "DummyClassifier",
+        "项目报告",
+        "生产部署"
+      ],
+      "summary": "掌握在干净虚拟环境中从零一键复现实验，建立 Dummy, 线性与树模型多级基线对比，并撰写规范的项目总结报告。",
+      "position": {
+        "x": 1840,
+        "y": 40
+      },
+      "layoutGroup": "foundations-engineering"
     },
     {
       "id": "math-vector-matrix",
-      "title": "向量、矩阵与线性变换",
+      "title": "01.向量、矩阵与余弦相似度",
       "module": "foundations",
       "submodule": "math",
       "route": "/learn/foundations/math/01-vector-matrix",
       "difficulty": "beginner",
-      "estimatedMinutes": 30,
+      "estimatedMinutes": 45,
       "prerequisites": [
         "py-numpy"
       ],
       "next": [
-        "math-eigen-svd"
+        "math-linear-transform"
       ],
       "relatedNotes": [
         "py-numpy",
-        "math-eigen-svd"
+        "math-linear-transform"
       ],
       "tags": [
         "线性代数",
         "向量",
-        "矩阵"
+        "范数",
+        "余弦相似度",
+        "张量"
       ],
-      "summary": "向量空间、点积、范数、矩阵乘法、秩与线性变换直觉。",
+      "summary": "掌握标量、向量、矩阵与张量的维度表达，理解 L1/L2/Linf 范数几何意义与余弦相似度计算，并通过 NumPy 实现向量化加速与数值校验。",
       "position": {
         "x": 720,
         "y": 40
@@ -198,27 +494,31 @@
       "layoutGroup": "foundations-math"
     },
     {
-      "id": "math-eigen-svd",
-      "title": "特征值分解与 SVD 降维",
+      "id": "math-linear-transform",
+      "title": "02.矩阵运算、秩与几何变换",
       "module": "foundations",
       "submodule": "math",
-      "route": "/learn/foundations/math/02-eigen-svd",
-      "difficulty": "intermediate",
-      "estimatedMinutes": 35,
+      "route": "/learn/foundations/math/02-linear-transform",
+      "difficulty": "beginner",
+      "estimatedMinutes": 50,
       "prerequisites": [
         "math-vector-matrix"
       ],
-      "next": [],
+      "next": [
+        "math-subspace-projection"
+      ],
       "relatedNotes": [
-        "py-numpy",
-        "math-10-optimization-descent"
+        "math-vector-matrix",
+        "math-subspace-projection"
       ],
       "tags": [
-        "特征值",
-        "SVD",
-        "PCA"
+        "线性代数",
+        "矩阵乘法",
+        "矩阵的秩",
+        "逆矩阵",
+        "几何变换"
       ],
-      "summary": "特征值与特征向量的几何意义、奇异值分解 SVD 及其在低秩近似与 PCA 中的应用。",
+      "summary": "深入矩阵代数性质（乘法、转置、迹、秩与逆矩阵），理清线性变换的几何含义，并手写旋转、缩放与剪切变换矩阵进行可视化演练。",
       "position": {
         "x": 920,
         "y": 40
@@ -226,29 +526,230 @@
       "layoutGroup": "foundations-math"
     },
     {
-      "id": "math-09-calculus-gradient",
-      "title": "偏导数、梯度与计算图",
+      "id": "math-subspace-projection",
+      "title": "03.基、Gram-Schmidt 与最小二乘",
       "module": "foundations",
       "submodule": "math",
-      "route": "/learn/foundations/math/09-calculus-gradient",
-      "difficulty": "beginner",
-      "estimatedMinutes": 35,
+      "route": "/learn/foundations/math/03-subspace-projection",
+      "difficulty": "intermediate",
+      "estimatedMinutes": 55,
       "prerequisites": [
-        "py-basics"
+        "math-linear-transform"
       ],
       "next": [
-        "math-10-optimization-descent"
+        "math-eigen-decomposition"
       ],
       "relatedNotes": [
-        "math-10-optimization-descent",
-        "py-functions"
+        "math-linear-transform",
+        "math-eigen-decomposition"
       ],
       "tags": [
-        "偏导数",
-        "梯度",
-        "链式法则"
+        "线性代数",
+        "基",
+        "Gram-Schmidt",
+        "正交投影",
+        "最小二乘"
       ],
-      "summary": "多变量函数的偏导数、方向导数、梯度向量定义与计算图链式法则。",
+      "summary": "掌握线性无关、子空间与基的定义，理解 Gram-Schmidt 正交化算法流程，推导正规方程并实现最小二乘直线拟合。",
+      "position": {
+        "x": 1120,
+        "y": 40
+      },
+      "layoutGroup": "foundations-math"
+    },
+    {
+      "id": "math-eigen-decomposition",
+      "title": "04.特征值分解、对角化与正定矩阵",
+      "module": "foundations",
+      "submodule": "math",
+      "route": "/learn/foundations/math/04-eigen-decomposition",
+      "difficulty": "intermediate",
+      "estimatedMinutes": 50,
+      "prerequisites": [
+        "math-subspace-projection"
+      ],
+      "next": [
+        "math-svd-pca"
+      ],
+      "relatedNotes": [
+        "math-subspace-projection",
+        "math-svd-pca"
+      ],
+      "tags": [
+        "线性代数",
+        "特征值",
+        "特征向量",
+        "对角化",
+        "正定矩阵",
+        "协方差矩阵"
+      ],
+      "summary": "理解特征值与特征向量的几何拉伸本质，推导方阵对角化与对称矩阵谱定理，掌握正定矩阵二次型及协方差矩阵主方向。",
+      "position": {
+        "x": 1320,
+        "y": 40
+      },
+      "layoutGroup": "foundations-math"
+    },
+    {
+      "id": "math-svd-pca",
+      "title": "05.SVD 分解与 PCA 降维实战",
+      "module": "foundations",
+      "submodule": "math",
+      "route": "/learn/foundations/math/05-svd-pca",
+      "difficulty": "advanced",
+      "estimatedMinutes": 60,
+      "prerequisites": [
+        "math-eigen-decomposition"
+      ],
+      "next": [
+        "math-calculus-gradient"
+      ],
+      "relatedNotes": [
+        "math-eigen-decomposition",
+        "py-ml-workflow"
+      ],
+      "tags": [
+        "线性代数",
+        "SVD",
+        "奇异值分解",
+        "PCA",
+        "降维",
+        "截断SVD",
+        "防数据泄露"
+      ],
+      "summary": "掌握任意矩形矩阵的 SVD 几何分解与低秩逼近，从方差最大化推导 PCA，手写截断 SVD/PCA 降维并遵循防数据泄露工程规范。",
+      "position": {
+        "x": 720,
+        "y": 95
+      },
+      "layoutGroup": "foundations-math"
+    },
+    {
+      "id": "math-calculus-gradient",
+      "title": "06. 偏导数、链式法则与计算图",
+      "module": "foundations",
+      "submodule": "math",
+      "route": "/learn/foundations/math/06-calculus-gradient",
+      "difficulty": "beginner",
+      "estimatedMinutes": 50,
+      "prerequisites": [
+        "math-svd-pca"
+      ],
+      "next": [
+        "math-gradient-jacobian-hessian"
+      ],
+      "relatedNotes": [
+        "math-svd-pca",
+        "math-gradient-jacobian-hessian"
+      ],
+      "tags": [
+        "微积分",
+        "导数",
+        "偏导数",
+        "链式法则",
+        "计算图",
+        "梯度检查"
+      ],
+      "summary": "掌握导数作为局部变化率的直觉，推导多变量偏导数与链式法则，理解计算图反向传播原理，并用中心差分实现梯度检查。",
+      "position": {
+        "x": 920,
+        "y": 95
+      },
+      "layoutGroup": "foundations-math"
+    },
+    {
+      "id": "math-gradient-jacobian-hessian",
+      "title": "07. 梯度、Jacobian/Hessian 与凸性",
+      "module": "foundations",
+      "submodule": "math",
+      "route": "/learn/foundations/math/07-gradient-jacobian-hessian",
+      "difficulty": "intermediate",
+      "estimatedMinutes": 55,
+      "prerequisites": [
+        "math-calculus-gradient"
+      ],
+      "next": [
+        "math-gradient-descent-variants"
+      ],
+      "relatedNotes": [
+        "math-calculus-gradient",
+        "math-gradient-descent-variants"
+      ],
+      "tags": [
+        "微积分",
+        "梯度向量",
+        "Jacobian矩阵",
+        "Hessian矩阵",
+        "凸函数",
+        "等高线"
+      ],
+      "summary": "掌握梯度向量作为最陡上升方向的性质，理解 Jacobian 矩阵与 Hessian 矩阵曲率，判定函数凸性并绘制等高线与梯度剪头场。",
+      "position": {
+        "x": 1120,
+        "y": 95
+      },
+      "layoutGroup": "foundations-math"
+    },
+    {
+      "id": "math-gradient-descent-variants",
+      "title": "08. 梯度下降算法：Batch, SGD 与 Mini-batch",
+      "module": "foundations",
+      "submodule": "math",
+      "route": "/learn/foundations/math/08-gradient-descent-variants",
+      "difficulty": "intermediate",
+      "estimatedMinutes": 55,
+      "prerequisites": [
+        "math-gradient-jacobian-hessian"
+      ],
+      "next": [
+        "math-modern-optimizers"
+      ],
+      "relatedNotes": [
+        "math-gradient-jacobian-hessian",
+        "math-modern-optimizers"
+      ],
+      "tags": [
+        "梯度下降",
+        "BGD",
+        "SGD",
+        "Mini-batch",
+        "学习率",
+        "特征标准化"
+      ],
+      "summary": "厘清批量 BGD、随机 SGD 与 Mini-batch 梯度下降机制，理解学习率与特征缩放对损失面等高线条件数及收敛速度的影响。",
+      "position": {
+        "x": 1320,
+        "y": 95
+      },
+      "layoutGroup": "foundations-math"
+    },
+    {
+      "id": "math-modern-optimizers",
+      "title": "09. 现代优化器：Momentum, RMSProp 与 Adam",
+      "module": "foundations",
+      "submodule": "math",
+      "route": "/learn/foundations/math/09-modern-optimizers",
+      "difficulty": "intermediate",
+      "estimatedMinutes": 55,
+      "prerequisites": [
+        "math-gradient-descent-variants"
+      ],
+      "next": [
+        "math-loss-logistic-regression"
+      ],
+      "relatedNotes": [
+        "math-gradient-descent-variants",
+        "math-loss-logistic-regression"
+      ],
+      "tags": [
+        "优化器",
+        "Momentum",
+        "RMSProp",
+        "Adam",
+        "鞍点",
+        "病态条件数"
+      ],
+      "summary": "掌握传统 SGD 在鞍点与病态条件数上的困境，理解 Momentum 动量、RMSProp 自适应学习率与 Adam 优化器机制并进行轨迹对比。",
       "position": {
         "x": 720,
         "y": 150
@@ -256,27 +757,31 @@
       "layoutGroup": "foundations-math"
     },
     {
-      "id": "math-10-optimization-descent",
-      "title": "梯度下降与凸优化基础",
+      "id": "math-loss-logistic-regression",
+      "title": "10. 损失函数思想与凸函数极小化",
       "module": "foundations",
       "submodule": "math",
-      "route": "/learn/foundations/math/10-optimization-descent",
+      "route": "/learn/foundations/math/10-loss-logistic-regression",
       "difficulty": "intermediate",
-      "estimatedMinutes": 35,
+      "estimatedMinutes": 60,
       "prerequisites": [
-        "math-09-calculus-gradient"
+        "math-modern-optimizers"
       ],
-      "next": [],
+      "next": [
+        "math-probability-bayes"
+      ],
       "relatedNotes": [
-        "math-02-eigen-svd",
-        "py-numpy"
+        "math-modern-optimizers",
+        "math-probability-bayes"
       ],
       "tags": [
-        "梯度下降",
-        "学习率",
-        "凸优化"
+        "损失函数",
+        "凸优化",
+        "极小化",
+        "均方误差",
+        "凹凸性"
       ],
-      "summary": "梯度下降算法、随机梯度下降 SGD、Mini-batch 机制、学习率设置与鞍点/局部极值问题。",
+      "summary": "掌握损失函数 (Loss Function) 的几何本质与极小化目标，理解凸函数与非凸函数的优化地形特征。",
       "position": {
         "x": 920,
         "y": 150
@@ -284,63 +789,168 @@
       "layoutGroup": "foundations-math"
     },
     {
-      "id": "prob-11-probability-bayes",
-      "title": "随机变量与贝叶斯定理",
+      "id": "math-probability-bayes",
+      "title": "11. 随机变量、条件概率与贝叶斯定理",
       "module": "foundations",
-      "submodule": "probability",
-      "route": "/learn/foundations/probability/11-probability-bayes",
+      "submodule": "math",
+      "route": "/learn/foundations/math/11-probability-bayes",
       "difficulty": "beginner",
-      "estimatedMinutes": 30,
+      "estimatedMinutes": 50,
       "prerequisites": [
-        "py-basics"
+        "math-loss-logistic-regression"
       ],
       "next": [
-        "prob-12-mle-hypothesis"
+        "math-distributions-moments"
       ],
       "relatedNotes": [
-        "prob-12-mle-hypothesis",
-        "py-basics"
+        "math-loss-logistic-regression",
+        "math-distributions-moments"
       ],
       "tags": [
         "概率论",
+        "随机变量",
+        "条件概率",
         "贝叶斯公式",
-        "条件概率"
+        "基础率谬误"
       ],
-      "summary": "随机变量、常见分布 (正态、伯努利)、条件概率、独立性与贝叶斯定理。",
+      "summary": "掌握随机变量、联合/条件概率与独立性，严密推导贝叶斯公式，识别基础率谬误并用蒙特卡洛代码模拟 Bayes 更新。",
       "position": {
-        "x": 1380,
+        "x": 1120,
         "y": 150
       },
-      "layoutGroup": "foundations-probability"
+      "layoutGroup": "foundations-math"
     },
     {
-      "id": "prob-12-mle-hypothesis",
-      "title": "最大似然估计 MLE 与交叉熵",
+      "id": "math-distributions-moments",
+      "title": "12. 常见分布、期望方差与协方差",
       "module": "foundations",
-      "submodule": "probability",
-      "route": "/learn/foundations/probability/12-mle-hypothesis",
-      "difficulty": "intermediate",
-      "estimatedMinutes": 35,
+      "submodule": "math",
+      "route": "/learn/foundations/math/12-distributions-moments",
+      "difficulty": "beginner",
+      "estimatedMinutes": 55,
       "prerequisites": [
-        "prob-11-probability-bayes"
+        "math-probability-bayes"
       ],
-      "next": [],
+      "next": [
+        "math-lln-clt-bootstrap"
+      ],
       "relatedNotes": [
-        "math-10-optimization-descent",
-        "py-numpy"
+        "math-probability-bayes",
+        "math-lln-clt-bootstrap"
       ],
       "tags": [
-        "MLE",
-        "MAP",
-        "交叉熵",
-        "似然函数"
+        "概率分布",
+        "高斯分布",
+        "伯努利分布",
+        "期望",
+        "方差",
+        "协方差"
       ],
-      "summary": "最大似然估计 MLE、最大后验概率 MAP、高斯噪声与 MSE 的等价性、伯努利分布与交叉熵。",
+      "summary": "掌握伯努利、二项、高斯与泊松四大分布，理解期望、方差与协方差的数字特征，对比理论矩与样本矩。",
       "position": {
-        "x": 1580,
+        "x": 1320,
         "y": 150
       },
-      "layoutGroup": "foundations-probability"
+      "layoutGroup": "foundations-math"
+    },
+    {
+      "id": "math-lln-clt-bootstrap",
+      "title": "13. 大数定律、中心极限定理与 Bootstrap",
+      "module": "foundations",
+      "submodule": "math",
+      "route": "/learn/foundations/math/13-lln-clt-bootstrap",
+      "difficulty": "intermediate",
+      "estimatedMinutes": 55,
+      "prerequisites": [
+        "math-distributions-moments"
+      ],
+      "next": [
+        "math-mle-map-loss"
+      ],
+      "relatedNotes": [
+        "math-distributions-moments",
+        "math-mle-map-loss"
+      ],
+      "tags": [
+        "大数定律",
+        "中心极限定理",
+        "CLT",
+        "抽样分布",
+        "Bootstrap",
+        "标准误"
+      ],
+      "summary": "掌握弱大数定律与中心极限定理的严密含义，推导标准误 SE 公式，并手写 Bootstrap 非参数重采样估计经验置信区间。",
+      "position": {
+        "x": 720,
+        "y": 205
+      },
+      "layoutGroup": "foundations-math"
+    },
+    {
+      "id": "math-mle-map-loss",
+      "title": "14. MLE, MAP 与高斯-MSE/伯努利-BCE 推导",
+      "module": "foundations",
+      "submodule": "math",
+      "route": "/learn/foundations/math/14-mle-map-loss",
+      "difficulty": "intermediate",
+      "estimatedMinutes": 60,
+      "prerequisites": [
+        "math-lln-clt-bootstrap"
+      ],
+      "next": [
+        "math-hypothesis-testing-ab"
+      ],
+      "relatedNotes": [
+        "math-lln-clt-bootstrap",
+        "math-hypothesis-testing-ab"
+      ],
+      "tags": [
+        "似然函数",
+        "MLE",
+        "MAP",
+        "均方误差",
+        "交叉熵",
+        "正则化"
+      ],
+      "summary": "掌握最大似然估计 MLE 与最大后验估计 MAP，严密推导高斯负对数似然到 MSE、伯努利到 BCE 的物理映射，理解正则化的先验本质。",
+      "position": {
+        "x": 920,
+        "y": 205
+      },
+      "layoutGroup": "foundations-math"
+    },
+    {
+      "id": "math-hypothesis-testing-ab",
+      "title": "15. 假设检验、p值、效应量与 A/B 测试实战",
+      "module": "foundations",
+      "submodule": "math",
+      "route": "/learn/foundations/math/15-hypothesis-testing-ab",
+      "difficulty": "intermediate",
+      "estimatedMinutes": 60,
+      "prerequisites": [
+        "math-mle-map-loss"
+      ],
+      "next": [
+        "py-iris-project"
+      ],
+      "relatedNotes": [
+        "math-mle-map-loss",
+        "py-iris-project"
+      ],
+      "tags": [
+        "假设检验",
+        "p值",
+        "效应量",
+        "A/B测试",
+        "检验功效",
+        "多重比较"
+      ],
+      "summary": "掌握原假设与备择假设，澄清 p 值的真实含义，理解效应量与多重比较 Bonferroni 修正，手写 A/B 测试报告并与 SciPy 对照。",
+      "position": {
+        "x": 1120,
+        "y": 205
+      },
+      "layoutGroup": "foundations-math"
     },
     {
       "id": "py-environment",
@@ -606,7 +1216,7 @@
     },
     {
       "id": "py-pandas",
-      "title": "09.pandas 数据处理与特征清洗",
+      "title": "09. Pandas 数据分析与表格操作实战",
       "module": "foundations",
       "submodule": "python",
       "route": "/learn/foundations/python/09-py-pandas",
@@ -616,23 +1226,23 @@
         "py-numpy"
       ],
       "next": [
-        "py-visualization",
-        "py-ml-workflow"
+        "py-visualization"
       ],
       "relatedNotes": [
         "py-numpy",
-        "py-visualization",
-        "py-ml-workflow"
+        "py-visualization"
       ],
       "tags": [
         "Pandas",
         "DataFrame",
-        "EDA",
+        "Series",
         "数据清洗",
-        "GroupBy",
-        "One-Hot"
+        "loc",
+        "iloc",
+        "Groupby",
+        "数据导入"
       ],
-      "summary": "掌握 Pandas 核心结构 Series 与 DataFrame、EDA 数据探索最小检查、缺失值清洗、GroupBy 聚合与 AI 数据预处理流水线。",
+      "summary": "深入掌握 Pandas 核心数据结构 Series 与 DataFrame，熟练运用数据导入导出、loc/iloc 显式切片、条件筛选、缺失值清洗、Groupby 分组聚合与表格 Merge 操作。",
       "position": {
         "x": 460,
         "y": 150
@@ -640,11 +1250,41 @@
       "layoutGroup": "foundations-python"
     },
     {
+      "id": "ml-problem-map",
+      "title": "01.机器学习问题地图",
+      "module": "machine-learning",
+      "submodule": "overview",
+      "route": "/learn/machine-learning/01-ml-problem-map",
+      "difficulty": "beginner",
+      "estimatedMinutes": 35,
+      "prerequisites": [
+        "eng-reproducible-pipeline-report"
+      ],
+      "next": [
+        "py-visualization"
+      ],
+      "relatedNotes": [],
+      "tags": [
+        "机器学习",
+        "问题地图",
+        "学习范式",
+        "任务类型",
+        "问题定义",
+        "DummyBaseline"
+      ],
+      "summary": "建立机器学习问题视角，掌握何时使用 ML、5 大学习范式对比、7 种任务类型与输出空间、统一 7 字段问题定义框架以及从数据到决策的标准流程。",
+      "position": {
+        "x": 460,
+        "y": 260
+      },
+      "layoutGroup": "machine-learning"
+    },
+    {
       "id": "py-visualization",
-      "title": "10.Matplotlib 与 Seaborn 数据可视化",
-      "module": "foundations",
-      "submodule": "python",
-      "route": "/learn/foundations/python/10-py-visualization",
+      "title": "02. Matplotlib 与 Seaborn 数据可视化",
+      "module": "machine-learning",
+      "submodule": "overview",
+      "route": "/learn/machine-learning/10-py-visualization",
       "difficulty": "intermediate",
       "estimatedMinutes": 35,
       "prerequisites": [
@@ -668,16 +1308,16 @@
       "summary": "掌握 Matplotlib 面向对象 Figure 与 Axes 架构模式、折线图/散点图/直方图/热图绘制，以及 AI 实验中损失曲线与混淆矩阵的可视化方法。",
       "position": {
         "x": 660,
-        "y": 150
+        "y": 260
       },
-      "layoutGroup": "foundations-python"
+      "layoutGroup": "machine-learning"
     },
     {
       "id": "py-ml-workflow",
-      "title": "11.AI 数据与实验工作流规范",
-      "module": "foundations",
-      "submodule": "python",
-      "route": "/learn/foundations/python/11-py-ml-workflow",
+      "title": "03. AI 数据与实验工作流规范",
+      "module": "machine-learning",
+      "submodule": "overview",
+      "route": "/learn/machine-learning/11-py-ml-workflow",
       "difficulty": "intermediate",
       "estimatedMinutes": 40,
       "prerequisites": [
@@ -702,16 +1342,16 @@
       "summary": "掌握标准 AI 实验工作流：数据集划分、分层抽样、特征归一化与标准化、数据泄露 (Data Leakage) 防范、Pipeline 构建与交叉验证。",
       "position": {
         "x": 860,
-        "y": 150
+        "y": 260
       },
-      "layoutGroup": "foundations-python"
+      "layoutGroup": "machine-learning"
     },
     {
       "id": "py-iris-project",
-      "title": "12.综合实战：鸢尾花分类小项目",
-      "module": "foundations",
-      "submodule": "python",
-      "route": "/learn/foundations/python/12-py-iris-project",
+      "title": "04. 综合实战：鸢尾花分类小项目",
+      "module": "machine-learning",
+      "submodule": "overview",
+      "route": "/learn/machine-learning/12-py-iris-project",
       "difficulty": "intermediate",
       "estimatedMinutes": 45,
       "prerequisites": [
@@ -731,9 +1371,9 @@
       "summary": "阶段 0 综合大作业：端到端实现鸢尾花 (Iris) 数据集加载、EDA 观察、Pipeline 构建、模型训练、多指标评估与错判分析。",
       "position": {
         "x": 1060,
-        "y": 150
+        "y": 260
       },
-      "layoutGroup": "foundations-python"
+      "layoutGroup": "machine-learning"
     }
   ],
   "edges": [
@@ -768,44 +1408,139 @@
       "target": "rag"
     },
     {
-      "id": "e-depends-math-01-vector-matrix-dl-neuron",
-      "source": "math-01-vector-matrix",
+      "id": "e-depends-math-vector-matrix-dl-neuron",
+      "source": "math-vector-matrix",
       "target": "dl-neuron"
     },
     {
-      "id": "e-depends-math-10-optimization-descent-dl-neuron",
-      "source": "math-10-optimization-descent",
+      "id": "e-depends-math-loss-logistic-regression-dl-neuron",
+      "source": "math-loss-logistic-regression",
       "target": "dl-neuron"
     },
     {
-      "id": "e-depends-py-numpy-math-01-vector-matrix",
+      "id": "e-depends-math-hypothesis-testing-ab-data-audit-eda",
+      "source": "math-hypothesis-testing-ab",
+      "target": "data-audit-eda"
+    },
+    {
+      "id": "e-next-data-audit-eda-data-splitting-strategies",
+      "source": "data-audit-eda",
+      "target": "data-splitting-strategies"
+    },
+    {
+      "id": "e-next-data-splitting-strategies-data-leakage-preprocessing",
+      "source": "data-splitting-strategies",
+      "target": "data-leakage-preprocessing"
+    },
+    {
+      "id": "e-next-data-leakage-preprocessing-data-feature-engineering-selection",
+      "source": "data-leakage-preprocessing",
+      "target": "data-feature-engineering-selection"
+    },
+    {
+      "id": "e-next-data-feature-engineering-selection-data-column-transformer-pipeline",
+      "source": "data-feature-engineering-selection",
+      "target": "data-column-transformer-pipeline"
+    },
+    {
+      "id": "e-next-data-column-transformer-pipeline-eng-project-structure-config",
+      "source": "data-column-transformer-pipeline",
+      "target": "eng-project-structure-config"
+    },
+    {
+      "id": "e-next-eng-project-structure-config-eng-testing-data-code",
+      "source": "eng-project-structure-config",
+      "target": "eng-testing-data-code"
+    },
+    {
+      "id": "e-next-eng-testing-data-code-eng-experiment-tracking-error-analysis",
+      "source": "eng-testing-data-code",
+      "target": "eng-experiment-tracking-error-analysis"
+    },
+    {
+      "id": "e-next-eng-experiment-tracking-error-analysis-eng-reproducible-pipeline-report",
+      "source": "eng-experiment-tracking-error-analysis",
+      "target": "eng-reproducible-pipeline-report"
+    },
+    {
+      "id": "e-depends-py-numpy-math-vector-matrix",
       "source": "py-numpy",
-      "target": "math-01-vector-matrix"
+      "target": "math-vector-matrix"
     },
     {
-      "id": "e-next-math-01-vector-matrix-math-02-eigen-svd",
-      "source": "math-01-vector-matrix",
-      "target": "math-02-eigen-svd"
+      "id": "e-next-math-vector-matrix-math-linear-transform",
+      "source": "math-vector-matrix",
+      "target": "math-linear-transform"
     },
     {
-      "id": "e-depends-py-basics-math-09-calculus-gradient",
-      "source": "py-basics",
-      "target": "math-09-calculus-gradient"
+      "id": "e-next-math-linear-transform-math-subspace-projection",
+      "source": "math-linear-transform",
+      "target": "math-subspace-projection"
     },
     {
-      "id": "e-next-math-09-calculus-gradient-math-10-optimization-descent",
-      "source": "math-09-calculus-gradient",
-      "target": "math-10-optimization-descent"
+      "id": "e-next-math-subspace-projection-math-eigen-decomposition",
+      "source": "math-subspace-projection",
+      "target": "math-eigen-decomposition"
     },
     {
-      "id": "e-depends-py-basics-prob-11-probability-bayes",
-      "source": "py-basics",
-      "target": "prob-11-probability-bayes"
+      "id": "e-next-math-eigen-decomposition-math-svd-pca",
+      "source": "math-eigen-decomposition",
+      "target": "math-svd-pca"
     },
     {
-      "id": "e-next-prob-11-probability-bayes-prob-12-mle-hypothesis",
-      "source": "prob-11-probability-bayes",
-      "target": "prob-12-mle-hypothesis"
+      "id": "e-next-math-svd-pca-math-calculus-gradient",
+      "source": "math-svd-pca",
+      "target": "math-calculus-gradient"
+    },
+    {
+      "id": "e-next-math-calculus-gradient-math-gradient-jacobian-hessian",
+      "source": "math-calculus-gradient",
+      "target": "math-gradient-jacobian-hessian"
+    },
+    {
+      "id": "e-next-math-gradient-jacobian-hessian-math-gradient-descent-variants",
+      "source": "math-gradient-jacobian-hessian",
+      "target": "math-gradient-descent-variants"
+    },
+    {
+      "id": "e-next-math-gradient-descent-variants-math-modern-optimizers",
+      "source": "math-gradient-descent-variants",
+      "target": "math-modern-optimizers"
+    },
+    {
+      "id": "e-next-math-modern-optimizers-math-loss-logistic-regression",
+      "source": "math-modern-optimizers",
+      "target": "math-loss-logistic-regression"
+    },
+    {
+      "id": "e-next-math-loss-logistic-regression-math-probability-bayes",
+      "source": "math-loss-logistic-regression",
+      "target": "math-probability-bayes"
+    },
+    {
+      "id": "e-next-math-probability-bayes-math-distributions-moments",
+      "source": "math-probability-bayes",
+      "target": "math-distributions-moments"
+    },
+    {
+      "id": "e-next-math-distributions-moments-math-lln-clt-bootstrap",
+      "source": "math-distributions-moments",
+      "target": "math-lln-clt-bootstrap"
+    },
+    {
+      "id": "e-next-math-lln-clt-bootstrap-math-mle-map-loss",
+      "source": "math-lln-clt-bootstrap",
+      "target": "math-mle-map-loss"
+    },
+    {
+      "id": "e-next-math-mle-map-loss-math-hypothesis-testing-ab",
+      "source": "math-mle-map-loss",
+      "target": "math-hypothesis-testing-ab"
+    },
+    {
+      "id": "e-next-math-hypothesis-testing-ab-py-iris-project",
+      "source": "math-hypothesis-testing-ab",
+      "target": "py-iris-project"
     },
     {
       "id": "e-depends-foundations-py-environment",
@@ -883,9 +1618,14 @@
       "target": "py-visualization"
     },
     {
-      "id": "e-next-py-pandas-py-ml-workflow",
-      "source": "py-pandas",
-      "target": "py-ml-workflow"
+      "id": "e-depends-eng-reproducible-pipeline-report-ml-problem-map",
+      "source": "eng-reproducible-pipeline-report",
+      "target": "ml-problem-map"
+    },
+    {
+      "id": "e-next-ml-problem-map-py-visualization",
+      "source": "ml-problem-map",
+      "target": "py-visualization"
     },
     {
       "id": "e-next-py-visualization-py-ml-workflow",
@@ -895,6 +1635,11 @@
     {
       "id": "e-depends-py-numpy-py-ml-workflow",
       "source": "py-numpy",
+      "target": "py-ml-workflow"
+    },
+    {
+      "id": "e-depends-py-pandas-py-ml-workflow",
+      "source": "py-pandas",
       "target": "py-ml-workflow"
     },
     {

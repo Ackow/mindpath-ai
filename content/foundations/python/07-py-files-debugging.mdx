@@ -63,11 +63,11 @@ exp_dir.mkdir(exist_ok=True)
 config_file = exp_dir / "config.txt"
 
 # UTF-8 健壮写入
-config_file.write_text("model: resnet50\nlr: 0.001\nbatch_size: 32", encoding="utf-8")
+config_file.write_text("model: resnet50\\nlr: 0.001\\nbatch_size: 32", encoding="utf-8")
 
 # UTF-8 健壮读取
 content = config_file.read_text(encoding="utf-8")
-print("读取到的配置文件内容:\n" + content)
+print("读取到的配置文件内容:\\n" + content)
 `}
 </RunnableCodeBlock>
 读写文件时，务必使用 **`with` 语句**。它保证即便在读取过程中发生异常，文件句柄也会被自动关闭，防止文件锁死与内存泄漏。
@@ -113,14 +113,24 @@ metrics = {
 
 # 序列化为 JSON 格式字符串
 json_str = json.dumps(metrics, indent=2, ensure_ascii=False)
-print("格式化 JSON 输出:\n" + json_str)
+print("格式化 JSON 输出:\\n" + json_str)
 
 # 反序列化
 parsed_data = json.loads(json_str)
-print("\n解析得到的模型准确率:", parsed_data["accuracy"])`}
+print("\\n解析得到的模型准确率:", parsed_data["accuracy"])`}
 </RunnableCodeBlock>
 
 #### 2. 读写 CSV 表格与标注数据
+
+| 方法                           | 说明                                | 示例                                               |
+| :----------------------------- | :---------------------------------- | :------------------------------------------------- |
+| **`csv.reader()`**             | 从文件对象读取 CSV 数据             | `reader = csv.reader(file)`                        |
+| **`csv.writer()`**             | 将数据写入 CSV 文件                 | `writer = csv.writer(file)`                        |
+| **`csv.DictReader()`**         | 将 CSV 行读取为字典（带表头）       | `dict_reader = csv.DictReader(file)`               |
+| **`csv.DictWriter()`**         | 将字典写入 CSV 文件（需指定字段名） | `dict_writer = csv.DictWriter(file, fieldnames)`   |
+| **`csv.register_dialect()`**   | 注册自定义 CSV 格式（如分隔符）     | `csv.register_dialect('mydialect', delimiter='|')` |
+| **`csv.unregister_dialect()`** | 删除已注册的方言                    | `csv.unregister_dialect('mydialect')`              |
+| **`csv.list_dialects()`**      | 列出所有已注册的方言                | `print(csv.list_dialects())`                       |
 
 在 AI 数据清洗中，经常需要读写 CSV 格式的样本列表与标注信息。标准库 `csv` 配合 `DictWriter` / `DictReader` 可以高效安全地读写字典格式的表格行：
 

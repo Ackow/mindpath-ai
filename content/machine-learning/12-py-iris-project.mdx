@@ -1,26 +1,26 @@
 ---
 id: py-iris-project
-title: 12.综合实战：鸢尾花分类小项目
-module: foundations
-submodule: python
-order: 12
+title: 04. 综合实战：鸢尾花分类小项目
+module: machine-learning
+submodule: overview
+order: 4
 difficulty: intermediate
 prerequisites: [py-ml-workflow]
 relatedNotes: [py-pandas, py-visualization]
 nextNotes: []
 map:
-  layoutGroup: foundations-python
+  layoutGroup: machine-learning
 estimatedMinutes: 45
 tags: [实战项目, Iris, scikit-learn, 分类任务]
 summary: 阶段 0 综合大作业：端到端实现鸢尾花 (Iris) 数据集加载、EDA 观察、Pipeline 构建、模型训练、多指标评估与错判分析。
 symbols:
-  - {symbol: "X \\in \\mathbb{R}^{n \\times d}", meaning: "样本特征矩阵，n 行样本，d 个特征"}
-  - {symbol: "y \\in \\{0, 1, 2\\}^n", meaning: "类别标签向量，分别代表 Setosa、Versicolor、Virginica"}
-  - {symbol: "\\text{Accuracy}", meaning: "准确率，预测正确的样本数占总样本数的比例"}
-  - {symbol: "\\text{Precision}", meaning: "精确率，被模型预测为某一类别的样本中实际属于该类别的比例"}
-  - {symbol: "\\text{Recall}", meaning: "召回率，实际属于某一类别的样本中被模型正确预测出来的比例"}
-  - {symbol: "F_1", meaning: "F1 分数，精确率与召回率的调和平均值"}
-  - {symbol: "\\mathbf{C}_{i, j}", meaning: "混淆矩阵中实际类别为 i 且被预测为类别 j 的样本数量"}
+  - {symbol: "X \\in \\mathbb{R}^{n \\times d}", mean: "样本特征矩阵，n 行样本，d 个特征"}
+  - {symbol: "y \\in \\{0, 1, 2\\}^n", mean: "类别标签向量，分别代表 Setosa、Versicolor、Virginica"}
+  - {symbol: "\\text{Accuracy}", mean: "准确率，预测正确的样本数占总样本数的比例"}
+  - {symbol: "\\text{Precision}", mean: "精确率，被模型预测为某一类别的样本中实际属于该类别的比例"}
+  - {symbol: "\\text{Recall}", mean: "召回率，实际属于某一类别的样本中被模型正确预测出来的比例"}
+  - {symbol: "F_1", mean: "F1 分数，精确率与召回率的调和平均值"}
+  - {symbol: "\\mathbf{C}_{i, j}", mean: "混淆矩阵中实际类别为 i 且被预测为类别 j 的样本数量"}
 ---
 
 # 12. 综合实战：鸢尾花分类小项目
@@ -113,8 +113,6 @@ plt.tight_layout()
 plt.show()
 `}
 </RunnableCodeBlock>
-
-![鸢尾花数据集特征空间矩阵分布图](/assets/python/setosa.png)
 
 <ConceptCard title="EDA 发现与特征洞察" type="tip">
 * **Setosa（山鸢尾）**：在花瓣长度（Petal Length）和花瓣宽度（Petal Width）维度上与另外两个种类存在明显的线性可分边界（Linearly Separable），分类难度极低。

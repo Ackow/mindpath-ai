@@ -25,6 +25,8 @@ import { VectorProjectionLab } from '@/components/animations/VectorProjectionLab
 import { SvdRankLab } from '@/components/animations/SvdRankLab';
 import { GradientDescentLab } from '@/components/animations/GradientDescentLab';
 import { CentralLimitTheoremLab } from '@/components/animations/CentralLimitTheoremLab';
+import { PandasDataImportLab } from '@/components/animations/PandasDataImportLab';
+import { MatplotlibParamsLab } from '@/components/animations/MatplotlibParamsLab';
 import { ReactFlowDiagram } from '@/components/mdx/ReactFlowDiagram';
 import { MermaidDiagram } from '@/components/mdx/MermaidDiagram';
 import { CodeCopyButton } from '@/components/mdx/CodeCopyButton';
@@ -169,6 +171,8 @@ export const mdxComponents = {
   SvdRankLab,
   GradientDescentLab,
   CentralLimitTheoremLab,
+  PandasDataImportLab,
+  MatplotlibParamsLab,
   ReactFlowDiagram,
   MermaidDiagram,
   img: (props: any) => <ZoomableImage {...props} />,
@@ -359,7 +363,7 @@ export async function getMdxNoteBySlug(slugArray: string[]): Promise<MdxNoteData
       let contentNode: React.ReactNode = null;
       try {
         const compiled = await compileMDX({
-          source: normalizeAlerts(normalizeMarkdownTables(normalizeDisplayMath(fileContent))),
+          source: normalizeAlerts(normalizeDisplayMath(normalizeMarkdownTables(fileContent))),
           options: {
             parseFrontmatter: true,
             mdxOptions: {
