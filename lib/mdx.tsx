@@ -29,6 +29,7 @@ import { PandasDataImportLab } from '@/components/animations/PandasDataImportLab
 import { MatplotlibParamsLab } from '@/components/animations/MatplotlibParamsLab';
 import { ReactFlowDiagram } from '@/components/mdx/ReactFlowDiagram';
 import { MermaidDiagram } from '@/components/mdx/MermaidDiagram';
+import { InteractiveQuiz } from '@/components/mdx/InteractiveQuiz';
 import { CodeCopyButton } from '@/components/mdx/CodeCopyButton';
 import { TaskCheckbox } from '@/components/mdx/TaskCheckbox';
 import { ZoomableImage } from '@/components/mdx/ZoomableImage';
@@ -175,6 +176,7 @@ export const mdxComponents = {
   MatplotlibParamsLab,
   ReactFlowDiagram,
   MermaidDiagram,
+  InteractiveQuiz,
   img: (props: any) => <ZoomableImage {...props} />,
   // 增加分割线上下充裕边距，彻底切断 margin 塌陷
   hr: (props: any) => (

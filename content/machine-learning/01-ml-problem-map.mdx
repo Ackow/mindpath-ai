@@ -5,7 +5,7 @@ module: machine-learning
 submodule: overview
 order: 1
 difficulty: beginner
-prerequisites: [eng-reproducible-pipeline-report]
+prerequisites: [py-pandas]
 relatedNotes: []
 nextNotes: [py-visualization]
 map:
@@ -444,7 +444,44 @@ print(df_results.to_string(index=False))
 
 ---
 
-## 11. 下一步
+## 11. 课后概念自测
+
+<InteractiveQuiz
+  title="🎯 机器学习问题地图与避坑规范自测"
+  questions={[
+    {
+      id: "q1",
+      type: "single",
+      question: "在确定预测时点 (Cutoff Time T₀) 时，以下哪项做法是正确的？",
+      options: [
+        "A. 允许特征包含 T₀ 之后发生的业务行为，因为这能大幅提高离线模型准确率",
+        "B. 特征 X 必须严格限制在 T₀ 之前可获得，严禁使用 T₀ 之后的数据，防范数据泄露",
+        "C. 预测时点只影响离线评估，线上部署时可以随意改变特征取值时间",
+        "D. 目标标签 y 应该和特征 X 在完全相同的时间点被观测"
+      ],
+      answer: 1,
+      explanation: "【防泄露第一红线】特征 X 必须严格限制在预测时刻 T₀ 之前！如果特征包含了 T₀ 之后的信息，模型将在训练时“穿越未来”，导致离线准确率极高但上线一秒崩溃。"
+    },
+    {
+      id: "q2",
+      type: "code-output",
+      question: "观察以下评估数据切分代码，指出其存在的隐患：",
+      codeSnippet: "from sklearn.model_selection import train_test_split\n# 对带有强时间序列属性的用户留存数据进行切分\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)",
+      options: [
+        "A. 没有任何隐患，这是标准推荐写法",
+        "B. 对强时间序列数据使用随机打乱 (Random Split) 会导致未来的数据泄漏给过去，破坏时间先后约束",
+        "C. test_size 应该设为 0.5",
+        "D. random_state 不应该指定固定数值"
+      ],
+      answer: 1,
+      explanation: "时间序列/金融/留存预测等带有明显时间顺序的数据，严禁使用随机打乱切分！必须严格按照时间先后分割（例如前80%时间段做训练，后20%做测试），否则会导致未来泄漏。"
+    }
+  ]}
+/>
+
+---
+
+## 12. 下一步
 
 在成功建立了机器学习问题地图与统一描述视角后，我们将进一步探讨如何将抽象的业务需求转化为精确的数学指标与代价矩阵：
 
