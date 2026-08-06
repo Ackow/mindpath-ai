@@ -70,13 +70,27 @@ function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialE
       continue;
     }
 
-    // 正则匹配箭号连接: A["Label"] -- 标签 --> B["Label"] 或 A --> B
-    const arrowMatch = line.match(/(.+?)\s*(?:-->|---|--\s*(.*?)\s*-->|--\s*(.*?)\s*---)\s*(.+)/);
-    if (arrowMatch) {
-      const leftPart = arrowMatch[1].trim();
-      const edgeLabel = (arrowMatch[2] || arrowMatch[3]) ? cleanLabelText(arrowMatch[2] || arrowMatch[3]) : undefined;
-      const rightPart = arrowMatch[4].trim();
+    let leftPart = '';
+    let rightPart = '';
+    let edgeLabel: string | undefined = undefined;
 
+    // 1. 优先匹配带竖线标签的箭头: A -->|"label"| B 或 A -->|label| B
+    const pipeLabelMatch = line.match(/(.+?)\s*-->\s*\|"?([^"|]+)"?\|\s*(.+)/);
+    if (pipeLabelMatch) {
+      leftPart = pipeLabelMatch[1].trim();
+      edgeLabel = cleanLabelText(pipeLabelMatch[2]);
+      rightPart = pipeLabelMatch[3].trim();
+    } else {
+      // 2. 匹配标准箭头: A --> B, A -- label --> B, A --- B
+      const stdMatch = line.match(/(.+?)\s*(?:-->|---|--\s*(.*?)\s*-->|--\s*(.*?)\s*---)\s*(.+)/);
+      if (stdMatch) {
+        leftPart = stdMatch[1].trim();
+        edgeLabel = (stdMatch[2] || stdMatch[3]) ? cleanLabelText(stdMatch[2] || stdMatch[3]) : undefined;
+        rightPart = stdMatch[4].trim();
+      }
+    }
+
+    if (leftPart && rightPart) {
       const sourceObj = parseNodePart(leftPart);
       const targetObj = parseNodePart(rightPart);
 
@@ -149,12 +163,12 @@ function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialE
 
   // 计算平面坐标 (X, Y)
   const initialNodes: Node[] = [];
-  const LEVEL_HEIGHT = 140; // 垂直层间距
-  const NODE_WIDTH = 260;   // 水平节点卡片宽度
+  const LEVEL_HEIGHT = 180; // 垂直层间距 (拉长折线避让标签)
+  const NODE_SPACING = 380; // 水平节点卡片间距 (由 260 扩至 380 避免分支标签重叠)
 
   levelGroups.forEach((nodeIdsInLevel, level) => {
     const totalCount = nodeIdsInLevel.length;
-    const startX = -((totalCount - 1) * NODE_WIDTH) / 2;
+    const startX = -((totalCount - 1) * NODE_SPACING) / 2;
 
     nodeIdsInLevel.forEach((id, index) => {
       const info = nodesMap.get(id)!;
@@ -166,7 +180,7 @@ function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialE
         id,
         data: { label: info.label },
         position: {
-          x: startX + index * NODE_WIDTH,
+          x: startX + index * NODE_SPACING,
           y: level * LEVEL_HEIGHT,
         },
         targetPosition: Position.Top,   // 上进
@@ -189,21 +203,32 @@ function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialE
   });
 
   // 构造边 (平滑折线 smoothstep)
-  const initialEdges: Edge[] = rawEdges.map((edge, idx) => ({
-    id: `e-${edge.source}-${edge.target}-${idx}`,
-    source: edge.source,
-    target: edge.target,
-    label: edge.label,
-    type: 'smoothstep', // 平滑折线体现清晰的前后前后流动
-    animated: true,
-    labelStyle: { fill: '#0D9488', fontWeight: 700, fontSize: 11 },
-    labelBgStyle: { fill: '#F0FDFA', rx: 6, ry: 6 },
-    style: { stroke: '#0D9488', strokeWidth: 2 },
-    markerEnd: {
-      type: MarkerType.ArrowClosed,
-      color: '#0D9488',
-    },
-  }));
+  const initialEdges: Edge[] = rawEdges.map((edge, idx) => {
+    // 智能美化：若分支标签过长，在斜杠 '/' 处进行适度自动分行，防止横向过长碰撞
+    let formattedLabel = edge.label;
+    if (formattedLabel && formattedLabel.length > 10 && formattedLabel.includes(' / ')) {
+      const parts = formattedLabel.split(' / ');
+      const mid = Math.ceil(parts.length / 2);
+      formattedLabel = parts.slice(0, mid).join(' / ') + '\n' + parts.slice(mid).join(' / ');
+    }
+
+    return {
+      id: `e-${edge.source}-${edge.target}-${idx}`,
+      source: edge.source,
+      target: edge.target,
+      label: formattedLabel,
+      type: 'smoothstep',
+      animated: true,
+      labelStyle: { fill: '#0D9488', fontWeight: 700, fontSize: 10, textAlign: 'center', whiteSpace: 'pre-wrap' },
+      labelBgStyle: { fill: '#F0FDFA', rx: 6, ry: 6, stroke: '#99F6E4', strokeWidth: 1 },
+      labelBgPadding: [6, 4] as [number, number],
+      style: { stroke: '#0D9488', strokeWidth: 2 },
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        color: '#0D9488',
+      },
+    };
+  });
 
   return { initialNodes, initialEdges };
 }
