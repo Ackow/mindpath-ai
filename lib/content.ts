@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 import globalGraph from '../maps/global.json';
+import contentStore from '../maps/content-store.json';
 
 const contentDirectory = path.join(process.cwd(), 'content');
 

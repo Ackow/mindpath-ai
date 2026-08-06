@@ -23,7 +23,8 @@ export const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ chart }) => {
         setError(null);
 
         // 动态引入 CDN 上的 mermaid 模块，兼容 Edge 与 SSR
-        const mermaidModule = await import(/* webpackIgnore: true */ 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs');
+        // @ts-ignore
+        const mermaidModule: any = await import(/* webpackIgnore: true */ 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs');
         const mermaid = mermaidModule.default || mermaidModule;
 
         mermaid.initialize({

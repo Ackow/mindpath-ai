@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
-import { ChevronDown, ChevronRightIcon, CheckCircle2 } from 'lucide-react';
+import { ChevronRight, ChevronRightIcon, CheckCircle2 } from 'lucide-react';
 import { getGlobalGraphNodes, getHierarchicalModuleTree } from '@/lib/graph';
 import { readDocumentProgress } from '@/components/mdx/TaskCheckbox';
 
@@ -17,6 +17,7 @@ export const ReaderSidebar: React.FC = () => {
   const moduleNodes = useMemo(() => allNodes.filter((node) => node.module === currentNode.module && node.route.startsWith('/learn/')), [allNodes, currentNode.module]);
   const [revision, setRevision] = useState(0);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [openSubmodules, setOpenSubmodules] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const refresh = () => setRevision((value) => value + 1);
@@ -24,6 +25,30 @@ export const ReaderSidebar: React.FC = () => {
     window.addEventListener('ai-learning:document-progress', refresh);
     return () => window.removeEventListener('ai-learning:document-progress', refresh);
   }, []);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('reader_sidebar_open_submodules');
+      if (saved) {
+        setOpenSubmodules(JSON.parse(saved));
+      }
+    } catch {
+      // Fallback to default state
+    }
+  }, []);
+
+  const toggleSubmodule = (subId: string) => {
+    setOpenSubmodules((prev) => {
+      const currentVal = prev[subId] ?? true;
+      const nextState = { ...prev, [subId]: !currentVal };
+      try {
+        localStorage.setItem('reader_sidebar_open_submodules', JSON.stringify(nextState));
+      } catch {
+        // Ignored
+      }
+      return nextState;
+    });
+  };
 
   const progressFor = (route: string) => {
     void revision;
@@ -38,21 +63,65 @@ export const ReaderSidebar: React.FC = () => {
   const modulePercent = moduleNodes.length > 0 ? Math.round((moduleCompleted / moduleNodes.length) * 100) : 0;
 
   return (
-    <div className="w-full shrink-0 space-y-4 md:sticky md:top-20 md:self-start md:w-64 xl:w-72">
+    <div className="w-full shrink-0 space-y-4 md:sticky md:top-20 md:self-start md:w-64 xl:w-72 select-none">
       <Card className="space-y-4 border border-slate-200/80 p-4 shadow-sm">
         <h2 className="flex items-center justify-between border-b border-slate-100 pb-3 text-sm font-extrabold text-slate-800">
           <span className="truncate">{currentModuleGroup.title}</span>
           <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{moduleNodes.length} 章节</span>
         </h2>
-        <div className="max-h-[72vh] space-y-3 overflow-y-auto pr-1 text-xs">
-          {currentModuleGroup.submodules.length > 0 ? currentModuleGroup.submodules.map((sub) => (
-            <div key={sub.id} className="space-y-1">
-              <div className="flex items-center gap-1.5 py-1 font-bold text-slate-700"><ChevronDown className="h-3.5 w-3.5 shrink-0 text-teal-600" /><span className="font-extrabold text-slate-800">{sub.title}</span></div>
-              <div className="space-y-1 pl-3">
-                {sub.children.map((node) => <ReaderChapterLink key={node.id} node={node} active={node.id === currentNode.id} percent={progressFor(node.route)} />)}
-              </div>
-            </div>
-          )) : moduleNodes.map((node) => <ReaderChapterLink key={node.id} node={node} active={node.id === currentNode.id} percent={progressFor(node.route)} />)}
+        <div className="max-h-[72vh] space-y-2 overflow-y-auto pr-1 text-xs">
+          {currentModuleGroup.submodules.length > 0 ? (
+            currentModuleGroup.submodules.map((sub) => {
+              const isOpen = openSubmodules[sub.id] ?? true;
+              return (
+                <div key={sub.id} className="space-y-1">
+                  <div
+                    onClick={() => toggleSubmodule(sub.id)}
+                    className="flex items-center justify-between py-1.5 px-2 rounded-lg text-slate-700 hover:bg-slate-100/80 cursor-pointer transition-colors group"
+                  >
+                    <div className="flex items-center gap-1.5 truncate">
+                      <ChevronRight
+                        className={`h-3.5 w-3.5 shrink-0 text-slate-400 group-hover:text-teal-600 transition-transform duration-200 ${
+                          isOpen ? 'rotate-90 text-teal-600' : 'rotate-0'
+                        }`}
+                      />
+                      <span className="font-extrabold text-slate-800 group-hover:text-teal-600 transition-colors truncate">
+                        {sub.title}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-semibold text-slate-400 shrink-0">
+                      {sub.children.length} 篇
+                    </span>
+                  </div>
+                  <div
+                    className={`grid transition-all duration-200 ease-in-out ${
+                      isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
+                    }`}
+                  >
+                    <div className="overflow-hidden space-y-1 pl-2 border-l border-slate-200/80 ml-2.5">
+                      {sub.children.map((node) => (
+                        <ReaderChapterLink
+                          key={node.id}
+                          node={node}
+                          active={node.id === currentNode.id}
+                          percent={progressFor(node.route)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            moduleNodes.map((node) => (
+              <ReaderChapterLink
+                key={node.id}
+                node={node}
+                active={node.id === currentNode.id}
+                percent={progressFor(node.route)}
+              />
+            ))
+          )}
         </div>
         <div className="space-y-3 border-t border-slate-100 pt-4">
           <div className="flex items-baseline justify-between"><span className="text-xs font-bold text-slate-500">本模块进度</span><span className="text-xl font-black text-teal-600">{modulePercent}%</span></div>
@@ -73,3 +142,4 @@ function ReaderChapterLink({ node, active, percent }: { node: ReturnType<typeof 
     </Link>
   );
 }
+

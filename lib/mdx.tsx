@@ -1,8 +1,10 @@
 import React from 'react';
+import katex from 'katex';
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 import { compileMDX } from 'next-mdx-remote/rsc';
+import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import rehypeHighlight from 'rehype-highlight';
@@ -21,12 +23,101 @@ import { ClassInheritanceAnimation } from '@/components/animations/ClassInherita
 import { PdbDebuggerAnimation } from '@/components/animations/PdbDebuggerAnimation';
 import { VectorProjectionLab } from '@/components/animations/VectorProjectionLab';
 import { SvdRankLab } from '@/components/animations/SvdRankLab';
+import { GradientDescentLab } from '@/components/animations/GradientDescentLab';
+import { CentralLimitTheoremLab } from '@/components/animations/CentralLimitTheoremLab';
 import { ReactFlowDiagram } from '@/components/mdx/ReactFlowDiagram';
 import { MermaidDiagram } from '@/components/mdx/MermaidDiagram';
 import { CodeCopyButton } from '@/components/mdx/CodeCopyButton';
 import { TaskCheckbox } from '@/components/mdx/TaskCheckbox';
 import { ZoomableImage } from '@/components/mdx/ZoomableImage';
+import { CalloutAlert } from '@/components/mdx/CalloutAlert';
 import contentStore from '../maps/content-store.json';
+
+function normalizeAlerts(source: string) {
+  const alertBlockRegex = /(?:^[ \t]*>[ \t]*\[\!(WARNING|NOTE|TIP|IMPORTANT|CAUTION)\][ \t]*(?:\r?\n|$))(?:^[ \t]*>.*(?:\r?\n|$))*/gm;
+
+  return source.replace(alertBlockRegex, (block) => {
+    const lines = block.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) return block;
+
+    const firstLineMatch = lines[0].match(/\[\!(WARNING|NOTE|TIP|IMPORTANT|CAUTION)\]/i);
+    if (!firstLineMatch) return block;
+
+    const alertType = firstLineMatch[1].toLowerCase();
+    const bodyLines = lines.slice(1).map(l => l.replace(/^[ \t]*>[ \t]?/, ''));
+    const bodyText = bodyLines.join('\n').trim();
+
+    return `\n\n<CalloutAlert type="${alertType}">\n\n${bodyText}\n\n</CalloutAlert>\n\n`;
+  });
+}
+
+function normalizeDisplayMath(source: string) {
+  // 1. Prerender $$...$$ display math into static KaTeX HTML
+  let result = source.replace(/\$\$([\s\S]+?)\$\$/g, (_match, formula: string) => {
+    try {
+      const html = katex.renderToString(formula.trim(), { displayMode: true, throwOnError: false });
+      return `\n\n<span className="katex-display block my-6 overflow-x-auto text-center" dangerouslySetInnerHTML={{ __html: ${JSON.stringify(html)} }} />\n\n`;
+    } catch {
+      return `\n\n$$${formula}$$\n\n`;
+    }
+  });
+
+  // 2. Prerender $...$ inline math into static KaTeX HTML (skipping JSX tags/attributes)
+  result = result.replace(/(<[^>]+>)|((?<!\$)\$([^\$\n]+?)\$(?!\$))/g, (match, isTag, _isMath, formula) => {
+    if (isTag) return match; // Keep JSX tags/attributes untouched
+    if (formula) {
+      try {
+        const html = katex.renderToString(formula.trim(), { displayMode: false, throwOnError: false });
+        return `<span className="katex-inline inline-block font-mono" dangerouslySetInnerHTML={{ __html: ${JSON.stringify(html)} }} />`;
+      } catch {
+        return `$${formula}$`;
+      }
+    }
+    return match;
+  });
+
+  return result;
+}
+
+function normalizeMarkdownTables(source: string) {
+  const tableBlockRegex = /(?:^[ \t]*\|.+?\|[ \t]*(?:\r?\n|$))+/gm;
+
+  return source.replace(tableBlockRegex, (block) => {
+    const rawLines = block.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    if (rawLines.length < 2) return block;
+
+    const sepIdx = rawLines.findIndex(l => l.includes('---') && l.includes('|'));
+    if (sepIdx <= 0) return block;
+
+    const headerLine = rawLines[0];
+    const dataLines = rawLines.slice(sepIdx + 1);
+
+    const splitCells = (line: string) => {
+      let trimmed = line.trim();
+      if (trimmed.startsWith('|')) trimmed = trimmed.slice(1);
+      if (trimmed.endsWith('|')) trimmed = trimmed.slice(0, -1);
+      return trimmed.split('|').map(c => c.trim());
+    };
+
+    const headers = splitCells(headerLine);
+    const rows = dataLines.map(splitCells);
+
+    const thClass = 'px-4 py-3 font-extrabold text-slate-900 bg-slate-100 border-b-2 border-r border-slate-300 text-left text-xs sm:text-sm whitespace-nowrap last:border-r-0';
+    const tdClass = 'px-4 py-3 text-slate-700 leading-relaxed border-b border-r border-slate-200 text-xs sm:text-sm last:border-r-0';
+
+    const headerHtml = `<thead><tr>${headers.map(h => `<th className="${thClass}">${h}</th>`).join('')}</tr></thead>`;
+    const bodyHtml = `<tbody>${rows.map((r, ri) => `<tr className="${ri % 2 === 1 ? 'bg-slate-50/80' : 'bg-white'}">${r.map((c, ci) => `<td className="${tdClass}${ri === rows.length - 1 ? ' border-b-0' : ''}">${c}</td>`).join('')}</tr>`).join('')}</tbody>`;
+
+    const tableWrapper = `<div className="my-7 overflow-x-auto rounded-xl border-2 border-slate-300 bg-white shadow-sm"><table className="w-full border-collapse text-left text-xs sm:text-sm min-w-full">\n${headerHtml}\n${bodyHtml}\n</table></div>`;
+
+    return `\n\n${tableWrapper}\n\n`;
+  });
+}
+
+function DisplayMath({ expression }: { expression: string }) {
+  const html = katex.renderToString(expression, { throwOnError: false });
+  return <span className="katex-display" dangerouslySetInnerHTML={{ __html: html }} />;
+}
 
 function remarkSimpleTable() {
   return (tree: any) => {
@@ -60,7 +151,9 @@ function remarkSimpleTable() {
 }
 
 export const mdxComponents = {
+  DisplayMath,
   ConceptCard,
+  CalloutAlert,
   RunnableCodeBlock,
   NotebookLifecycle,
   FlowControlAnimation,
@@ -74,6 +167,8 @@ export const mdxComponents = {
   PdbDebuggerAnimation,
   VectorProjectionLab,
   SvdRankLab,
+  GradientDescentLab,
+  CentralLimitTheoremLab,
   ReactFlowDiagram,
   MermaidDiagram,
   img: (props: any) => <ZoomableImage {...props} />,
@@ -264,12 +359,12 @@ export async function getMdxNoteBySlug(slugArray: string[]): Promise<MdxNoteData
       let contentNode: React.ReactNode = null;
       try {
         const compiled = await compileMDX({
-          source: fileContent,
+          source: normalizeAlerts(normalizeMarkdownTables(normalizeDisplayMath(fileContent))),
           options: {
             parseFrontmatter: true,
             mdxOptions: {
-              remarkPlugins: [remarkSimpleTable as any, remarkMath as any],
-              rehypePlugins: [rehypeHighlight as any, rehypeKatex as any],
+              remarkPlugins: [],
+              rehypePlugins: [rehypeHighlight as any],
             },
           },
           components: mdxComponents,

@@ -21,23 +21,23 @@ export function SvdRankLab() {
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200/60">
-            <Layers className="w-3.5 h-3.5" />
+            <Layers className="w-4 h-4" />
             低秩近似互动演练
           </span>
-          <h4 className="text-sm font-bold text-slate-800">截断 SVD 阶数 (Rank k) 评估实验室</h4>
+          <h4 className="text-base font-bold text-slate-800">截断 SVD 阶数 (Rank k) 评估实验室</h4>
         </div>
         <button
           onClick={handleReset}
-          className="flex items-center gap-1 text-slate-500 hover:text-slate-800 text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors cursor-pointer"
+          className="flex items-center gap-1 text-slate-600 hover:text-slate-900 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors cursor-pointer"
         >
-          <RotateCcw className="w-3 h-3" />
+          <RotateCcw className="w-3.5 h-3.5" />
           重置参数
         </button>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_260px]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         {/* 奇异值柱状图柱体视图 */}
-        <div className="flex min-h-44 items-end gap-4 rounded-xl border border-slate-200/80 bg-slate-50/60 px-5 pb-8 pt-5 justify-around">
+        <div className="flex min-h-56 items-end gap-4 rounded-xl border border-slate-200/80 bg-slate-50/60 px-6 pb-8 pt-6 justify-around">
           {singularValues.map((value, index) => (
             <div key={value} className="flex flex-1 flex-col items-center gap-2 max-w-[50px]">
               <div
@@ -55,17 +55,20 @@ export function SvdRankLab() {
           ))}
         </div>
 
-        {/* 右侧滑块控制与能量/误差评估面板 */}
+        {/* 右侧滑块控制与能量/误差评估面板（加宽 340px + 字体放大） */}
         <div className="space-y-4 flex flex-col justify-between">
-          <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-200/60 space-y-2">
+          <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-200/60 space-y-3">
             <div className="flex justify-between items-center text-xs font-semibold text-slate-700">
-              <span>保留截断阶数 k</span>
-              <span className="px-2 py-0.5 rounded bg-teal-100 text-teal-800 font-mono font-bold text-xs">
+              <div>
+                <span className="text-sm font-bold text-teal-800">保留截断阶数 k</span>
+                <span className="text-xs text-slate-500 ml-1.5 font-normal">(保留的最大奇异值个数)</span>
+              </div>
+              <span className="px-2.5 py-0.5 rounded bg-teal-100 text-teal-800 font-mono font-bold text-xs">
                 k = {rank}
               </span>
             </div>
             <input
-              className="w-full accent-teal-600 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+              className="w-full accent-teal-600 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
               type="range"
               min="1"
               max={singularValues.length}
@@ -73,12 +76,21 @@ export function SvdRankLab() {
               value={rank}
               onChange={(event) => setRank(Number(event.target.value))}
             />
+            <p className="text-xs text-slate-600 leading-relaxed border-t border-slate-200/50 pt-2.5 font-sans">
+              💡 <strong>作用说明</strong>：调整截断阶数 $k$。$k=1$ 压缩率最高（只保留第1个主特征成分）；$k=4$ 无损全量保留。
+            </p>
           </div>
 
-          <div className="rounded-xl border border-teal-200/80 bg-teal-50/60 p-3.5 text-xs text-teal-950 leading-relaxed shadow-xs space-y-1.5 font-mono">
-            <div>保留能量比 (Energy): <strong className="text-teal-700 font-bold">{(retainedEnergy * 100).toFixed(1)}%</strong></div>
-            <div>重建误差 ||A - A_k||_F: <strong className="text-amber-700 font-bold">{error.toFixed(3)}</strong></div>
-            <div className="pt-1 text-[11px] text-slate-500 font-sans border-t border-teal-200/60">
+          <div className="rounded-xl border border-teal-200/80 bg-teal-50/60 p-4 text-xs text-teal-950 leading-relaxed shadow-xs space-y-2 font-mono">
+            <div className="flex justify-between items-center">
+              <span className="font-sans text-slate-600">保留能量比 (Energy):</span>
+              <strong className="text-teal-700 font-bold text-xs">{(retainedEnergy * 100).toFixed(1)}%</strong>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="font-sans text-slate-600">重建误差 ||A - A_k||_F:</span>
+              <strong className="text-amber-700 font-bold text-xs">{error.toFixed(3)}</strong>
+            </div>
+            <div className="pt-1.5 text-xs text-slate-500 font-sans border-t border-teal-200/60 leading-relaxed">
               💡 理论提示：Frobenius 范数重建误差的平方等于所有被抛弃奇异值平方之和。
             </div>
           </div>

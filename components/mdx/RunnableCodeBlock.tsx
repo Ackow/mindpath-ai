@@ -103,43 +103,61 @@ print(f"z = {z:.2f}")`,
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Dynamic Python Token Syntax Highlighter (Restored Original Rainbow Highlighting)
+  // Dynamic Python Token Syntax Highlighter (PyCharm Darcula Theme Style)
   const renderHighlightedPython = (codeText: string) => {
     const safeText = typeof codeText === 'string' ? codeText : String(codeText || '');
     const rawLines = safeText.split('\n');
+
     return rawLines.map((line, lineIdx) => {
-      const trimmed = line.trim();
       const lineClassName = 'min-h-[1.5em] whitespace-pre font-mono';
+      const trimmed = line.trim();
+
       if (trimmed.startsWith('#')) {
         return (
-          <div key={lineIdx} className={`${lineClassName} text-slate-500 italic`}>
+          <div key={lineIdx} className={`${lineClassName} text-[#808080] italic`}>
             {line || ' '}
           </div>
         );
       }
 
-      // Safe Tokenization preserving indentation and spacing
-      const tokens = line.split(/(\s+|[(),=**"':.])/);
+      // Multi-layer PyCharm syntax tokenization
+      const tokens = line.split(/(".*?"|'.*?'|#.*$|\b\d+\.?\d*\b|\b[a-zA-Z_]\w*\b|[(),=**+\-/:.@<>]|\s+)/).filter(Boolean);
+
       return (
         <div key={lineIdx} className={lineClassName}>
           {line ? tokens.map((token, tokenIdx) => {
             if (!token) return null;
-            if (/^(import|from|as|def|class|return|if|else|elif|for|in|while|try|except|finally|with|print|raise)$/.test(token)) {
-              return <span key={tokenIdx} className="text-purple-400 font-bold">{token}</span>;
+
+            // PyCharm Comment: #808080 (Grey Italic)
+            if (token.startsWith('#')) {
+              return <span key={tokenIdx} className="text-[#808080] italic">{token}</span>;
             }
-            if (/^(dataclass|field|asdict|parse_args|add_argument|ArgumentParser|Path|exists|mkdir|write_text|read_text|dumps|loads|dump|load)$/.test(token)) {
-              return <span key={tokenIdx} className="text-sky-300 font-semibold">{token}</span>;
-            }
-            if (/^-?\d+\.?\d*$/.test(token)) {
-              return <span key={tokenIdx} className="text-orange-300 font-bold">{token}</span>;
-            }
+            // PyCharm String: #7C9D6B (Warm Olive Green)
             if (/^(".*?"|'.*?')$/.test(token)) {
-              return <span key={tokenIdx} className="text-amber-300 font-medium">{token}</span>;
+              return <span key={tokenIdx} className="text-[#7C9D6B] font-medium">{token}</span>;
             }
-            if (/^[=**+\-/:.@]$/.test(token)) {
-              return <span key={tokenIdx} className="text-pink-400 font-bold">{token}</span>;
+            // PyCharm Keyword: #CC7832 (Classic Orange-Brown)
+            if (/^(import|from|as|def|class|return|if|else|elif|for|in|while|try|except|finally|with|print|raise|pass|break|continue|is|not|and|or|lambda|yield|None|True|False)$/.test(token)) {
+              return <span key={tokenIdx} className="text-[#CC7832] font-bold">{token}</span>;
             }
-            return <span key={tokenIdx} className="text-slate-200">{token}</span>;
+            // PyCharm Decorator: #BBB529 (Olive Yellow)
+            if (token.startsWith('@')) {
+              return <span key={tokenIdx} className="text-[#BBB529] font-semibold">{token}</span>;
+            }
+            // PyCharm Function/Method Calls & Builtin Types: #FFC66D (Golden Yellow)
+            if (/^(np|pd|plt|sns|tf|torch|nn|F|sklearn|os|sys|math|random|json|dataclass|len|range|enumerate|zip|map|filter|list|dict|set|tuple|int|float|str|type|super|isinstance|sum|max|min|abs|open|array|zeros|ones|arange|linspace|eye|dot|matmul|mean|std|sum|argmin|argmax|reshape|transpose|subplots|plot|scatter|hist|heatmap|figure|title|xlabel|ylabel|legend|show|fit|transform|fit_transform|predict|score|train_test_split|StandardScaler|MinMaxScaler|OneHotEncoder|Pipeline|ColumnTransformer|LogisticRegression|LinearRegression|DecisionTreeClassifier|RandomForestClassifier|KMeans|PCA|SGDClassifier)$/.test(token)) {
+              return <span key={tokenIdx} className="text-[#FFC66D] font-semibold">{token}</span>;
+            }
+            // PyCharm Numbers: #6897BB (Ice Cyan Blue)
+            if (/^-?\d+\.?\d*$/.test(token)) {
+              return <span key={tokenIdx} className="text-[#6897BB] font-bold">{token}</span>;
+            }
+            // PyCharm Punctuation & Operators: #A9B7C6
+            if (/^[=**+\-/:.@<>!&|^]+$/.test(token)) {
+              return <span key={tokenIdx} className="text-[#A9B7C6] font-bold">{token}</span>;
+            }
+            // PyCharm Default Variable Text: #A9B7C6 (Light Grey-White)
+            return <span key={tokenIdx} className="text-[#A9B7C6]">{token}</span>;
           }) : ' '}
         </div>
       );

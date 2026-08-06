@@ -2,6 +2,8 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
 import { Card } from '@/components/ui/Card';
 import { ConceptCard } from '@/components/mdx/ConceptCard';
 import { RunnableCodeBlock } from '@/components/mdx/RunnableCodeBlock';
@@ -17,6 +19,31 @@ import {
   Bookmark,
   BookOpen
 } from 'lucide-react';
+
+function MathSymbolItem({ symbol }: { symbol: string }) {
+  const cleanSymbol = symbol.trim().replace(/^\$+|\$+$/g, '');
+  const isLatex = /[\\[\]{}^_=\in\lVert\mathbb\sigma\lambda\theta]/.test(symbol) || symbol.startsWith('$');
+
+  if (isLatex) {
+    try {
+      const html = katex.renderToString(cleanSymbol, { throwOnError: false });
+      return (
+        <span
+          className="text-teal-700 text-xs shrink-0 max-w-[45%] break-words inline-flex items-center [&_.katex]:text-xs [&_.katex]:font-semibold font-mono"
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      );
+    } catch {
+      // fallback to plain text if parse fails
+    }
+  }
+
+  return (
+    <span className="font-mono font-bold text-teal-700 text-xs shrink-0 max-w-[45%] break-words bg-teal-50/80 px-1.5 py-0.5 rounded border border-teal-200/60">
+      {symbol}
+    </span>
+  );
+}
 
 interface NoteReaderClientProps {
   slug: string[];
@@ -418,15 +445,11 @@ export const NoteReaderClient: React.FC<NoteReaderClientProps> = ({
             <h3 className="font-extrabold text-slate-800 text-xs border-b border-slate-100 pb-2">
               {hasMathSymbols ? '核心公式符号表' : '核心概念术语表'}
             </h3>
-            <div className="space-y-1.5 text-xs max-h-48 overflow-y-auto pr-1">
-              <div className="grid grid-cols-2 text-[11px] font-bold text-slate-400 bg-slate-50 p-1.5 rounded-lg border border-slate-100">
-                <span>{hasMathSymbols ? '符号' : '术语'}</span>
-                <span>含义</span>
-              </div>
+            <div className="space-y-1.5 text-xs max-h-60 overflow-y-auto pr-1">
               {symbols.map((item, idx) => (
-                <div key={idx} className="grid grid-cols-2 text-xs py-1.5 px-1 border-b border-slate-50 last:border-0 items-center">
-                  <span className="font-mono font-bold text-teal-700 truncate">{item.symbol}</span>
-                  <span className="text-slate-600 font-medium truncate">{item.mean}</span>
+                <div key={idx} className="flex items-baseline justify-between gap-2.5 py-1.5 border-b border-slate-100/80 last:border-0">
+                  <MathSymbolItem symbol={item.symbol} />
+                  <span className="text-slate-600 text-xs font-medium text-right leading-relaxed break-words flex-1">{item.mean}</span>
                 </div>
               ))}
             </div>
