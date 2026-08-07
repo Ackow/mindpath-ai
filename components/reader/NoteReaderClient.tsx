@@ -335,7 +335,7 @@ export const NoteReaderClient: React.FC<NoteReaderClientProps> = ({
 
       {/* Center Main MDX Content */}
       <div className="flex-1 space-y-6 min-w-0">
-        <Card className="p-6 md:p-8 space-y-6 border border-slate-200/80 shadow-sm">
+        <Card className="p-4 sm:p-6 md:p-8 space-y-5 sm:space-y-6 border border-slate-200/80 shadow-sm">
           {/* Breadcrumbs & Metadata Bar with Explicit "笔记库" & "返回知识地图" */}
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">

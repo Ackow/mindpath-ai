@@ -91,8 +91,8 @@ export default async function DashboardPage() {
       {/* Top Section */}
       <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-12">
         {/* Left Welcome */}
-        <div className="flex flex-col justify-center pr-2 lg:col-span-4">
-          <h1 className="mb-4 text-4xl font-extrabold leading-tight tracking-normal text-slate-900">
+        <div className="flex flex-col justify-center sm:pr-2 lg:col-span-4">
+          <h1 className="mb-3 sm:mb-4 text-2xl sm:text-3xl lg:text-4xl font-extrabold leading-tight tracking-normal text-slate-900">
             继续构建你的 <br />
             <span className="text-teal-600">AI 知识体系</span>
           </h1>

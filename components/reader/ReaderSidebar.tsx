@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
-import { ChevronRight, ChevronRightIcon, CheckCircle2 } from 'lucide-react';
+import { ChevronRight, ChevronRightIcon, CheckCircle2, BookOpen } from 'lucide-react';
 import { getGlobalGraphNodes, getHierarchicalModuleTree } from '@/lib/graph';
 import { readDocumentProgress } from '@/components/mdx/TaskCheckbox';
 
@@ -61,15 +61,33 @@ export const ReaderSidebar: React.FC = () => {
   };
   const moduleCompleted = moduleNodes.filter((node) => progressFor(node.route) === 100).length;
   const modulePercent = moduleNodes.length > 0 ? Math.round((moduleCompleted / moduleNodes.length) * 100) : 0;
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   return (
     <div className="w-full shrink-0 space-y-4 md:sticky md:top-20 md:self-start md:w-64 xl:w-72 select-none">
-      <Card className="space-y-4 border border-slate-200/80 p-4 shadow-sm">
-        <h2 className="flex items-center justify-between border-b border-slate-100 pb-3 text-sm font-extrabold text-slate-800">
+      <Card className="space-y-3 border border-slate-200/80 p-3.5 sm:p-4 shadow-sm">
+        {/* Mobile Toggle Button */}
+        <div
+          onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+          className="flex md:hidden items-center justify-between cursor-pointer py-1"
+        >
+          <h2 className="flex items-center gap-2 text-xs font-extrabold text-slate-800 m-0">
+            <BookOpen className="w-4 h-4 text-teal-600" />
+            <span>章节目录 ({currentModuleGroup.title})</span>
+          </h2>
+          <span className="text-[11px] font-bold text-teal-700 bg-teal-50 border border-teal-200/60 px-2 py-0.5 rounded-full flex items-center gap-1">
+            {mobileSidebarOpen ? '收起目录 ▲' : '展开目录 ▼'}
+          </span>
+        </div>
+
+        {/* Header - Always shown on desktop, collapsible on mobile */}
+        <h2 className={`hidden md:flex items-center justify-between border-b border-slate-100 pb-3 text-sm font-extrabold text-slate-800`}>
           <span className="truncate">{currentModuleGroup.title}</span>
           <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{moduleNodes.length} 章节</span>
         </h2>
-        <div className="max-h-[72vh] space-y-2 overflow-y-auto pr-1 text-xs">
+
+        {/* Sidebar Content Links - Collapsible on mobile */}
+        <div className={`space-y-2 text-xs ${mobileSidebarOpen ? 'block pt-2 border-t border-slate-100' : 'hidden md:block'} max-h-[60vh] md:max-h-[72vh] overflow-y-auto pr-1`}>
           {currentModuleGroup.submodules.length > 0 ? (
             currentModuleGroup.submodules.map((sub) => {
               const isOpen = openSubmodules[sub.id] ?? true;
