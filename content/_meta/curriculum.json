@@ -13,58 +13,52 @@
         {
           "id": "python",
           "title": "Python 与科学计算",
-          "notesCount": 6,
-          "completedCount": 6
-        },
-        {
-          "id": "math",
-          "title": "数学基础（线代、微积分与概率统计）",
-          "notesCount": 15,
-          "completedCount": 15
+          "notesCount": 7,
+          "completedCount": 7
         },
         {
           "id": "data",
-          "title": "数据处理与特征工程",
-          "notesCount": 5,
-          "completedCount": 5
+          "title": "数据处理",
+          "notesCount": 2,
+          "completedCount": 2
         },
         {
-          "id": "engineering",
-          "title": "实验与工程习惯",
-          "notesCount": 4,
-          "completedCount": 4
+          "id": "math",
+          "title": "数学基础",
+          "notesCount": 3,
+          "completedCount": 3
         }
       ]
     },
     {
       "id": "machine-learning",
-      "title": "机器学习",
-      "description": "经典机器学习算法与模型，掌握从数据到模型的核心流程。",
+      "title": "经典机器学习",
+      "description": "掌握从监督学习回归与分类、模型诊断与评估到无监督聚类降维的完整机器学习算法闭环。",
       "icon": "trending-up",
       "color": "emerald",
-      "totalNotes": 18,
+      "totalNotes": 16,
       "submodules": [
         {
           "id": "overview",
-          "title": "机器学习通识",
-          "notesCount": 4,
-          "completedCount": 4
+          "title": "机器学习概览与通识",
+          "notesCount": 2,
+          "completedCount": 2
         },
         {
           "id": "supervised",
           "title": "监督学习算法",
           "notesCount": 6,
-          "completedCount": 0
+          "completedCount": 2
         },
         {
           "id": "evaluation",
           "title": "模型评估与诊断",
-          "notesCount": 4,
+          "notesCount": 3,
           "completedCount": 0
         },
         {
           "id": "unsupervised",
-          "title": "无监督学习算法",
+          "title": "无监督学习与推荐系统",
           "notesCount": 4,
           "completedCount": 0
         }

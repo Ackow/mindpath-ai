@@ -247,9 +247,9 @@ export const InteractiveMindMap: React.FC<InteractiveMindMapProps> = ({ nodes, s
               <AnimatePresence initial={false}>
               {!module.isCollapsed && module.groups.map((group) => (
                 <React.Fragment key={group.id}>
-                  <motion.div initial={{ opacity: 0, x: -270, scale: 0.96, top: module.centerY - CARD_HEIGHT / 2 }} animate={{ opacity: 1, x: 0, scale: 1, top: group.centerY - CARD_HEIGHT / 2 }} exit={{ opacity: 0, x: -270, scale: 0.96, top: module.centerY - CARD_HEIGHT / 2 }} transition={LAYOUT_TRANSITION} style={{ left: '510px' }} className="node-card absolute z-10 flex w-[220px] items-center justify-between rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2.5 shadow-sm">
+                  <motion.div initial={{ opacity: 0, x: -270, scale: 0.96, top: module.centerY - CARD_HEIGHT / 2 }} animate={{ opacity: 1, x: 0, scale: 1, top: group.centerY - CARD_HEIGHT / 2 }} exit={{ opacity: 0, x: -270, scale: 0.96, top: module.centerY - CARD_HEIGHT / 2 }} transition={LAYOUT_TRANSITION} style={{ left: '510px' }} className="node-card absolute z-10 flex w-[230px] items-center justify-between rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2.5 shadow-sm">
                     <div className="flex min-w-0 items-center gap-2">
-                      <BookOpen className="h-3.5 w-3.5 shrink-0 text-emerald-700" />
+                      <div className="learning-progress-circle"><LearningProgressValue nodes={group.nodes} /></div>
                       <div className="min-w-0">
                         <div className="truncate whitespace-nowrap text-xs font-extrabold text-slate-900">{group.title}</div>
                         <div className="text-[10px] font-medium text-emerald-700">{group.nodes.length} 篇文档</div>

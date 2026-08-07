@@ -1,80 +1,100 @@
 ---
 id: py-modules
-title: 06.模块、包与配置
+title: 06.模块、包与面向对象基础
 module: foundations
 submodule: python
 order: 6
 difficulty: beginner
 prerequisites: [py-functions]
-relatedNotes: [py-files-debugging, py-environment]
-nextNotes: [py-files-debugging]
-map:
-  layoutGroup: foundations-python
 estimatedMinutes: 25
-tags: [Python, 模块, 包, import, sys.path, 面向对象, dataclass, argparse]
-summary: __init__.py 机制、绝对与相对导入、sys.path 搜索路径、类与继承基础（面向 AI 库 API 理解）、dataclass 与 argparse 配置解析，以及 if __name__ == '__main__' 规范入口。
+tags: [Python, 模块, import, 包, sys.path, 面向对象, 类, 对象, 继承, self]
+summary: 掌握 Python 模块与包的结构架构、sys.path 查找与 __init__.py 机制，深入理解面向对象编程（OOP）中类、对象、继承、super() 与方法重写的核心概念。
 symbols:
   - symbol: "import"
-    mean: "导入外部模块或包"
+    mean: "导入模块关键字，用于引入外部 .py 文件或标准库代码"
   - symbol: "__init__.py"
-    mean: "标识包目录与控制包初始化逻辑的文件"
+    mean: "标识包目录并掌控包初始化与 API 导出控制的文件"
   - symbol: "sys.path"
-    mean: "Python 查找模块的路径列表"
+    mean: "Python 查找模块的物理目录路径列表"
   - symbol: "class"
-    mean: "定义面向对象类对象的关键字"
-  - symbol: "@dataclass"
-    mean: "自动生成初始化与表示方法的配置类装饰器"
-  - symbol: "__name__ == '__main__'"
-    mean: "判断文件是作为主程序运行还是被导入模块"
+    mean: "定义面向对象类的关键字，作为创建对象的蓝图/模板"
+  - symbol: "super()"
+    mean: "子类中调用父类构造函数与方法的内置函数"
 ---
 
-## 本节要解决什么问题？
+## 1. 问题导入
 
-随着 AI 项目规模的增长，代码量很快就会超出单个 Python 文件或 Notebook 的承载极限。为了防止代码变成“面条式代码 (Spaghetti Code)”，我们需要将复杂的系统拆分为结构清晰的**模块 (Module)** 与 **包 (Package)**，并用规范的**面向对象 (OOP)** 和**配置机制 (Configuration)** 进行管理。
+随着程序功能的不断丰富，如果把成百上千行代码全部挤在单个 `.py` 文件中，代码的可读性和维护性会迅速恶化。
 
-完成本节后，你应能：
+我们如何将代码按照功能拆分到不同的文件中？当运行 `import` 导入外部代码时，Python 是如何寻找到对应文件的？为什么有时导入自定义模块会提示 `ModuleNotFoundError`？
 
-- 掌握 `import` 语句的底层机制与 `sys.path` 模块搜索路径规则。
-- 区分 Python 模块 (Module) 与包 (Package)，理解 `__init__.py` 的作用。
-- 掌握基础类 (Class)、实例 (Instance)、继承 (Inheritance) 概念，能轻松读懂 PyTorch `Dataset` 和模型基类 API。
-- 掌握使用 `@dataclass` 和 `argparse` 构建规范的 AI 超参数配置管理系统。
-- 理解 `if __name__ == '__main__'` 的工程防污染价值。
-- 设计清晰、可复用、符合工程规范的 AI 代码文件结构。
+同时，在 AI 编程（如 PyTorch、Scikit-learn）中，模型、数据集和评估器大多基于**面向对象编程 (OOP)** 构建。如何使用**类 (Class)**、**继承 (Inheritance)** 和 **方法重写 (Overriding)** 来组织解耦的代码？
 
-<ConceptCard title="模块与包的建筑隐喻" type="intuition">
-把你的 AI 项目看作一栋大楼：单个 .py 文件是集成了特定功能的“房间（模块）”，含有 __init__.py 的文件夹则是“楼层（包）”，而 sys.path 则是连接各个房间的“走廊与通道”。配置类（Config）则是楼层的控制蓝图，指导各个房间如何协同运行。
-</ConceptCard>
+本章将带你深入理解 **模块与包的底层机制**，并掌握 **面向对象编程 (OOP)** 的核心精髓。
 
 ---
 
-## 1. 模块、包与导入机制
+## 2. 学习目标
 
-### 1.1 模块 (Module) 与 sys.path 搜索路径
+完成本章学习后，你将能够：
 
-在 Python 中，任何以 `.py` 结尾的文件都是一个**模块 (Module)**。使用 `import` 语句可以将一个模块中的函数、类或变量引入到当前文件中。
+- 区分 Python 模块 (Module) 与包 (Package)，掌握 `__init__.py` 的三大作用；
+- 深入理解 `sys.path` 模块查找机制与绝对/相对导入规范；
+- 熟练使用 `math`、`random`、`datetime` 和 `os` 内置标准库；
+- 理解 `if __name__ == '__main__':` 脚本入口保护机制；
+- 掌握面向对象 (OOP) 中类 (Class)、对象 (Instance) 与 `self` 的底层逻辑；
+- 掌握类的继承 (`Inheritance`)、`super()` 函数与方法重写 (`Overriding`)。
 
-当运行 `import my_module` 时，Python 按以下顺序在 `sys.path` 路径列表中寻找对应的文件：
+---
 
-1. 当前运行脚本所在的目录。
-2. 环境变量 `PYTHONPATH` 中指定的目录。
-3. Python 标准库与第三方包目录（如 `site-packages`）。
+## 3. 模块、包与 `sys.path` 查找机制
 
-```python
-import sys
-import os
+### 3.1 模块 (Module) 与包 (Package) 的区别
 
-# 查看当前 Python 的模块搜索路径
-print("当前 Python 搜索路径:")
-for path_entry in sys.path[:3]:  # 仅展示前3项
-    print(f" - {path_entry}")
+- **模块 (Module)**：一个独立的 `.py` 文件就是一个模块（如 `data_loader.py`）；
+- **包 (Package)**：包含 `__init__.py` 文件以及一个或多个模块的文件夹（用于组织大型项目）。
 
-# 动态添加自定义路径（当导入第三方未安装包时）
-custom_dir = os.path.abspath("./custom_libs")
-if custom_dir not in sys.path:
-    sys.path.append(custom_dir)
+```text
+my_ai_project/              <- 项目根目录
+├── my_package/             <- Python 包 (Package)
+│   ├── __init__.py         <- 包标识与导出控制文件
+│   ├── data_loader.py      <- 子模块 A
+│   └── model.py            <- 子模块 B
+└── main.py                 <- 主运行脚本
 ```
 
-<ImportResolutionAnimation />
+### 3.2 `__init__.py` 的三大核心作用
+
+1. **包标识**：告诉 Python 解释器“当前文件夹是一个可以被 `import` 的包”；
+2. **包初始化**：当外部运行 `import my_package` 时，`__init__.py` 中的代码会自动率先执行；
+3. **提升层级与 API 导出控制 (`__all__`)**：通过在 `__init__.py` 中提升子模块类，让外部调用更方便。
+
+```python
+# file: my_package/__init__.py
+
+# 将子模块中的类提升到包顶层
+from .data_loader import DataLoader
+from .model import SimpleModel
+
+# 控制使用 from my_package import * 时对外暴露的类
+__all__ = ["DataLoader", "SimpleModel"]
+```
+
+外部 `main.py` 调用方式对比：
+
+```python
+# 未在 __init__.py 中提升时的繁琐写法：
+# from my_package.data_loader import DataLoader
+
+# 提升后的优雅写法：
+from my_package import DataLoader, SimpleModel
+```
+
+---
+
+### 3.3 `sys.path` 模块查找路径
+
+当你执行 `import my_module` 时，Python 并不是在全盘搜索文件，而是严格按照列表 `sys.path` 中记录的目录顺序依次寻找：
 
 ```mermaid
 flowchart TD
@@ -87,317 +107,280 @@ flowchart TD
     Step3 -- 否 --> Step4{"4. 第三方 site-packages 目录<br/>是否存在?"}
     Step4 -- 是 --> LoadSite["加载 pip/conda 安装的第三方包"]
     Step4 -- 否 --> Error["抛出 ModuleNotFoundError 异常"]
+```
 
-    style Start fill:#3b82f6,color:#fff
-    style Error fill:#ef4444,color:#fff
-    style LoadStd fill:#10b981,color:#fff
-    style LoadCurrent fill:#10b981,color:#fff
-    style LoadEnv fill:#10b981,color:#fff
-    style LoadSite fill:#10b981,color:#fff
+<ImportResolutionAnimation />
+
+```python
+import sys
+
+# 查看当前 Python 的模块查找路径列表
+print("Python 路径查找顺序:")
+for path in sys.path[:3]:  # 展示前 3 个优先目录
+    print(f" - {path}")
+
+# 解决 ModuleNotFoundError 的应急方案：动态添加路径
+# sys.path.append("/path/to/custom_directory")
 ```
 
 ---
 
-### 1.2 包 (Package) 与 `__init__.py`
+## 4. 高频常用内置标准库
 
-**包 (Package)** 是包含 `__init__.py` 文件以及一个或多个模块的文件夹。`__init__.py` 的主要作用包括：
+Python 内置了丰富的标准库，无需额外 `pip install` 即可直接 `import`：
 
-- 标识该文件夹为一个可导入的 Python 包。
-- 掌控包被导入时的初始化代码。
-- 通过 `__all__` 变量控制 `from package import *` 时暴露的导出一览。
+| 模块名 | 核心功能 | 高频方法/属性 |代码示例 |
+|---|---|---|---|
+| **`math`** | 数学计算 | `sqrt()` (开方), `ceil()` (上取整), `floor()` (下取整) | `math.sqrt(16)` |
+| **`random`** | 随机数与抽样 | `randint(a,b)` (随机整数), `choice(seq)` (随机选一), `shuffle()` (打乱) | `random.choice(["A", "B"])` |
+| **`datetime`** | 日期时间处理 | `datetime.now()` (当前时间), `strftime()` (时间格式化) | `datetime.now().strftime("%Y-%m-%d")` |
+| **`os`** | 操作系统文件路径 | `os.path.exists()` (检查路径), `os.mkdir()` (创建文件夹) | `os.path.exists("./data")` |
 
-假设我们有如下 AI 项目目录架构：
+---
 
-```text
-my_ai_project/
-├── my_package/
-│   ├── __init__.py
-│   ├── data.py
-│   └── model.py
-└── main.py
-```
+## 5. 模块入口保护：`if __name__ == '__main__':`
 
-在 `my_package/__init__.py` 中：
+当你编写一个 `.py` 脚本时，它既可以被直接运行，也可能被其他文件 `import` 导入。
 
-```python
-# 将内部子模块的重要类直接提升到包顶层，方便外部调用
-from .data import DataLoader
-from .model import SimpleNN
-
-__all__ = ["DataLoader", "SimpleNN"]
-```
-
-外部 `main.py` 导入示例：
+- 当文件被**直接运行**时，Python 解释器会自动将该文件的 `__name__` 变量赋值为 `'__main__'`；
+- 当文件被**其他脚本 `import` 导入**时，该文件的 `__name__` 变量等于**模块名本身**。
 
 ```python
-# 绝对导入（推荐）
-from my_package.data import DataLoader
-from my_package.model import SimpleNN
+# file: math_utils.py
 
-# 或者直接导入包顶层（依赖 __init__.py 的提升导出）
-# from my_package import DataLoader, SimpleNN
+def add(a: float, b: float) -> float:
+    return a + b
+
+# 测试代码入口保护
+if __name__ == '__main__':
+    print("正在直接运行 math_utils.py 脚本进行功能自测：")
+    print(f"2 + 3 = {add(2, 3)}")
 ```
 
 ---
 
-## 2. 面向对象基础：为读懂 AI 框架而学
+## 6. 面向对象编程 (OOP) 基础：类与对象
 
-在 AI 领域（特别是 PyTorch / Scikit-learn），绝大多数模型、数据集与训练器都是基于**类 (Class)** 构建的。
+面向对象编程 (OOP) 是一种将**数据（属性）**与针对数据的**操作（方法）**打包封装在同一个逻辑单元中的编程思想。
 
-### 2.1 类 (Class)、实例 (Instance) 与 `self`
+### 6.1 类 (Class) 与对象 (Instance) 的关系
 
-- **类 (Class)**：对象的蓝图或模版。
-- **实例 (Instance)**：根据蓝图创建出的具体对象。
-- **`__init__` 方法**：构造函数，在实例化时自动触发。
-- **`self`**：代表实例对象本身，用于访问实例属性与方法。
+- **类 (Class)**：对象的模板或蓝图。例如“汽车设计图纸”；
+- **对象 (Object / Instance)**：根据类创建出来的具体实体。例如根据图纸制造出的“具体某辆特斯拉”。
 
-<RunnableCodeBlock title="类的定义与实例化">
-{`class LinearRegressionModel:
-    """简单的线性回归模型类示例。"""
-    
-    def __init__(self, in_features: int, out_features: int):
-        # 初始属性绑定到 self 实例
-        self.in_features = in_features
-        self.out_features = out_features
-        self.weight = 0.5  # 模拟初始化权重
-        self.bias = 0.1    # 模拟初始化偏置
-    
-    def forward(self, x: float) -> float:
-        """前向传播计算：y = w * x + b"""
+```mermaid
+graph LR
+    A["类 (Class): 汽车设计图纸"] -->|实例化 Instantiation| B["对象 (Object): 小明的红色特斯拉"]
+    A -->|实例化 Instantiation| C["对象 (Object): 小红的黑色特斯拉"]
+```
+
+### 6.2 `class` 关键字、`__init__` 与 `self`
+
+- **`class`**：定义类的关键字，类名习惯采用**大驼峰命名法**（如 `DataLoader`）；
+- **`__init__()` 构造函数**：根据类创建新对象时自动调用的初始化方法；
+- **`self` 参数**：代表**当前被创建或调用的对象实例本身**。必须作为类内部实例方法的第一个形参。
+
+```python
+class Student:
+    """学生类定义"""
+
+    # 构造函数：初始化对象的属性
+    def __init__(self, name: str, score: float):
+        self.name = name    # 绑定实例属性 name
+        self.score = score  # 绑定实例属性 score
+
+    # 实例方法：第一个参数必须是 self
+    def print_info(self):
+        print(f"学生姓名: {self.name}, 成绩: {self.score}")
+```
+
+---
+
+## 7. 面向对象进阶：继承与方法重写
+
+在复杂的 AI 框架（如 PyTorch、Scikit-learn）中，**继承 (Inheritance)** 和 **方法重写 (Overriding)** 是最核心的代码复用机制。
+
+### 7.1 类的继承 (Inheritance)
+子类可以自动拥有父类（基类）的所有属性和方法，从而避免编写重复代码。
+
+语法格式：
+```python
+class 子类名(父类名):
+    # 子类代码
+```
+
+### 7.2 `super()` 函数与父类初始化
+在子类的 `__init__` 方法中，使用 `super().__init__()` 可以自动调用父类的构造函数，继承父类的初始化逻辑。
+
+### 7.3 方法重写 (Method Overriding)
+如果父类定义的方法不能满足子类的需求，子类可以重新编写同名方法进行覆盖。
+
+```python
+# 1. 父类（基类）：通用模型类
+class BaseModel:
+    def __init__(self, model_name: str):
+        self.model_name = model_name
+
+    def predict(self, x: float) -> float:
+        """父类的通用预测接口，要求子类重写"""
+        print("警告：基类未实现具体的预测逻辑！")
+        return 0.0
+
+# 2. 子类：继承 BaseModel 并重写 predict 方法
+class LinearModel(BaseModel):
+    def __init__(self, model_name: str, weight: float, bias: float):
+        # 使用 super() 调用父类的 __init__ 构造函数
+        super().__init__(model_name)
+        self.weight = weight
+        self.bias = bias
+
+    # 重写父类的 predict 方法
+    def predict(self, x: float) -> float:
         return self.weight * x + self.bias
 
-# 实例化模型对象
-model = LinearRegressionModel(in_features=1, out_features=1)
-prediction = model.forward(2.0)
-print(f"输入 2.0 时的前向预测值: {prediction}")`}
-</RunnableCodeBlock>
-
----
-
-### 2.2 继承与重写 (Inheritance & Overriding)
-
-AI 框架（如 PyTorch）通过继承机制规范代码模式。例如继承 `Dataset` 基类并重写 `__len__` 和 `__getitem__` 方法：
-
-<RunnableCodeBlock title="实例演练：基类继承与方法重写">
-{`class BaseDataset:
-    """模拟 AI 框架的数据集基类。"""
-    def __len__(self) -> int:
-        raise NotImplementedError("子类必须实现 __len__ 方法")
-
-    def __getitem__(self, idx: int):
-        raise NotImplementedError("子类必须实现 __getitem__ 方法")
-
-class ImageDataset(BaseDataset):
-    """继承基类并实现具体的图像数据集载入。"""
-    def __init__(self, data_list: list):
-        self.data_list = data_list
-
-    def __len__(self) -> int:
-        return len(self.data_list)
-    
-    def __getitem__(self, idx: int) -> dict:
-        return {"id": str(idx), "path": self.data_list[idx]}
-
-dataset = ImageDataset(["img1.jpg", "img2.jpg", "img3.jpg"])
-print(f"数据集大小: {len(dataset)}")
-print(f"索引 0 的样本: {dataset[0]}")`}
-</RunnableCodeBlock>
-
-<ClassInheritanceAnimation />
-
----
-
-## 3. 配置管理：Dataclass 与 Argparse
-
-在机器学习实验中，将**模型超参数**与**训练代码**解耦是保证实验可复现的关键。
-
-### 3.1 使用 `@dataclass` 定义结构化配置
-
-Python 3.7+ 引入的 `dataclass` 可以极大简化配置类的编写，无需手动编写 `__init__` 代码：
-
-<RunnableCodeBlock title="实例演练：Dataclass 结构化超参数配置">
-{`from dataclasses import dataclass, field
-
-@dataclass
-class TrainingConfig:
-    model_name: str = "resnet18"
-    learning_rate: float = 0.001
-    batch_size: int = 64
-    epochs: int = 10
-    tags: list = field(default_factory=lambda: ["baseline", "cv"])
-
-# 实例化配置并覆写参数
-config = TrainingConfig(learning_rate=0.0005, batch_size=32)
-print(f"模型配置: {config}")
-print(f"当前学习率: {config.learning_rate}")`}
-</RunnableCodeBlock>
-
----
-
-### 3.2 使用 `argparse` 解析命令行参数
-
-在终端运行训练脚本时，`argparse` 允许我们从命令行动态传入超参数：
-
-<RunnableCodeBlock title="实例演练：argparse 命令行参数解析">
-{`
-import argparse
-
-def parse_args():
-    parser = argparse.ArgumentParser(description="AI 模型训练超参数配置")
-    parser.add_argument("--lr", type=float, default=0.01, help="学习率 (default: 0.01)")
-    parser.add_argument("--epochs", type=int, default=5, help="训练轮次 (default: 5)")
-    parser.add_argument("--model", type=str, default="mlp", choices=["mlp", "cnn", "resnet"], help="模型架构")
-    
-    # 模拟在脚本中解析命令行参数
-    args = parser.parse_args(["--lr", "0.001", "--model", "cnn"])
-    return args
-
-args = parse_args()
-print(f"解析参数: 学习率={args.lr}, 模型架构={args.model}")
-`}
-</RunnableCodeBlock>
-
----
-
-### 3.3 实战交互演练
-
-尝试在下方交互框中编辑并直接点击运行，体验类继承、`@dataclass` 与命令行参数 `argparse` 的联动控制：
-
-<RunnableCodeBlock title="实战交互脚本：类继承、Dataclass 与 argparse 配置整合">
-{`
-import argparse
-from dataclasses import dataclass, asdict
-
-# 1. 配置管理：使用 @dataclass 结构化定义超参数
-@dataclass
-class ExperimentConfig:
-    model_name: str = "ResNet-18"
-    learning_rate: float = 0.001
-    batch_size: int = 32
-    use_cuda: bool = True
-
-# 2. 面向对象类继承：数据集与基类结构
-class BaseDataset:
-    def __init__(self, name: str):
-        self.name = name
-    def load(self):
-        return f"[{self.name}] 载入基础数据"
-
-class ImageClassificationDataset(BaseDataset):
-    def __init__(self, name: str, num_samples: int):
-        super().__init__(name=name)  # 使用 super() 正确初始化基类
-        self.num_samples = num_samples
-
-    def load(self):
-        base_info = super().load()
-        return f"{base_info}，共计 {self.num_samples} 张样本图片"
-
-# 3. 命令行参数解析：模拟从终端接收超参覆盖默认配置
-def parse_cli_args():
-    parser = argparse.ArgumentParser(description="模拟 AI 实验命令行输入")
-    parser.add_argument("--lr", type=float, default=0.0005, help="覆写学习率")
-    parser.add_argument("--batch", type=int, default=64, help="覆写 Batch 大小")
-    return parser.parse_args(["--lr", "0.0005", "--batch", "64"])
-
-# 4. 规范脚本入口主流程
-if __name__ == "__main__":
-    cli_args = parse_cli_args()
-    
-    config = ExperimentConfig(
-        learning_rate=cli_args.lr,
-        batch_size=cli_args.batch
-    )
-    
-    dataset = ImageClassificationDataset("MNIST", num_samples=60000)
-    
-    print("=== 1. 实验超参数配置 (Dataclass & argparse) ===")
-    for key, value in asdict(config).items():
-        print(f" - {key}: {value}")
-        
-    print("\n=== 2. 数据集加载逻辑 (类继承与 super()) ===")
-    print(dataset.load())
-`}
-</RunnableCodeBlock>
-
-## 4. 规范脚本入口：`if __name__ == '__main__'`
-
-当一个 Python 文件被执行或导入时，全局变量 `__name__` 会被赋予不同的值：
-
-- **作为脚本直接运行**：`__name__` 的值为 `'__main__'`。
-- **作为模块被 import 导入**：`__name__` 的值为该模块的文件名。
-
-使用 `if __name__ == '__main__':` 守护块可以保证：**作为模块被他人导入时，不会意外触发测试代码或训练脚本**。
-
-```python
-def train_pipeline():
-    print("[Pipeline] 开始执行训练流程...")
-
-def helper_util():
-    return "工具函数辅助输出"
-
-# 规范脚本主入口
-if __name__ == "__main__":
-    print("当前文件作为主程序启动:")
-    train_pipeline()
+# 实例化子类对象
+model = LinearModel(model_name="线性回归模型", weight=2.0, bias=1.0)
+print(f"模型名称: {model.model_name}") # 继承自父类的属性
+print(f"预测结果 y = 2.0 * 3 + 1.0 = {model.predict(3.0)}") # 重写后的方法
 ```
 
 ---
 
-## AI 场景连接
+## 8. 动手实战：AI 数据集加载器层次化封装
 
-在真实 AI 框架中，模块、包与配置的应用无处不在：
+请在下方的代码块中，点击 **“运行代码”**，体验基于继承、`super()` 和方法重写构建的数据处理类：
 
-1. **PyTorch 模型定义**：定义网络时必须继承 `torch.nn.Module`，并在 `__init__` 中定义网络层，在 `forward` 中定义前向数据流。
-2. **数据集加载**：继承 `torch.utils.data.Dataset` 实现重写。
-3. **配置解包与实验跟踪**：使用 `@dataclass` 配合 `argparse` 或 `yaml` 配置文件，将其解包为 `**dataclasses.asdict(config)` 传给 WandB 或 TensorBoard 记录日志。
+<RunnableCodeBlock title="基于继承的数据集加载器实战">
+{`# 1. 定义通用数据集基类
+class BaseDataset:
+    def __init__(self, dataset_name: str):
+        self.dataset_name = dataset_name
 
----
+    def __len__(self) -> int:
+        return 0
+    
+    def get_sample(self, index: int):
+        raise NotImplementedError("子类必须重写 get_sample 方法！")
 
-## 常见错误排查 (Troubleshooting)
+# 2. 定义具体的列表数据集子类
+class ListDataset(BaseDataset):
+    def __init__(self, dataset_name: str, raw_data: list):
+        super().__init__(dataset_name)  # 调用父类初始化
+        self.raw_data = raw_data
 
-| 错误现象 / 异常类型 | 常见原因 | 解决方案 |
-| :--- | :--- | :--- |
-| `ModuleNotFoundError: No module named 'xxx'` | 模块所在的路径未包含在 `sys.path` 中，或包缺失 `__init__.py` | 检查启动路径，或用 `sys.path.append()` 补全搜索路径；确保文件夹存在 `__init__.py` |
-| `AttributeError: module 'xxx' has no attribute 'yyy'` | 循环导入 (Circular Import) 或文件名与标准库同名冲突 (如创建了 `random.py`) | 检查重命名同名文件；将互相依赖的 import 移动到函数内部延迟加载 |
-| `TypeError: __init__() missing required argument` | 实例化类对象时漏掉了未设默认值的必填形参 | 检查类的 `__init__` 定义，按顺序补全参数或指定关键字参数 |
-| `ImportError: cannot import name 'xxx' from partially initialized module` | 两个模块之间存在循环引用 | 重新解耦代码结构，提取公共部分到第三个模块 |
+    # 重写父类的 __len__ 方法
+    def __len__(self) -> int:
+        return len(self.raw_data)
+    
+    # 重写父类的 get_sample 方法
+    def get_sample(self, index: int):
+        if 0 <= index < len(self.raw_data):
+            return self.raw_data[index]
+        return None
 
----
+# 实例化子类
+data = ["样本_A", "样本_B", "样本_C", "样本_D"]
+dataset = ListDataset(dataset_name="训练集_V1", raw_data=data)
 
-## 本节检查清单
-
-- [ ] 理解 `import` 查找 `sys.path` 的优先级逻辑。
-- [ ] 能为自定义代码文件夹创建 `__init__.py` 并理清包结构。
-- [ ] 能读懂并编写继承基类的 Python 类，理解 `self` 和 `__init__`。
-- [ ] 掌握 `@dataclass` 创建简易参数配置类。
-- [ ] 会使用 `argparse` 定义和解析命令行超参数。
-- [ ] 在所有可执行 Python 脚本末尾添加 `if __name__ == '__main__':` 保护。
-
----
-
-## 自测题
-
-1. **概念理解**：如果创建了一个名为 `math.py` 的文件，并在其中运行 `import math; print(math.sqrt(4))`，会发生什么？为什么？
-2. **代码阅读**：阅读以下代码，写出输出结果：
-   ```python
-   class A:
-       def show(self):
-           return "Class A"
-   
-   class B(A):
-       def show(self):
-           return "Class B -> " + super().show()
-   
-   print(B().show())
-   ```
-3. **实战练习**：编写一个 `ModelConfig` 的 `@dataclass`，包含 `learning_rate`（默认 `0.01`）、`hidden_dim`（默认 `128`）和 `use_gpu`（默认 `True`），并编写一个函数接收该配置并打印调试信息。
+print(f"数据集名称: {dataset.dataset_name}")
+print(f"数据集总样本量: {len(dataset)}")
+print(f"索引 2 的样本内容: {dataset.get_sample(2)}")
+`}
+</RunnableCodeBlock>
 
 ---
 
-## 下一步与参考资料
+## 9. 常见错误排查 (Troubleshooting)
 
-- **下一步**：学习 [07.文件、异常、调试与测试](/learn/foundations/python/07-py-files-debugging)，掌握 AI 数据文件的安全读写与训练异常定位。
-- **参考资料**：
-  - [Python 官方模块与包文档](https://docs.python.org/3/tutorial/modules.html)
-  - [Python dataclasses 官方教程](https://docs.python.org/3/library/dataclasses.html)
-  - [PyTorch Docs: Defining a Neural Network](https://pytorch.org/tutorials/beginner/basics/buildmodel_tutorial.html)
+| 错误现象 / 异常类型 | 常见原因 | 标准排查与处理方式 |
+|---|---|---|
+| `ModuleNotFoundError: No module named 'xxx'` | 模块文件不在 `sys.path` 搜索路径列表中 | 检查拼写，或使用 `sys.path.append()` 将自定义路径引入 |
+| `AttributeError: module 'xxx' has no attribute 'yyy'` | 自定义 `.py` 脚本的文件名与系统标准库名字相同（如自建了 `random.py`） | 绝对不要将自己的脚本命名为 `random.py` 或 `math.py` 等标准库名字 |
+| `TypeError: method() takes 1 positional argument but 2 were given` | 在类的方法定义中漏写了首个形参 `self` | 在类的方法中必须显式将 `self` 作为第一个参数 |
+| `NotImplementedError` | 调用了子类中尚未重写的基类抽象方法 | 检查子类代码，重写父类中定义的接口方法 |
+
+---
+
+## 10. 本节检查清单 (Checklist)
+
+- [ ] 我能区分模块与包的区别，并理解 `__init__.py` 的三大作用；
+- [ ] 我理解 `sys.path` 模块查找机制与 `ModuleNotFoundError` 的排查方案；
+- [ ] 我熟练掌握了 `math`、`random`、`datetime` 和 `os` 标准库使用；
+- [ ] 我能解释 `if __name__ == '__main__':` 语句的入口测试保护逻辑；
+- [ ] 我理解类 (Class) 与对象 (Instance) 的关系，掌握 `__init__` 与 `self`；
+- [ ] 我能使用 `class Sub(Parent):` 实现继承，并使用 `super()` 和重写方法。
+
+---
+
+## 11. 课后互动自测
+
+<InteractiveQuiz
+  title="06. 模块、包与面向对象基础 课后互动自测"
+  questions={[
+    {
+      id: "q1",
+      type: "single",
+      question: "在 Python 中，当执行 import my_module 提示 ModuleNotFoundError 时，核心原因是什么？",
+      options: [
+        "A. 当前电脑没有联网",
+        "B. Python 解释器在 sys.path 包含的各个目录中未能找到名为 my_module.py 的文件",
+        "C. 变量名没有使用大写字母",
+        "D. 函数中没有写 return 语句"
+      ],
+      answer: 1,
+      explanation: "import 导入模块时会严格按 sys.path 路径列表查找。若所有目录均未找到对应的 .py 文件，则抛出 ModuleNotFoundError。"
+    },
+    {
+      id: "q2",
+      type: "single",
+      question: "在面向对象继承中，如果子类重写了父类的 __init__ 方法，想要同时调用父类的 __init__ 初始化逻辑，应该使用什么语句？",
+      options: [
+        "A. parent.__init__()",
+        "B. super().__init__()",
+        "C. this.__init__()",
+        "D. self.parent()"
+      ],
+      answer: 1,
+      explanation: "在 Python 子类中，使用 super().__init__() 可以方便地调用父类的构造函数，继承父类的属性初始化逻辑。"
+    },
+    {
+      id: "q3",
+      type: "single",
+      question: "关于 __init__.py 文件的作用，以下说法错误的是？",
+      options: [
+        "A. 标识包含该文件的文件夹是一个可被 import 的 Python 包",
+        "B. 可以通过在 __init__.py 中提升导入，简化外部调用层级",
+        "C. __init__.py 必须包含至少 1000 行代码才能生效",
+        "D. 可以通过 __all__ 变量控制 from package import * 时导出的列表"
+      ],
+      answer: 2,
+      explanation: "__init__.py 文件即使完全为空，也能够成功将文件夹标识为 Python 包。不需要包含多行代码。"
+    },
+    {
+      id: "q4",
+      type: "tf",
+      question: "判断题：子类继承父类后，如果重新定义了与父类同名的方法，调用该方法时会执行子类的实现（方法重写）。",
+      options: [
+        "A. 正确",
+        "B. 错误"
+      ],
+      answer: 0,
+      explanation: "正确！方法重写（Method Overriding）允许子类根据需求定制实现父类的同名方法。"
+    }
+  ]}
+/>
+
+---
+
+## 12. 下一步
+
+恭喜你掌握了 Python 模块包管理与面向对象继承机制！
+
+下一步我们将深入学习 [07. 文件读写与调试技巧](/learn/foundations/python/07-py-files-debugging)，掌握文本与 JSON 文件读写、`with` 上下文管理器，以及 `try-except` 异常捕获排错技能。
+
+---
+
+## 13. 参考资料
+
+- [Python 官方教程：模块与包](https://docs.python.org/zh-cn/3/tutorial/modules.html) —— 官方模块包权威指引。
+- [Python 官方教程：类与继承](https://docs.python.org/zh-cn/3/tutorial/classes.html) —— 官方面向对象类与继承指南。

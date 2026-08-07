@@ -1,338 +1,426 @@
 ---
 id: py-basics
-title: 02.变量、类型与表达式
+title: 02.变量、数据类型与运算符
 module: foundations
 submodule: python
 order: 2
 difficulty: beginner
 prerequisites: [py-environment]
-relatedNotes: [py-data-structures, py-control-flow]
-nextNotes: [py-control-flow]
-map:
-  layoutGroup: foundations-python
 estimatedMinutes: 20
-tags: [Python, 变量, 数据类型]
-summary: 强类型与动态类型机制、数值、布尔、字符串处理与运算符优先级。
+tags: [Python, 变量, 数据类型, 运算符, 类型转换, 注释, 解释器]
+summary: 掌握 Python 变量定义与命名规范、注释编写、解释器与动态类型机制、四大基本数据类型（整数、浮点数、字符串、布尔值）、算术与逻辑运算符，以及常用的数据类型转换技巧。
+symbols:
+  - symbol: "# (注释)"
+    mean: "写给人类看的说明文字，解释器运行时完全忽略"
+  - symbol: "动态类型"
+    mean: "解释器在运行时根据右侧数值自动推断变量数据类型"
+  - symbol: "int"
+    mean: "整数类型，表示无小数的整数（如 10, -5）"
+  - symbol: "float"
+    mean: "浮点数类型，表示带小数的数字（如 3.14）"
+  - symbol: "str"
+    mean: "字符串类型，用引号包围的文本（如 'Hello'）"
+  - symbol: "bool"
+    mean: "布尔类型，仅包含 True 与 False 两种真假值"
+  - symbol: "type()"
+    mean: "内置函数，用于查询任何变量的数据类型"
+  - symbol: "input()"
+    mean: "内置函数，接收控制台用户输入并返回字符串"
+  - symbol: "f-string"
+    mean: "格式化字符串语法 f'姓名: {name}'"
 ---
 
-## 本节要解决什么问题？
+## 1. 问题导入
 
-本章把“一个值如何被程序表示、计算和传递”讲清楚。机器学习代码看起来经常只是几行公式，但每个公式都依赖 Python 对象：特征是数值，标签常常是字符串或整数，掩码是布尔数组，缺失值可能是 `None` 或 `NaN`，学习率和批大小则是超参数。
+假设你要开发一个简易的购物结算程序，你需要记住商品的名称（如 `"苹果"`）、商品的单价（如 `5.5` 元）、购买的数量（如 `3` 斤），以及顾客是否是会员（如 `True`）。
 
-完成本章后，你应能：
+计算机在处理这些数据时，是如何区分文字、数字和真假判断的？又是如何记住并计算它们的？
 
-- 创建变量并用 `type()`、`isinstance()` 检查类型。
-- 区分 `int`、`float`、`bool`、`str`、`None`，并进行安全的类型转换。
-- 使用算术、比较、逻辑、成员和身份运算符写出清晰的表达式。
-- 处理字符串切片、格式化和常见清洗操作。
-- 解释浮点数精度问题，以及为什么比较浮点数要使用容差。
-- 理解“变量名绑定对象”、不可变对象和可变对象的初步区别。
+这就是本章要学习的核心内容：**变量、基本数据类型与运算符**。掌握了它们，你就掌握了控制计算机处理数据的“基本元件”。
 
-<ConceptCard title="本节核心原则" type="intuition">
-变量不是贴在数值上的永久标签，而是指向对象的名字。表达式先计算出对象，再把结果绑定给名字。理解这一点，才能读懂 NumPy 数组、pandas 列和模型参数为什么会被原地修改或重新赋值。
+---
+
+## 2. 学习目标
+
+完成本章学习后，你将能够：
+
+- 遵守 Python 变量命名规范，创建合法且含义清晰的变量；
+
+- 熟练区分并使用四大基本数据类型（整数、浮点数、字符串、布尔值）；
+
+- 使用内置函数 `type()` 查询任何变量的数据类型；
+
+- 掌握算术运算符（包括整除与取余）、比较运算符与逻辑运算符；
+
+- 使用 `int()`、`float()`、`str()` 进行显式数据类型转换，并能使用 `f-string` 格式化输出。
+
+---
+
+## 3. 变量与命名规范
+
+在上一章中，我们把变量比喻为“贴有标签的盒子”。在 Python 中创建和使用变量时，需要遵循一套标准的语法规则。
+
+### 3.1 变量赋值与修改
+在 Python 中，通过单等号 `=` 绑定变量名与具体数据：
+
+```python
+# 1. 首次赋值：创建变量 count 并存入数字 10
+count = 10
+print(count)  # 输出 10
+
+# 2. 修改赋值：重新将数字 20 存入变量 count 中
+count = 20
+print(count)  # 输出 20
+```
+
+### 3.2 变量命名 3 大硬性规则
+
+Python 对变量的名称有严格的语法要求，不遵守规则会导致 `SyntaxError` 报错：
+
+1. **组成元素**：只能包含**字母（a-z, A-Z）**、**数字（0-9）**和**下划线（`_`）**，不能包含空格或特殊字符；
+2. **开头限制**：变量名**绝不能以数字开头**（例如 `1user` 是非法的，但 `user1` 是合法的）；
+3. **大小写敏感**：`Age` 和 `age` 是两个完全不同的变量。
+
+### 3.3 推荐命名习惯（蛇形命名法）
+为了让代码易读，Python 官方推荐使用**小写字母 + 下划线**（蛇形命名法 `snake_case`）来命名变量：
+
+```python
+# 推荐的命名（含义清晰）
+user_age = 18
+total_price = 99.5
+is_vip_member = True
+
+# 不推荐的命名（含义模糊或拼写混乱）
+a = 18
+x1 = 99.5
+isvipmember = True
+```
+
+> ⚠️ **避开系统保留关键字**：不能使用 Python 内部占用的关键字作为变量名，如 `if`, `else`, `for`, `def`, `class`, `import`, `True`, `False` 等。
+
+### 3.4 Python 注释的使用
+
+**注释 (Comments)** 是写给代码阅读者看的人类说明文字。**Python 解释器在运行代码时会完全忽略注释内容**。良好的注释能让代码可读性大大提升。
+
+1. **单行注释**：使用 `#` 井号开头。在井号后面的整行文字都会被视作注释；
+2. **多行注释 / 文档字符串**：使用三个连续的单引号 `'''...'''` 或双引号 `"""..."""` 包围大段文字。
+
+```python
+# 这是一个单行注释：定义用户的初始积分
+user_score = 100  # 也可以写在代码行的末尾
+
+"""
+这是一个多行注释示例：
+用来说明接下来的代码逻辑：
+计算打折后的最终商品总价
+"""
+discount_price = 85.0
+```
+
+### 3.5 解释器与动态类型机制
+
+Python 是一种**解释型、动态类型语言**：
+
+- **解释器一行行执行**：Python 解释器会按照从上到下的顺序，逐行读取并执行代码；
+- **动态类型机制**：在创建变量时，你**不需要像 C/Java 那样手动声明数据类型**（例如无需写 `int age = 18`）。Python 解释器会在运行时自动根据右侧的值推断变量类型，并且同一个变量在后续代码中可以被赋予不同类型的新值：
+
+```python
+x = 10       # 解释器自动识别 x 为整数 int
+x = "Hello"  # 解释器将 x 重新识别为字符串 str
+```
+
+---
+
+## 4. 四大基本数据类型
+
+Python 是一种动态类型语言，在赋值时会自动识别数据的类型。主要包含以下 4 种基本类型：
+
+| 数据类型 | 英文名称 | 类型关键字 | 示例数据 | 适用场景 |
+|---|---|---|---|---|
+| **整数** | Integer | `int` | `10`, `-5`, `0` | 计数、件数、年份 |
+| **浮点数 (小数)** | Float | `float` | `3.14`, `-0.5`, `99.0` | 金额、商品重量、百分比 |
+| **字符串** | String | `str` | `"Hello"`, `'Python'` | 姓名、文本、商品描述 |
+| **布尔值** | Boolean | `bool` | `True`, `False` | 状态开关、条件真假判断 |
+
+### 4.1 使用 `type()` 检查数据类型
+你可以使用 Python 内置的 `type()` 函数随时查看一个变量的数据类型：
+
+```python
+name = "小明"
+age = 20
+height = 1.75
+is_student = True
+
+print(type(name))        # 输出 <class 'str'>
+print(type(age))         # 输出 <class 'int'>
+print(type(height))      # 输出 <class 'float'>
+print(type(is_student))  # 输出 <class 'bool'>
+```
+
+### 4.2 字符串用法详解
+字符串必须用引号包围，单引号 `' '` 或双引号 `" "` 均可：
+
+```python
+# 1. 字符串拼接（使用 + 号）
+first_name = "张"
+last_name = "三"
+full_name = first_name + last_name  # 结果为 "张三"
+
+# 2. 字符串重复（使用 * 号）
+star_line = "*" * 10  # 结果为 "**********"
+
+# 3. 现代化格式化输出：f-string（推荐）
+age = 18
+message = f"你好，{full_name}！你今年 {age} 岁。"
+print(message)  # 输出：你好，张三！你今年 18 岁。
+```
+
+<ConceptCard title="优雅的 f-string 语法" type="intuition">
+在字符串引号前加上字母 `f`，就可以在字符串内直接使用 `{变量名}` 把变量嵌入文本中，非常适合输出格式化的账单或通知！
 </ConceptCard>
 
-## 1. 变量是名字，类型属于对象
+---
 
-Python 使用动态类型：不需要在赋值前声明类型，运行时对象自身携带类型信息。下面的变量名 `value` 先指向整数，随后又指向字符串；这不是“变量类型改变”，而是名字重新绑定了对象。
+## 5. 运算符与表达式
 
-<RunnableCodeBlock title="查看类型与重新绑定">
-{`value = 42
-print(value, type(value))
+Python 提供了丰富的运算符来对数据进行计算与逻辑判断。
 
-value = "forty-two"
-print(value, type(value))
+### 5.1 算术运算符
 
-print(isinstance(value, str))
-print(isinstance(42, int))`}
+| 运算符 | 名称 | 示例表达式 | 结果 | 说明 |
+|---|---|---|---|---|
+| `+` | 加法 | `10 + 5` | `15` | 数字相加或字符串拼接 |
+| `-` | 减法 | `10 - 5` | `5` | 数字相减 |
+| `*` | 乘法 | `10 * 5` | `50` | 数字相乘或字符串重复 |
+| `/` | 浮点除 | `10 / 4` | `2.5` | **结果始终为浮点数** |
+| `//` | 整除 (向下取整) | `10 // 4` | `2` | 只保留计算结果的整数部分 |
+| `%` | 取余 (求模) | `10 % 4` | `2` | 计算除法后的**余数** |
+| `**` | 幂运算 (次方) | `2 ** 3` | `8` | $2^3 = 8$ |
+
+```python
+# 取余 % 的常用用途：判断奇偶数
+number = 7
+print(number % 2)  # 结果为 1，说明是奇数
+```
+
+<ConceptCard title="手算演练：整除、取余与复合赋值运算" type="tip">
+**计算示例 1：整除 // 与取余 % 的区别（已知 $a = 17, b = 5$）**
+- **浮点除法 $a / b$**：$17 / 5 = 3.4$；
+- **整除 $a // b$**：只保留商的整数部分，去掉小数，得到 $3$；
+- **取余 $a \% b$**：计算除法后的余数，$17 = 5 \times 3 + 2$，余数为 $2$。
+
+**计算示例 2：复合赋值运算符优先级（已知 $x = 10$）**
+- 执行代码 `x += 5 * 2`；
+- 第一步（算右侧）：先计算乘法 $5 \times 2 = 10$；
+- 第二步（做累加）：$x = x + 10 = 10 + 10 = 20$；
+- 最终 $x$ 的值为 $20$。
+</ConceptCard>
+
+### 5.2 比较运算符（输出布尔值 `True` / `False`）
+
+| 运算符 | 含义 | 示例 | 结果 |
+|---|---|---|---|
+| `==` | **等于** (注意是双等号) | `5 == 5` | `True` |
+| `!=` | 不等于 | `5 != 3` | `True` |
+| `>` / `<` | 大于 / 小于 | `10 > 20` | `False` |
+| `>=` / `<=` | 大于等于 / 小于等于 | `18 >= 18` | `True` |
+
+> **新手陷阱**：单等号 `=` 是**赋值**（将值存入变量）；双等号 `==` 才是**比较**（判断两边是否相等）。
+
+### 5.3 逻辑运算符（组合多个条件）
+
+- **`and` (与)**：两边条件**都为 `True`**，结果才为 `True`；
+- **`or` (或)**：只要有一边条件为 `True`，结果就为 `True`；
+- **`not` (非)**：取反，`True` 变 `False`，`False` 变 `True`。
+
+```python
+age = 20
+has_ticket = True
+
+# 条件：年龄 >= 18 并且 持有门票
+can_enter = (age >= 18) and has_ticket
+print(can_enter)  # 输出 True
+```
+
+---
+
+## 6. 数据类型转换
+
+有时我们需要将一种数据类型强制转换为另一种类型。
+
+### 6.1 隐式类型转换（自动转换）
+当整数与浮点数一起计算时，Python 会自动将结果升级为浮点数：
+
+```python
+a = 10    # int
+b = 2.5   # float
+c = a + b # 结果为 12.5，类型自动变为 float
+```
+
+### 6.2 显式类型转换（强制转换）
+使用内置函数 `int()`, `float()`, `str()` 进行转换：
+
+```python
+# 1. 字符串转整数
+str_num = "100"
+real_num = int(str_num)  # 转换为整数 100
+
+# 2. 浮点数转整数（直接抹去小数部分）
+pi = 3.99
+int_pi = int(pi)  # 结果为 3
+
+# 3. 数字转字符串
+price = 49.9
+price_str = str(price)  # 转换为字符串 "49.9"
+```
+
+### 6.3 经典实战：处理用户输入 `input()`
+内置函数 `input()` 用于从控制台接收用户输入的文字。**需要特别注意：`input()` 返回的结果永远是字符串 (`str`)**！
+
+如果直接拿去进行数学加减，会引发报错或字符串拼接，必须先用 `int()` 或 `float()` 进行转换：
+
+```python
+# 错误写法（会进行字符串拼接，而不是加法）
+# user_input = input("请输入数量：") # 假设用户输入 5
+# total = user_input + 1           # 报错 TypeError!
+
+# 正确写法：显式转换为整数
+input_text = "5"            # 模拟用户输入
+item_count = int(input_text) # 转换为数字 5
+total = item_count + 1      # 正确计算为 6
+print(total)
+```
+
+---
+
+## 7. 动手实战：超市打折收据计算器
+
+请在下方代码块中，点击 **“运行代码”**，体验变量计算、类型转换与 `f-string` 格式化输出：
+
+<RunnableCodeBlock title="超市打折小收据生成器">
+{`# 1. 定义商品信息
+item_name = "优质红富士苹果"
+unit_price = 8.5  # 单价 (元/斤)
+weight = 4.0      # 购买重量 (斤)
+discount = 0.85   # 85 折优惠
+
+# 2. 计算原价与打折后的实付金额
+original_total = unit_price * weight
+final_pay = original_total * discount
+saved_money = original_total - final_pay
+
+# 3. 格式化生成购物收据
+receipt = f"""
+---------------- Shopping Receipt ----------------
+商品名称: {item_name}
+商品单价: {unit_price} 元/斤
+购买重量: {weight} 斤
+-------------------------------------------------
+应付原价: {original_total} 元
+折后实付: {final_pay} 元
+本次立省: {saved_money} 元
+-------------------------------------------------
+"""
+
+print(receipt)
+`}
 </RunnableCodeBlock>
 
-`type(x)` 适合检查确切类型，`isinstance(x, SomeType)` 更适合业务代码，因为它也会识别子类。不要依靠变量名猜类型；在数据处理边界处主动检查，错误会更早暴露。
+---
 
-### 1.1 赋值、同时赋值与常量约定
+## 8. 常见错误排查 (Troubleshooting)
 
-```python
-learning_rate = 0.01
-batch_size = 32
-feature_name = "petal_length"
-
-width, height = 640, 480
-width, height = height, width  # Python 可直接交换两个名字
-```
-
-Python 没有强制常量语法。全大写只是团队约定，表示不应在后续代码中修改：
-
-```python
-DEFAULT_SEED = 42
-IMAGE_SIZE = (224, 224)
-```
-
-### 1.2 命名规则
-
-变量名**只能包含字母、数字和下划线**，不能以数字开头，也不能使用 `class`、`for` 等关键字。推荐使用 `snake_case`，让名字表达单位和含义：`learning_rate` 比 `lr1` 更容易检查实验配置。
-
-## 2. Python 的基本类型
-
-| 类型 | 示例 | AI 中的常见用途 |
+| 错误现象 / 异常类型 | 常见原因 | 标准排查与处理方式 |
 |---|---|---|
-| `int` | `0`, `-3`, `42` | 类别 ID、样本计数、epoch 数 |
-| `float` | `0.1`, `-2.5` | 特征值、损失、概率、学习率 |
-| `bool` | `True`, `False` | 掩码、开关、预测是否正确 |
-| `str` | `"cat"` | 标签名称、文本、文件路径 |
-| `NoneType` | `None` | 尚未计算的值、缺失配置 |
-
-### 2.1 整数与浮点数
-
-Python 整数可以表示任意精度；浮点数通常对应 IEEE 754 双精度，计算速度快但不能精确表示所有十进制小数。
-
-```python
-samples = 128
-temperature = 0.7
-print(samples // 32)   # 整除：4
-print(samples % 32)    # 余数：0
-print(2 ** 10)         # 幂：1024
-```
-
-`/` 总是产生浮点数，`//` 做向下取整。批处理时要留意最后一个不完整 batch，不能把 `//` 和 `/` 混用。
-
-### 2.2 布尔值与真值判断
-
-`bool` 只有 `True` 和 `False`，但 `if` 会把其他对象转换为真值。通常为假的对象包括：`False`、`None`、数值 `0`、空字符串 `""`、空列表 `[]`、空字典 `{}`。
-
-```python
-label = ""
-missing_value = None
-
-if not label:
-    print("标签为空")
-if missing_value is None:
-    print("尚未提供值")
-```
-
-不要写 `if value == None`，应写 `value is None`。`None` 是单例对象，身份判断能清晰表达“确实没有值”。
-
-### 2.3 字符串
-
-字符串是 Unicode 文本，不可变。索引从 0 开始，负索引从末尾开始，切片使用半开区间 `[start:stop:step]`：
-
-<RunnableCodeBlock title="字符串索引、切片与清洗">
-{`text = "  Ackow-AILearning"
-cleaned = text.strip().lower()
-
-print(cleaned[0])       # i
-print(cleaned[-1])      # a
-print(cleaned[:4])      # iris
-print(cleaned[5:])      # setosa
-print(cleaned[::-1])    # 反转
-print(cleaned.replace("-", "_"))
-print("setosa" in cleaned)`}
-</RunnableCodeBlock>
-
-常用方法：`strip()` 去除首尾空白，`split()` 分割，`join()` 拼接，`replace()` 替换，`lower()`/`upper()` 统一大小写。文本标签进入模型前，应先明确是否需要这些清洗，否则 `"Cat"` 和 `"cat"` 可能被当作两个类别。
-
-### 2.4 用 f-string 展示变量
-
-f-string 以 `f` 开头，把花括号中的表达式求值后放进字符串。它很适合打印训练配置和观察中间结果；格式说明写在冒号后面，例如 `:.2f` 表示保留两位小数。
-
-```python
-epoch = 3
-loss = 0.123456
-print(f"epoch={epoch}, loss={loss:.2f}")  # epoch=3, loss=0.12
-```
-
-## 3. 运算符与表达式
-
-### 3.1 算术运算符
-
-| 运算符 | 描述                          | 优先级 | 示例                         |
-| ------ | ----------------------------- | ------ | ---------------------------- |
-| **     | 幂 - 返回 x 的 y 次幂         | 1      | `2 ** 3 = 8`                 |
-| *      | 乘 - 两数相乘；字符串重复     | 2      | `3 * 4 = 12`                 |
-| /      | 除 - x 除以 y，永远返回浮点数 | 2      | `7 / 2 = 3.5`                |
-| %      | 取模 - 返回除法余数           | 2      | `7 % 2 = 1`                  |
-| //     | 取整除 - **向下取整**         | 2      | `7 // 2 = 3`、`-7 // 2 = -4` |
-| +      | 加 - 数字相加 / 字符串拼接    | 3      | `5 + 3 = 8`                  |
-| -      | 减 - 数字相减 / 负号          | 3      | `5 - 3 = 2`                  |
-
-括号优先级最高，建议用括号表达意图：
-
-```python
-score = 0.8 * 0.6 + 0.2 * 0.4
-normalized = (value - mean) / std
-```
-
-### 3.2 比较、逻辑和成员运算符
-
-| 运算符   | 类别 | 描述             | 优先级 | 示例                                                     |
-| -------- | ---- | ---------------- | ------ | -------------------------------------------------------- |
-| `==`     | 比较 | 等于             | 6      | `5 == 3 → False`、`"a" == "a" → True`                    |
-| `!=`     | 比较 | 不等于           | 6      | `5 != 3 → True`                                          |
-| `>`      | 比较 | 大于             | 6      | `7 > 2 → True`                                           |
-| `<`      | 比较 | 小于             | 6      | `7 < 2 → False`                                          |
-| `>=`     | 比较 | 大于等于         | 6      | `4 >= 4 → True`                                          |
-| `<=`     | 比较 | 小于等于         | 6      | `3 <= 1 → False`                                         |
-| `not`    | 逻辑 | 逻辑非           | 7      | `not True → False`、`not 0 → True`                       |
-| `and`    | 逻辑 | 逻辑与（短路）   | 8      | `3 and 5 → 5`、`0 and 9 → 0`、`True and False → False`   |
-| `or`     | 逻辑 | 逻辑或（短路）   | 9      | `3 or 5 → 3`、`0 or "hi" → "hi"`、`False or True → True` |
-| `in`     | 成员 | 判断是否包含在内 | 10     | `2 in [1,2,3] → True`、`"he" in "hello" → True`          |
-| `not in` | 成员 | 判断是否不包含   | 10     | `5 not in [1,2,3] → True`                                |
-
-比较运算符产生布尔值：`< <= == != >= >`。逻辑运算符 `and`、`or`、`not` 具有短路特性；成员运算符 `in`、`not in` 检查元素是否属于字符串或容器。
-
-```python
-probability = 0.82
-is_positive = probability >= 0.5
-is_valid = (0.0 <= probability <= 1.0) and is_positive
-
-allowed = {"train", "validation", "test"}
-split = "validation"
-print(is_valid, split in allowed)
-```
-
-Python 支持链式比较 `0.0 <= probability <= 1.0`，比写两个 `and` 更易读。不要把 `and` 当成 NumPy 数组的逐元素逻辑运算；后续学习 NumPy 时应使用 `&`、`|` 并为每个条件加括号。
-
-`==` 比较两个对象的内容，`is` 比较它们是否就是同一个对象。初学阶段最可靠的规则是：只用 `is None` 和 `is not None` 判断缺失值，不要用 `is` 比较数字或字符串。
-
-```python
-first = [1, 2]
-second = [1, 2]
-alias = first
-
-print(first == second)  # True: 内容相同
-print(first is second)  # False: 是两份不同的列表
-print(first is alias)   # True: alias 指向 first
-print(None is None)     # True: None 是单例对象
-```
-
-### 3.3 运算符优先级
-
-表达式大致按“括号 → 幂 → 正负号 → 乘除 → 加减 → 比较 → `not` → `and` → `or`”求值。实际代码中不要依赖记忆，复杂条件主动加括号：
-
-```python
-ready = (samples > 0) and (label_count >= 2)
-```
-
-## 4. 类型转换与输入验证
-
-`int()`、`float()`、`str()`、`bool()` 可将兼容值转换为目标类型，但转换可能失败或产生意外结果：
-
-```python
-epoch_text = "10"
-epoch = int(epoch_text)
-learning_rate = float("0.001")
-
-print(epoch + 1, learning_rate * 10)
-print(bool("False"))  # True：非空字符串都是真值
-```
-
-从配置或命令行读取的内容通常是字符串，不能直接拿来做数值运算。对用户输入应捕获 `ValueError` 并给出可理解的错误信息：
-
-```python
-def parse_probability(raw: str) -> float:
-    value = float(raw)
-    if not 0.0 <= value <= 1.0:
-        raise ValueError("probability 必须在 0 到 1 之间")
-    return value
-```
-
-这里的边界检查比单纯转换更重要：模型配置中的 `dropout=1.5` 虽然是合法浮点数，却不是合法概率。
-
-## 5. 浮点数精度：不要直接比较小数
-
-许多十进制小数无法用二进制浮点数精确存储：
-
-```python
-result = 0.1 + 0.2
-print(result)          # 可能显示 0.30000000000000004
-print(result == 0.3)   # False
-```
-
-比较计算结果时使用容差。标准库 `math.isclose` 提供相对和绝对容差：
-
-```python
-import math
-
-print(math.isclose(0.1 + 0.2, 0.3, rel_tol=1e-9, abs_tol=1e-12))
-```
-
-`abs_tol` 对接近 0 的值尤其重要。训练损失、概率和归一化结果都可能受舍入误差影响；不要为了让输出“好看”而在中间步骤过早 `round()`。
-
-## 6. 可变与不可变对象的初步概念
-
-整数、浮点数、布尔值和字符串是不可变对象；列表、字典和集合是可变对象。赋值不会复制对象，只会复制引用关系：
-
-```python
-features = [1.0, 2.0]
-same_features = features
-same_features.append(3.0)
-print(features)  # [1.0, 2.0, 3.0]
-```
-
-如果需要独立的浅拷贝，可以使用切片或 `list()`：
-
-```python
-features = [1.0, 2.0]
-copied = features.copy()
-copied.append(3.0)
-print(features)  # [1.0, 2.0]
-```
-
-嵌套列表还涉及深拷贝；当前阶段只需记住：传递数据给函数前，确认函数是否会原地修改它。NumPy 的数组和 pandas 的 DataFrame 也有视图/拷贝问题，后续章节会专门说明。
-
-## 小实验：把预测概率转换为标签
-
-下面示例模拟二分类预测，把概率、阈值和标签名称结合起来：
-
-<RunnableCodeBlock title="概率到标签">
-{`probabilities = [0.12, 0.51, 0.93, 0.48]	# 概率列表
-threshold = 0.5	# 二分类阈值
-labels = ["negative" if p < threshold else "positive" for p in probabilities]
-
-for probability, label in zip(probabilities, labels):
-    print(f"probability={probability:.2f} -> {label}")`}
-</RunnableCodeBlock>
-
-这里的 `:.2f` 是 f-string 格式说明符：固定显示两位小数。阈值不是永远等于 0.5；在漏检成本更高的任务中，阈值应通过验证集和业务指标选择。
-
-## 常见错误排查
-
-| 现象 | 原因 | 处理方式 |
-|---|---|---|
-| `"3" + 2` 报 `TypeError` | 字符串和整数不能直接相加 | 先明确转换：`int("3") + 2` |
-| `bool("False")` 得到 `True` | 非空字符串都是真值 | 对配置使用显式解析，而不是直接 `bool()` |
-| `0.1 + 0.2 == 0.3` 为假 | 二进制浮点表示有舍入误差 | 使用 `math.isclose` |
-| `if x == None` | 用相等比较表达缺失值 | 使用 `x is None` |
-| 修改副本却影响原列表 | 赋值只复制引用 | 使用 `.copy()`；嵌套结构按需深拷贝 |
-| 条件表达式结果不符合预期 | 优先级或短路逻辑不清 | 拆成有名字的布尔变量并加括号 |
-
-## 本节检查清单
-
-- [ ] 能用 `type()` 和 `isinstance()` 解释对象类型。
-- [ ] 能区分 `/`、`//`、`%` 和 `**`。
-- [ ] 能用 `if`、比较和逻辑运算符验证输入范围。
-- [ ] 能用切片和字符串方法清洗一个文本标签。
-- [ ] 能解释 `0.1 + 0.2` 的精度问题并使用 `math.isclose`。
-- [ ] 能说明赋值、浅拷贝和可变对象之间的关系。
-- [ ] 能运行“概率到标签”示例，并修改阈值观察结果变化。
-
-## 自测
-
-1. Python 的动态类型和强类型分别意味着什么？`type()` 与 `isinstance()` 如何选择？
-2. 为什么 `bool("False")` 是 `True`？如何可靠地解析配置中的布尔值？
-3. `is` 和 `==` 有什么区别？为什么判断 `None` 应使用 `is`？
-4. `0.1 + 0.2` 为什么可能不等于 `0.3`？`math.isclose` 的两个容差参数分别解决什么问题？
-5. `a = b` 后修改 `b` 为什么可能影响 `a`？如何创建一个独立的一层列表副本？
-
-## 下一步
-
-下一章：[03.控制流与推导式](/learn/foundations/python/03-py-control-flow)。你将使用本章的布尔表达式、字符串和数值，遍历样本并构造批处理逻辑。
-
-## 参考资料
-
-- [Python 官方教程：数字、字符串与列表](https://docs.python.org/3/tutorial/introduction.html)
-- [Python 官方文档：内置类型](https://docs.python.org/3/library/stdtypes.html)
-- [Python 官方文档：表达式与运算符优先级](https://docs.python.org/3/reference/expressions.html)
-- [Python 官方文档：`math.isclose`](https://docs.python.org/3/library/math.html#math.isclose)
-- [Python 官方教程：赋值、对象与可变性](https://docs.python.org/3/tutorial/classes.html#python-scopes-and-namespaces)
-- [CPython 官方仓库：Python 语言实现与测试](https://github.com/python/cpython)
-- [Python 官方文档仓库](https://github.com/python/cpython/tree/main/Doc)
+| `TypeError: can only concatenate str (not "int") to str` | 尝试直接使用 `+` 将字符串与数字拼接 | 使用 `str(num)` 先将数字转为字符串，或改用 `f"{text}{num}"` 语法 |
+| `ValueError: invalid literal for int() with base 10` | 尝试将无法解析为数字的文本（如 `"abc"` 或 `"3.14"`）用 `int()` 转换 | 检查字符串内容是否包含字母；如果是带小数的文本 `"3.14"`，应先转为 `float()` |
+| `SyntaxError: invalid syntax` | 变量名使用了数字开头（如 `1st_name`）或使用了中文标点 | 修改变量名使其符合命名规范；确认所有符号均为英文半角字符 |
+| `NameError: name 'true' is not defined` | 布尔值 `True` 和 `False` 误写成了小写 `true` 或 `false` | Python 大小写敏感，布尔值的首字母必须**大写**（`True` / `False`） |
+
+---
+
+## 9. 本节检查清单 (Checklist)
+
+- [ ] 我能遵守变量命名规范，写出合法且有清晰含义的蛇形变量名；
+- [ ] 我能准确区分 `int` (整数)、`float` (小数)、`str` (字符串) 和 `bool` (布尔值)；
+- [ ] 我会使用 `type()` 函数检查变量的数据类型；
+- [ ] 我能区分整除 `//` 与取余 `%` 的作用，并能用 `% 2` 判断奇偶数；
+- [ ] 我能区分单等号 `=` (赋值) 与双等号 `==` (比较) 的不同含义；
+- [ ] 我能使用 `f-string` 语法（如 `f"单价: {price}"`）进行格式化输出；
+- [ ] 我知道 `input()` 返回的结果是字符串，并在做数学运算前使用 `int()` 或 `float()` 进行转换。
+
+---
+
+## 10. 课后互动自测
+
+<InteractiveQuiz
+  title="02. 变量、数据类型与运算符 课后互动自测"
+  questions={[
+    {
+      id: "q1",
+      type: "single",
+      question: "在 Python 中，以下哪一个变量名是合法且符合规范的？",
+      options: [
+        "A. 2nd_user",
+        "B. user-name",
+        "C. total_score",
+        "D. class"
+      ],
+      answer: 2,
+      explanation: "A 以数字开头是非法的；B 包含减号 - 是非法的；D 是 Python 内部保留关键字；C 采用小写字母加下划线，合法且规范。"
+    },
+    {
+      id: "q2",
+      type: "code-output",
+      question: "运行以下两行 Python 代码，控制台打印的结果是什么？\n\nprint(13 // 5)\nprint(13 % 5)",
+      codeSnippet: "print(13 // 5)\nprint(13 % 5)",
+      options: [
+        "A. 2.6 和 3",
+        "B. 2 和 3",
+        "C. 2 和 2.6",
+        "D. 3 和 2"
+      ],
+      answer: 1,
+      explanation: "13 // 5 是整除，向下取整结果为 2；13 % 5 是取余，13 除以 5 余数为 3。"
+    },
+    {
+      id: "q3",
+      type: "single",
+      question: "在 Python 中尝试运行代码 print(\"年龄: \" + 18) 会引发什么报错？应该如何正确改写？",
+      options: [
+        "A. 抛出 TypeError；应改写为 print(\"年龄: \" + str(18)) 或使用 f-string f\"年龄: {18}\"",
+        "B. 抛出 SyntaxError；不能打印数字",
+        "C. 正常输出 \"年龄: 18\"",
+        "D. 抛出 NameError 提示年龄未定义"
+      ],
+      answer: 0,
+      explanation: "Python 不能用 + 号直接将字符串 (str) 和整数 (int) 拼接，会抛出 TypeError。需要先用 str() 将数字转为字符串，或改用 f-string 语法。"
+    },
+    {
+      id: "q4",
+      type: "tf",
+      question: "判断题：单等号 = 用来给变量赋值（如 x = 10），而双等号 == 用来比较两边的值是否相等（如 x == 10）。",
+      options: [
+        "A. 正确",
+        "B. 错误"
+      ],
+      answer: 0,
+      explanation: "正确！单等号 = 是赋值运算符，双等号 == 是比较运算符，二者含义完全不同。"
+    }
+  ]}
+/>
+
+---
+
+## 11. 下一步
+
+恭喜你掌握了 Python 变量、基本类型与运算符！
+
+下一步我们将深入学习 [03. 控制流：条件判断与循环](/learn/foundations/python/03-py-control-flow)，掌握 `if-elif-else` 分支判断、`for` 循环与 `while` 循环，让你的程序能够根据不同条件自动做出决策。
+
+---
+
+## 12. 参考资料
+
+- [Python 官方教程：内置类型 (Built-in Types)](https://docs.python.org/zh-cn/3/library/stdtypes.html) —— 官方数字与字符串类型文档。
+- [PEP 8 -- Python 代码风格指南](https://peps.python.org/pep-0008/) —— 官方变量命名规范指南。

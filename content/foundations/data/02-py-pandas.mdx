@@ -1,0 +1,350 @@
+---
+id: py-pandas
+title: 02.Pandas 表格数据分析与清洗
+module: foundations
+submodule: data
+order: 2
+difficulty: beginner
+prerequisites: [py-numpy]
+estimatedMinutes: 25
+tags: [Pandas, DataFrame, Series, 数据清洗, loc, iloc, Groupby, 数据导入]
+summary: 掌握 Pandas 核心数据结构 Series 与 DataFrame、CSV 文件读写、loc/iloc 显式切片、多条件布尔筛选、缺失值清洗与 Groupby 分组统计。
+symbols:
+  - symbol: "pd.DataFrame"
+    mean: "带有行索引 (Index) 和列名 (Columns) 的二维异构表格数据结构"
+  - symbol: "pd.Series"
+    mean: "带有索引 (Index) 的一维数据序列"
+  - symbol: "df.loc[]"
+    mean: "基于标签名 (Label) 的显式索引切片（包含末端闭区间）"
+  - symbol: "df.iloc[]"
+    mean: "基于 0 开始整数位置 (Position) 的隐式切片（不含末端开区间）"
+---
+
+## 1. 问题导入
+
+在真实的数据科学与 AI 工程中，数据很少以干净的 NumPy 纯数字矩阵形式直接呈现。真实的数据集往往是包含姓名、日期、省份、类别标签与缺失值的**异构表格数据 (Tabular Data)**。
+
+NumPy 擅长高密度的纯数字矩阵运算，但面对字符串列、缺失值 `NaN` 以及按列名查找时却力不从心。
+
+这正是 **Pandas** 登场的时刻！可以把 Pandas 比作 Python 中的“超级 Excel 引擎”：它不仅能以极高效率读取 GB 级别的 CSV/Excel 文件，还能用极其简洁的代码完成数据清洗、条件筛选与分组统计。
+
+---
+
+## 2. 学习目标
+
+完成本章学习后，你将能够：
+
+- 说出 `pd.Series` 与 `pd.DataFrame` 的层次关系及 Index、Columns、Values 物理三要素；
+- 掌握使用 `pd.read_csv()` 读取文件，以及使用 `df.info()` 和 `df.describe()` 探查数据质量；
+- 清晰区分 `df.loc[]`（基于显式标签闭区间）与 `df.iloc[]`（基于整数位置开区间）的切片用法；
+- 掌握多条件布尔筛选 `df[(cond1) & (cond2)]` 的小括号使用规则；
+- 掌握 `isnull().sum()` 检测缺失值与 `fillna()` / `dropna()` 缺失值清洗流程；
+- 熟练使用 `df.groupby().agg()` 进行多指标分组统计。
+
+---
+
+## 3. 核心数据结构：Series 与 DataFrame
+
+一个 `pd.DataFrame` 相当于附带了额外坐标轴信息的二维表格：
+
+- **`Index` (行索引)**：每行数据的唯一身份标识（如 0, 1, 2... 或时间日期）；
+- **`Columns` (列名/表头)**：每列数据的语义标签（如 `'name'`, `'price'`, `'city'`）；
+- **`Values` (底层的 NumPy 数组)**：真正存储底层数据的二维矩阵。
+
+<PandasDataImportLab />
+
+```python
+import pandas as pd
+import numpy as np
+
+# 1. 创建一维带索引的 Series
+s = pd.Series([88, 92, 79], index=["小明", "小红", "小刚"], name="Score")
+print("--- pd.Series ---")
+print(s)
+
+# 2. 从 Python 字典创建二维 DataFrame
+data = {
+    "name": ["小明", "小红", "小刚", "小华"],
+    "age": [24, 29, 22, 31],
+    "city": ["北京", "上海", "广州", "北京"],
+    "score": [88.5, 92.0, np.nan, 95.5]
+}
+df = pd.DataFrame(data)
+print("\n--- pd.DataFrame ---")
+print(df)
+```
+
+---
+
+## 4. 数据导入与质量探查
+
+### 4.1 数据导入与导出
+最常用的数据格式是 CSV 文本表格：
+
+```python
+import pandas as pd
+
+# 读取 CSV 文件 (常用参数: encoding='utf-8', sep=',')
+df = pd.read_csv("./housing.csv", encoding="utf-8")
+
+# 导出为 CSV 文件 (index=False 表示不保存默认数字行索引)
+df.to_csv("./housing_cleaned.csv", index=False, encoding="utf-8")
+```
+
+### 4.2 数据快速探查与诊断
+
+- **`df.head(n)`**：查看前 $n$ 行数据（默认 5 行）；
+- **`df.info()`**：输出数据框占用内存、每列非空值数量 (Non-Null Count) 与数据类型 (dtypes)；
+- **`df.describe()`**：输出数值列的八项统计汇总（计数、均值、标准差、最小值、四分位数、最大值）；
+- **`df.shape`**：返回 `(行数, 列数)` 元组。
+
+```python
+import pandas as pd
+import numpy as np
+
+df = pd.DataFrame({
+    "user_id": [101, 102, 103, 104, 105],
+    "age": [25, np.nan, 31, 22, 29],
+    "income": [50000, 72000, 61000, np.nan, 85000],
+    "status": ["active", "inactive", "active", "active", "pending"]
+})
+
+print("Shape:", df.shape)
+print("\n--- df.info() ---")
+df.info()
+print("\n--- df.describe() ---")
+print(df.describe())
+```
+
+---
+
+## 5. 切片与筛选：loc 与 iloc 显式区分
+
+这是初学 Pandas 时最容易混淆的地方。Pandas 提供了两种精准切片索引器：
+
+1. **`df.loc[行标签, 列标签]`**：基于**显式名称/标签 (Label-based)** 进行索引。包含起始和结束端点（闭区间 `[a, b]`）；
+2. **`df.iloc[行位置, 列位置]`**：基于 **0 开始的整数位置 (Integer Position-based)** 进行索引。遵循 Python 标准（前闭后开区间 `[a, b)`）。
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({
+    "name": ["小明", "小红", "小刚", "小华"],
+    "age": [24, 29, 22, 31],
+    "score": [88, 92, 79, 95]
+}, index=["a", "b", "c", "d"])
+
+# 1. loc 基于标签索引：包含 'c' (闭区间)
+print("--- df.loc['a':'c', ['name', 'score']] ---")
+print(df.loc["a":"c", ["name", "score"]])
+
+# 2. iloc 基于整数位置切片：不包含 2 (半开区间)
+print("\n--- df.iloc[0:2, 0:2] ---")
+print(df.iloc[0:2, 0:2])
+```
+
+---
+
+## 6. 数据清洗：布尔筛选、缺失值与 Groupby 聚合
+
+### 6.1 布尔条件筛选 (Boolean Indexing)
+
+在 Pandas 中组合多个筛选条件时，必须遵守两条规则：
+1. 逻辑与使用 `&`，逻辑或使用 `|`，逻辑非使用 `~`（**不能使用 Python 原生的 `and`, `or`, `not`**）；
+2. 每个独立的条件表达式**必须用小括号 `()` 括起来**。
+
+```python
+# 筛选：年龄 > 25 且 分数 >= 90
+high_performers = df[(df["age"] > 25) & (df["score"] >= 90)]
+
+# 成员资格筛选 .isin()
+beijing_shanghai = df[df["city"].isin(["北京", "上海"])]
+```
+
+---
+
+### 6.2 缺失值处理 (Handling Missing Values)
+
+数据缺失在实际 AI 任务中极常见。Pandas 使用 `NaN` (Not a Number) 表示缺失值：
+
+- **检测缺失值**：`df.isnull().sum()`（统计每列缺失值的数量）；
+- **删除缺失值**：`df.dropna(subset=['score'])`（删除 score 列包含 NaN 的行）；
+- **填充缺失值**：`df['age'] = df['age'].fillna(df['age'].mean())`（用年龄均值填充空值）。
+
+---
+
+### 6.3 分组聚合统计 (Groupby)
+
+`groupby` 遵循“拆分 - 应用 - 合并”三步模式，常用于按类别统计指标：
+
+```python
+import pandas as pd
+import numpy as np
+
+df = pd.DataFrame({
+    "city": ["北京", "上海", "北京", "上海", "广州", "北京"],
+    "department": ["HR", "Tech", "Tech", "HR", "Tech", "HR"],
+    "salary": [10000, 18000, 22000, 12000, 15000, np.nan]
+})
+
+# 1. 填充薪资缺失值
+df["salary"] = df["salary"].fillna(df["salary"].mean())
+
+# 2. 按城市做 Groupby 聚合统计
+grouped = df.groupby("city").agg(
+    avg_salary=("salary", "mean"),
+    emp_count=("department", "count")
+)
+
+print("--- 按城市 Groupby 统计 ---")
+print(grouped)
+```
+
+<ConceptCard title="手算演练：均值填充与 Groupby 聚合步步推演" type="tip">
+**计算示例：已知薪资列表为 `[10000, 18000, 22000, 12000, 15000, NaN]`**：
+
+1. **第一步（手算已知项均值并填充 NaN）**：
+   - 已知非空薪资：$10000 + 18000 + 22000 + 12000 + 15000 = 77000$；
+   - 均值：$\frac{77000}{5} = 15400$；
+   - 用 $15400$ 填充第 6 行的 NaN 之后，薪资列变为：`[10000, 18000, 22000, 12000, 15000, 15400]`。
+
+2. **第二步（按“北京”城市分组并计算平均薪资）**：
+   - 属于“北京”的员工薪资（第 1, 3, 6 行）：`[10000, 22000, 15400]`；
+   - 手算“北京”平均薪资：$\frac{10000 + 22000 + 15400}{3} = \frac{47400}{3} = 15800$。
+</ConceptCard>
+
+---
+
+## 7. 动手实战：真实房价数据集清洗与分析
+
+请在下方的代码块中，点击 **“运行代码”**，体验完整的数据载入、缺失值处理、布尔筛选与分组统计流程：
+
+<RunnableCodeBlock title="真实房价数据集清洗与分析实战">
+{`import pandas as pd
+import numpy as np
+
+# 1. 模拟构建原始房屋特征表格
+raw_data = {
+    "district": ["朝阳区", "海淀区", "朝阳区", "丰台区", "海淀区", "朝阳区"],
+    "area_sqm": [85.0, 120.5, np.nan, 65.0, 95.0, 110.0],
+    "price_total": [650, 1100, 720, 420, np.nan, 980],
+    "building_year": [2010, 2015, 2008, 2005, 2018, 2012]
+}
+df = pd.DataFrame(raw_data)
+
+print("=== 1. 原始数据质量诊断 ===")
+print("各列缺失值统计:\n", df.isnull().sum())
+
+# 2. 数据清洗：用该区域面积均值填充面积空值，删除总价空值
+df["area_sqm"] = df["area_sqm"].fillna(df["area_sqm"].mean())
+df = df.dropna(subset=["price_total"])
+
+# 3. 特征工程：计算房屋单价 (万元/平米)
+df["unit_price"] = np.round(df["price_total"] / df["area_sqm"], 2)
+
+# 4. 按区域 (district) 分组汇总平均单价与房源数量
+district_summary = df.groupby("district").agg(
+    avg_unit_price=("unit_price", "mean"),
+    house_count=("building_year", "count")
+).reset_index()
+
+print("\n=== 2. 清洗后的区域房价汇总表 ===")
+print(district_summary)
+`}
+</RunnableCodeBlock>
+
+---
+
+## 8. 常见错误排查 (Troubleshooting)
+
+| 错误现象 / 异常类型 | 常见原因 | 标准排查与处理方式 |
+|---|---|---|
+| `TypeError: cannot compare a dtyped [object] array with a scalar` | 在多条件布尔筛选时漏掉了子条件两边的小括号 `()` | 每个子条件表达式必须用括号包围，如 `(df['a'] > 0) & (df['b'] < 10)` |
+| `KeyError: 'xxx'` | 访问了不存在的列名，或 `loc` 查找了不存在的索引标签 | 检查列名拼写，先使用 `print(df.columns)` 核对所有列名 |
+| `SettingWithCopyWarning` | 对数据框切片提取出的子视图进行直接修改 | 如果需要修改切片后的 DataFrame，请先显式加上 `.copy()` 创建独立副本 |
+
+---
+
+## 9. 本节检查清单 (Checklist)
+
+- [ ] 我能说出 `pd.Series` 与 `pd.DataFrame` 的结构以及 Index、Columns、Values 三要素；
+- [ ] 我能使用 `pd.read_csv()` 读取文件，并用 `head()`, `info()`, `describe()` 探查数据；
+- [ ] 我能准确区分 `loc`（基于显式标签闭区间）与 `iloc`（基于整数位置开区间）；
+- [ ] 我掌握了多条件布尔筛选 `df[(cond1) & (cond2)]` 的小括号要求；
+- [ ] 我掌握了 `isnull().sum()` 查空与 `fillna()` / `dropna()` 缺失值清洗；
+- [ ] 我能使用 `df.groupby().agg()` 进行多指标分组统计。
+
+---
+
+## 10. 课后互动自测
+
+<InteractiveQuiz
+  title="02. Pandas 表格数据分析与清洗 课后互动自测"
+  questions={[
+    {
+      id: "q1",
+      type: "single",
+      question: "在 Pandas 中执行多条件筛选 df[(df['age'] > 18) & (df['score'] >= 60)] 时，为什么各个子条件外面的小括号 () 绝对不能省略？",
+      options: [
+        "A. Python 中位运算符 & 和 | 的优先级高于比较运算符 > 和 >=，省略括号会导致逻辑运算顺序混乱抛出 TypeError",
+        "B. 小括号是为了让 Pandas 自动开启多线程计算",
+        "C. 小括号没有任何作用，只是个人代码习惯",
+        "D. 省略小括号会自动把数据保存到硬盘"
+      ],
+      answer: 0,
+      explanation: "Python 中位运算符 & / | 的优先级高于关系运算符 > / <=。若写成 df['age'] > 18 & df['score'] >= 60，Python 会优先计算 18 & df['score'] 导致 TypeError 报错。"
+    },
+    {
+      id: "q2",
+      type: "single",
+      question: "假设 DataFrame df 默认整数行索引为 0, 1, 2, 3, 4。切片 df.loc[1:3] 与 df.iloc[1:3] 分别会返回几行数据？",
+      options: [
+        "A. df.loc[1:3] 返回 3 行 (包含标签 1, 2, 3)；df.iloc[1:3] 返回 2 行 (位置 1, 2，开区间)",
+        "B. 两者都返回 3 行",
+        "C. 两者都返回 2 行",
+        "D. df.loc 返回 2 行，df.iloc 返回 3 行"
+      ],
+      answer: 0,
+      explanation: "loc 基于显式标签 (Label)，切片为闭区间 [start, stop]（包含末尾 3，共 3 行）；iloc 基于整数位置 (Position)，切片为半开区间 [start, stop)（不含末尾 3，共 2 行）。"
+    },
+    {
+      id: "q3",
+      type: "single",
+      question: "在数据清洗中，如果想快速查看 DataFrame 中每一列到底有多少个缺失值 (NaN)，最简洁高效的方法是？",
+      options: [
+        "A. df.isnull().sum()",
+        "B. df.count_nan()",
+        "C. len(df)",
+        "D. df.shape"
+      ],
+      answer: 0,
+      explanation: "df.isnull() 会将数据框转换为布尔矩阵（缺失值为 True，非空为 False），再调用 .sum() 即可按列汇总计算 True（即缺失值）的总数量。"
+    },
+    {
+      id: "q4",
+      type: "tf",
+      question: "判断题：使用 df.groupby('city')['salary'].mean() 可以快速计算按城市分组后各个城市的平均薪资。",
+      options: [
+        "A. 正确",
+        "B. 错误"
+      ],
+      answer: 0,
+      explanation: "正确！groupby('city') 会按城市对行进行拆分分组，['salary'].mean() 则计算每个分组中薪资的平均值。"
+    }
+  ]}
+/>
+
+---
+
+## 11. 下一步
+
+恭喜你完成了 **阶段 0.2 数据科学基础工具** 的全部学习！
+
+下一步我们将开启 **[阶段 0.3 机器学习极简数学直觉]** 的学习，第一站是 [01. 线性代数直觉：向量与矩阵](/learn/foundations/math/01-math-linear-algebra)，用直观几何视角拆解向量点积与矩阵变换！
+
+---
+
+## 12. 参考资料
+
+- [Pandas 官方用户指南](https://pandas.pydata.org/docs/user_guide/index.html) —— 官方权威使用手册。
+- [Pandas 10 分钟快速入门](https://pandas.pydata.org/docs/user_guide/10min.html) —— 官方极速上手教程。

@@ -19,7 +19,7 @@ interface ReactFlowDiagramProps {
 }
 
 // 提取并解析 Mermaid / Diagram 为 DAG 拓扑层级的 React Flow 节点与边
-function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialEdges: Edge[] } {
+function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialEdges: Edge[]; maxLevels: number } {
   const lines = chartText.split('\n').map((l) => l.trim()).filter(Boolean);
   const nodesMap = new Map<string, { label: string }>();
   const rawEdges: { source: string; target: string; label?: string }[] = [];
@@ -67,6 +67,30 @@ function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialE
       line.startsWith('classDiagram') ||
       line.startsWith('style')
     ) {
+      continue;
+    }
+
+    // 0. 支持多节点链式箭头: A --> B --> C --> D
+    const chainSegments = line.split(/\s*-->\s*/);
+    if (chainSegments.length > 2) {
+      for (let i = 0; i < chainSegments.length - 1; i++) {
+        const sourcePart = chainSegments[i].trim();
+        const targetPart = chainSegments[i + 1].trim();
+
+        const sourceObj = parseNodePart(sourcePart);
+        const targetObj = parseNodePart(targetPart);
+
+        if (sourceObj) {
+          if (!nodesMap.has(sourceObj.id)) nodesMap.set(sourceObj.id, { label: sourceObj.label });
+        }
+        if (targetObj) {
+          if (!nodesMap.has(targetObj.id)) nodesMap.set(targetObj.id, { label: targetObj.label });
+        }
+
+        if (sourceObj && targetObj) {
+          rawEdges.push({ source: sourceObj.id, target: targetObj.id });
+        }
+      }
       continue;
     }
 
@@ -161,10 +185,18 @@ function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialE
     levelGroups.get(level)!.push(id);
   });
 
-  // 计算平面坐标 (X, Y)
+  // 智能自适应节点大小与水平间距
   const initialNodes: Node[] = [];
-  const LEVEL_HEIGHT = 180; // 垂直层间距 (拉长折线避让标签)
-  const NODE_SPACING = 380; // 水平节点卡片间距 (由 260 扩至 380 避免分支标签重叠)
+  const LEVEL_HEIGHT = 140; // 紧凑垂直层高
+
+  // 统计文本平均长度，自适应计算 NODE_SPACING
+  let maxLabelLen = 0;
+  nodesMap.forEach(({ label }) => {
+    if (label.length > maxLabelLen) maxLabelLen = label.length;
+  });
+
+  // 动态间距：文本越短间距越紧凑 (220px ~ 320px)
+  const NODE_SPACING = Math.min(320, Math.max(220, maxLabelLen * 10 + 120));
 
   levelGroups.forEach((nodeIdsInLevel, level) => {
     const totalCount = nodeIdsInLevel.length;
@@ -175,6 +207,10 @@ function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialE
       const isError = id.toLowerCase().includes('error') || info.label.includes('异常') || info.label.includes('抛出');
       const isSuccess = info.label.includes('成功') || info.label.includes('加载') || info.label.includes('直接加载');
       const isDecision = info.label.includes('?') || info.label.includes('是否');
+
+      // 短文本使用极简紧凑自适应宽度 (minWidth: 90px)，长文本自适应 (maxWidth: 240px)
+      const textLength = info.label.length;
+      const calcMinWidth = textLength < 6 ? '90px' : textLength < 15 ? '130px' : '170px';
 
       initialNodes.push({
         id,
@@ -189,14 +225,17 @@ function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialE
           background: isError ? '#FEF2F2' : isSuccess ? '#ECFDF5' : isDecision ? '#F8FAFC' : '#FFFFFF',
           color: isError ? '#991B1B' : isSuccess ? '#065F46' : isDecision ? '#0F172A' : '#1E293B',
           border: `2px solid ${isError ? '#FCA5A5' : isSuccess ? '#34D399' : isDecision ? '#94A3B8' : '#CBD5E1'}`,
-          borderRadius: isDecision ? '16px' : '12px',
-          padding: '10px 16px',
+          borderRadius: isDecision ? '14px' : '10px',
+          padding: '8px 14px',
           fontSize: '12px',
           fontWeight: '600',
           textAlign: 'center',
           whiteSpace: 'pre-wrap',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-          minWidth: '180px',
+          wordBreak: 'break-word',
+          boxShadow: '0 2px 4px -1px rgba(0, 0, 0, 0.05)',
+          minWidth: calcMinWidth,
+          maxWidth: '240px',
+          width: 'fit-content',
         },
       });
     });
@@ -204,7 +243,6 @@ function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialE
 
   // 构造边 (平滑折线 smoothstep)
   const initialEdges: Edge[] = rawEdges.map((edge, idx) => {
-    // 智能美化：若分支标签过长，在斜杠 '/' 处进行适度自动分行，防止横向过长碰撞
     let formattedLabel = edge.label;
     if (formattedLabel && formattedLabel.length > 10 && formattedLabel.includes(' / ')) {
       const parts = formattedLabel.split(' / ');
@@ -230,32 +268,39 @@ function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialE
     };
   });
 
-  return { initialNodes, initialEdges };
+  return { initialNodes, initialEdges, maxLevels: levelGroups.size };
 }
 
 export const ReactFlowDiagram: React.FC<ReactFlowDiagramProps> = ({ chart }) => {
-  const { initialNodes, initialEdges } = useMemo(() => parseMermaidToFlow(chart), [chart]);
+  const { initialNodes, initialEdges, maxLevels } = useMemo(() => parseMermaidToFlow(chart), [chart]);
+
+  // 根据层级数量自适应动态高度：简单 1-2 层图表高度压缩至 240px/320px，复杂图表高度为 450px
+  const containerHeightClass = useMemo(() => {
+    if (maxLevels <= 1) return 'h-[240px]';
+    if (maxLevels <= 2) return 'h-[320px]';
+    return 'min-h-[420px] h-[50vh] max-h-[600px]';
+  }, [maxLevels]);
 
   return (
-    <div className="my-8 rounded-2xl overflow-hidden border-2 border-slate-200 shadow-md bg-white font-sans">
+    <div className="my-7 rounded-2xl overflow-hidden border border-slate-200 shadow-card bg-white font-sans">
       {/* 头部标题栏 - 浅色风 */}
-      <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+      <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <Network className="w-4.5 h-4.5 text-teal-600" />
-          <span className="text-sm font-bold text-slate-800">React Flow 拓扑流程图</span>
+          <Network className="w-4 h-4 text-teal-600" />
+          <span className="text-xs font-bold text-slate-800">React Flow 拓扑流程图</span>
         </div>
-        <span className="text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-200 px-2.5 py-0.5 rounded-full">
-          支持拖拽与滚轮缩放 🔍
+        <span className="text-[11px] font-semibold bg-teal-50 text-teal-700 border border-teal-200 px-2.5 py-0.5 rounded-full">
+          自适应框体与缩放 🔍
         </span>
       </div>
 
       {/* React Flow 画布 */}
-      <div className="min-h-[560px] h-[65vh] max-h-[720px] w-full bg-slate-50/50 relative">
+      <div className={`w-full bg-slate-50/50 relative ${containerHeightClass}`}>
         <ReactFlow
           nodes={initialNodes}
           edges={initialEdges}
           fitView
-          fitViewOptions={{ padding: 0.25 }}
+          fitViewOptions={{ padding: 0.2 }}
           attributionPosition="bottom-right"
         >
           <Controls className="bg-white border border-slate-200 shadow-sm rounded-lg text-slate-700" />

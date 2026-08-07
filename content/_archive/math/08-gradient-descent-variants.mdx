@@ -1,0 +1,209 @@
+---
+id: math-gradient-descent-variants
+title: 08. 梯度下降算法：Batch, SGD 与 Mini-batch
+module: foundations
+submodule: math
+order: 8
+difficulty: intermediate
+prerequisites: [math-gradient-jacobian-hessian]
+relatedNotes: [math-gradient-jacobian-hessian, math-modern-optimizers]
+nextNotes: [math-modern-optimizers]
+map:
+  layoutGroup: foundations-math
+estimatedMinutes: 55
+tags: [梯度下降, BGD, SGD, Mini-batch, 学习率, 特征标准化]
+summary: 厘清批量 BGD、随机 SGD 与 Mini-batch 梯度下降机制，理解学习率与特征缩放对损失面等高线条件数及收敛速度的影响。
+symbols:
+  - symbol: "w_{t+1} = w_t - \\eta \\nabla L(w_t)"
+    mean: "梯度下降参数更新公式"
+  - symbol: "\\eta"
+    mean: "学习率（Learning Rate）"
+  - symbol: "B"
+    mean: "Mini-batch 批次大小（Batch Size）"
+---
+
+## 从一个问题开始
+
+在训练海量数据的 AI 模型时，我们是一次性把全部 100 万条样本加载进内存算梯度，还是每次只看 1 条样本？或者分批每次看 32 条？特征如果没有经过缩放（比如身高是米，收入是万元），为什么模型训练起来会慢上几十倍？
+
+答案就在于**梯度下降的变体与特征标准化**。这一章我们将深入对比 Batch GD、SGD 与 Mini-batch 机制，推导特征标准化对损失面形状的影响，并使用 NumPy 从零实现带有固定随机种子的梯度下降实验。
+
+<ConceptCard title="初学者直觉：三种出游方式的比喻" type="tip">
+把模型参数更新比作组织一次出游：
+- **Batch GD (BGD 全量)**：每次必须等全班 100 万人到齐才发车。方向极其准确稳定，但每次等所有人到齐非常慢，甚至装不下。
+- **Stochastic GD (SGD 单样本)**：每次只要来 1 个人就立即发车。速度极快，但路线弯弯曲曲、一路上歪歪扭扭（噪音大）。
+- **Mini-batch GD (小批次)**：每次凑满一辆 32 人的面包车就发车。兼顾了速度与路线稳定性，是工业界的**绝对标准**！
+</ConceptCard>
+
+![BGD vs SGD vs Mini-batch 在等高线上的更新轨迹对比图](/assets/math/bgd-sgd-minibatch-trajectories.png)
+---
+
+## 1. 三种梯度下降机制对比
+
+对于数据集 $\mathcal{D} = \{(x_i, y_i)\}_{i=1}^N$：
+
+### 1.1 批量梯度下降 (Batch Gradient Descent, BGD)
+
+每次使用全量 $N$ 个样本计算精确梯度：
+
+$$w_{t+1} = w_t - \eta \cdot \frac{1}{N} \sum_{i=1}^N \nabla L(w_t; x_i, y_i)$$
+
+### 1.2 随机梯度下降 (Stochastic Gradient Descent, SGD)
+
+每次随机挑选 $1$ 个样本计算近似梯度：
+
+$$w_{t+1} = w_t - \eta \cdot \nabla L(w_t; x_k, y_k)$$
+
+### 1.3 小批量梯度下降 (Mini-batch Gradient Descent)
+
+每次随机抽取大小为 $B$（如 32, 64, 128）的 Batch：
+
+$$w_{t+1} = w_t - \eta \cdot \frac{1}{B} \sum_{i \in \text{Batch}} \nabla L(w_t; x_i, y_i)$$
+
+---
+
+## 2. 学习率 $\eta$ 与特征标准化
+
+### 2.1 学习率 $\eta$ 的收敛行为
+
+- **学习率过大**：跨步过猛，跳过极小值点，导致 Loss 剧烈震荡甚至发散到无穷大（`NaN`）。
+- **学习率过小**：每次只走一丢丢，陷入极慢收敛，浪费大量算力。
+
+### 2.2 特征标准化对损失面条件数（Condition Number）的影响
+
+假设特征 $x_1$ 范围在 $[0, 1]$，特征 $x_2$ 范围在 $[0, 10000]$：
+- **未标准化**：损失面等高线是一个**极度扁平狭长的“细长椭圆”**（病态条件数）。梯度方向几乎垂直于极小值方向，参数在峡谷两壁间来回剧烈碰撞跳跃。
+- **特征标准化（Z-score: $\frac{x - \mu}{\sigma}$）**：等高线被重构为**完美的近正圆形**，梯度箭头径直指向正中心，收敛速度提升几十倍！
+
+<GradientDescentLab />
+
+![特征标准化前狭长椭圆与标准化后近正圆等高线及梯度轨迹对比图](/assets/math/feature-scaling-contour-effect.png)
+```mermaid
+flowchart LR
+    Unscaled["未标准化特征<br/>等高线呈细长椭圆<br/>梯度剧烈碰撞震荡"] --> Standardized["Z-score 标准化<br/>等高线重构为正圆形<br/>梯度直奔圆心秒收敛"]
+```
+
+---
+
+## 3. 手算演练
+
+### 手算练习：单样本均方误差 (MSE) 的 SGD 梯度步进
+
+假设我们有一个极简线性回归模型 $y = w \cdot x$（无截断），损失函数为单样本 MSE $L(w) = \frac{1}{2} (w \cdot x - y)^2$：
+
+1. **推导 Loss 关于 $w$ 的梯度**：
+   $$\frac{\partial L}{\partial w} = (w \cdot x - y) \cdot x = (\text{预测值} - \text{真实值}) \cdot x$$
+
+2. **给定初始条件**：
+   - 初始参数 $w_0 = 0.0$
+   - 学习率 $\eta = 0.1$
+   - 样本点 $x_1 = 2.0, y_1 = 6.0$（真实规律是 $w = 3.0$）
+
+3. **第 1 步更新手算**：
+   - 计算预测值 $\hat{y}_1 = w_0 \cdot x_1 = 0.0 \times 2.0 = 0.0$
+   - 计算误差：$\text{err} = \hat{y}_1 - y_1 = 0.0 - 6.0 = -6.0$
+   - 计算梯度：$g_0 = \text{err} \times x_1 = -6.0 \times 2.0 = -12.0$
+   - 参数更新：$w_1 = w_0 - \eta \cdot g_0 = 0.0 - 0.1 \times (-12.0) = 0.0 + 1.2 = 1.2$
+
+4. **第 2 步更新手算（相同样本）**：
+   - 新预测值 $\hat{y}_1 = 1.2 \times 2.0 = 2.4$
+   - 新误差：$2.4 - 6.0 = -3.6$
+   - 新梯度：$g_1 = -3.6 \times 2.0 = -7.2$
+   - 新参数更新：$w_2 = 1.2 - 0.1 \times (-7.2) = 1.2 + 0.72 = 1.92$
+   可以看到，$w$ 从 $0 \to 1.2 \to 1.92$，正稳定地逼近真实值 $3.0$！
+
+---
+
+## 4. 动手实战：从零实现 BGD 与 SGD 收敛性对比
+
+下面的代码使用 NumPy 自带的标准随机发生器 `default_rng(seed)`，演示特征标准化前后及 BGD 与 SGD 的收敛对比：
+
+<RunnableCodeBlock title="BGD vs SGD 线性回归与特征标准化影响代码">
+{`import numpy as np
+
+# 1. 使用官方推荐的 Generator 设置固定随机种子
+rng = np.random.default_rng(seed=42)
+
+# 2. 构造特征尺寸悬殊的数据集 (x1 范围 1 左右，x2 范围 100 左右)
+N = 200
+x1 = rng.normal(1.0, 0.5, N)
+x2 = rng.normal(100.0, 20.0, N)
+X_unscaled = np.column_stack([x1, x2])
+y = 2.0 * x1 + 0.05 * x2 + rng.normal(0, 0.1, N)
+
+# 标准化特征 Z-score
+X_scaled = (X_unscaled - np.mean(X_unscaled, axis=0)) / np.std(X_unscaled, axis=0)
+
+# 3. 批量梯度下降 (BGD) 训练函数
+def train_bgd(X: np.ndarray, y: np.ndarray, lr: float = 0.01, epochs: int = 50):
+    m, n = X.shape
+    w = np.zeros(n)
+    losses = []
+    for _ in range(epochs):
+        pred = X @ w
+        loss = np.mean((pred - y) ** 2)
+        grad = (2.0 / m) * X.T @ (pred - y)
+        w -= lr * grad
+        losses.append(loss)
+    return w, losses
+
+# 运行对比实验
+w_unscaled, loss_unscaled = train_bgd(X_unscaled, y, lr=1e-5, epochs=20)
+w_scaled, loss_scaled = train_bgd(X_scaled, y, lr=0.1, epochs=20)
+
+print("未标准化数据 - 第1次 Loss:", np.round(loss_unscaled[0], 2), "-> 第20次 Loss:", np.round(loss_unscaled[-1], 2))
+print("标准化数据   - 第1次 Loss:", np.round(loss_scaled[0], 2), "-> 第20次 Loss:", np.round(loss_scaled[-1], 2))
+`}
+</RunnableCodeBlock>
+
+---
+
+## 5. 常见错误与避坑指南
+
+| 现象 | 先问什么 | 处理方式 |
+| :--- | :--- | :--- |
+| `np.random.seed()` 导致随机状态污染 | 是否使用了全局随机函数 | 使用 NumPy 官方推荐的 `rng = np.random.default_rng(seed)` |
+| 未标准化特征导致 Loss 报 `NaN` | 是否学习率设置过高 | 特征未缩放时必须极度缩小学习率（如 $10^{-5}$），或先统一做标准化处理 |
+| 用 Test 测试集选 Batch Size 或学习率 | 是否违反了测试隔离规则 | 只能在 Training / Validation 验证集上调试超参数，测试集只能用于最终评估一次 |
+
+---
+
+## 检查清单 (Checklist)
+
+- [ ] 能清楚说明 BGD、SGD 与 Mini-batch 三者的区别与优缺点。
+- [ ] 能解释为什么未标准化的特征会导致损失面呈病态椭圆并减慢收敛。
+- [ ] 能手写单样本 MSE 损失关于参数 $w$ 的更新步骤。
+- [ ] 能使用 `np.random.default_rng(seed)` 编写可复现的梯度下降实验。
+- [ ] 能说明为什么超参数调节只能在验证集上进行而严禁使用测试集。
+
+---
+
+## 自测题
+
+1. 在具有 10,000,000 条样本的大数据集上训练模型，你会推荐选择 BGD 还是 Mini-batch？为什么？
+2. 如果在训练中发现损失值 Loss 不断变成 `inf` 或 `NaN`，最有可能的原因是什么？应该如何解决？
+3. 假设有一个特征 $x_1$ 范围在 $[0, 1]$，另一个特征 $x_2$ 范围在 $[0, 100000]$，为什么必须进行标准化？
+4. 【代码阅读题】在上一节代码中，为什么针对未标准化数据的学习率取 `1e-5`，而针对标准化数据的学习率可以放大到 `0.1`？
+
+<details>
+<summary>点击查看参考答案</summary>
+
+1. 推荐选择 Mini-batch。因为全量 BGD 需要把 1000 万条数据全部加载并计算梯度，内存可能溢出且速度极慢；Mini-batch 每次只需 32~256 条数据，兼顾了速度与方向稳定性。
+2. 学习率设置过大导致梯度爆炸与参数发散。解决方法是缩小学习率（如缩小 10 倍）、加上梯度裁剪（Gradient Clipping）或对特征进行标准化。
+3. 未标准化的 $x_2$ 会在梯度更新中占据主导地位，导致损失面变成极度狭长的扁椭圆，梯度的步进会在峡谷两侧劇烈震荡，无法快速收敛。
+4. 因为未标准化数据 $x_2$ 的数值量级极大，其梯度的绝对值数值也极大；若学习率过大乘上巨大的梯度就会导致参数发散，因此必须用极小的学习率约束；而标准化后特征尺度均匀，可以使用更大的学习率快速收敛。
+</details>
+
+---
+
+## 下一步
+
+进入下一个专项 [09. 现代优化器：Momentum, RMSProp 与 Adam](/learn/foundations/math/09-modern-optimizers)，学习 Momentum 动量滚雪球、RMSProp 自适应缩放与 Adam 现代优化器在病态条件数与鞍点上的实战表现。
+
+---
+
+## 参考资料
+
+- [Mathematics for Machine Learning](https://mml-book.github.io/)：第 7.1 节 梯度下降与学习率。
+- [CS231n: Optimization 1](https://cs231n.github.io/optimization-1/)：Stochastic Gradient Descent 与 Batch Size 工程选择。
+- [NumPy random Generator](https://numpy.org/doc/stable/reference/random/generator.html)：指定 Generator seed 规范。

@@ -1,0 +1,273 @@
+---
+id: math-calculus-gradient
+title: 02.微积分直觉：导数与梯度下降
+module: foundations
+submodule: math
+order: 2
+difficulty: beginner
+prerequisites: [math-linear-algebra]
+estimatedMinutes: 25
+tags: [数学, 微积分, 导数, 偏导数, 梯度, 梯度下降, 损失函数, 学习率]
+summary: 用山谷下山的比喻理解导数与梯度的几何含义，掌握梯度下降法（Gradient Descent）更新模型参数的直觉与代码实现。
+symbols:
+  - symbol: "Derivative 导数"
+    mean: "函数曲线在某一点的切线斜率，反映函数值的瞬时变化率与方向"
+  - symbol: "Gradient 梯度"
+    mean: "多维函数在某点沿各个自变量偏导数构成的向量，指向函数增长最快的方向"
+  - symbol: "Loss Function 损失函数"
+    mean: "衡量模型预测值与真实标签之间误差大小的指标函数（如 MSE）"
+  - symbol: "Learning Rate 学习率"
+    mean: "梯度下降中每次参数更新移动步幅大小的标量超参数（通常用 alpha 表示）"
+---
+
+## 1. 问题导入
+
+假设你设计了一个预测房价的模型，刚开始模型的预测结果与真实房价相差巨大。我们如何让计算机**自动、智能地调整**模型内部的参数（如权重 $w$ 和偏置 $b$），使得预测误差越来越小？
+
+计算机没有人类的直观灵感，但微积分赋予了模型“蒙眼下山”的能力：
+- **损失函数 (Loss Function)**：画出了一座表示误差大小的“山谷”，谷底代表误差最小的理想状态；
+- **导数与梯度**：告诉模型此时此刻站在山坡的哪里、向哪个方向迈步下降最快；
+- **梯度下降法 (Gradient Descent)**：引导模型一步步迈向最底部的山谷，自动寻找最优参数。
+
+---
+
+## 2. 学习目标
+
+完成本章学习后，你将能够：
+
+- 理解导数 (Derivative) 的几何含义（曲线切线斜率与变化率方向）；
+- 理解偏导数 (Partial Derivative) 与多维梯度 (Gradient) 向量的物理含义；
+- 掌握损失函数 (Loss Function) 的“山谷地形”几何直觉；
+- 掌握梯度下降法参数更新公式 $w_{new} = w_{old} - \alpha \cdot \text{gradient}$；
+- 理解学习率 $\alpha$ (Learning Rate) 大小对参数收敛过程的影响。
+
+---
+
+## 3. 导数 (Derivative)：切线斜率与变化方向
+
+在几何上，一个函数 $y = f(x)$ 在某一点 $x_0$ 处的**导数 $f'(x_0)$**，代表了函数曲线在该点切线的**斜率 (Slope)**。
+
+<ConceptCard title="切线斜率的三种状态" type="intuition">
+1. **斜率 $> 0$（正斜率）**：说明 $x$ 增加时，$y$ 也会增加（向右看在爬坡上升）；
+2. **斜率 $= 0$（零斜率）**：说明到达了曲线的极小值谷底或极大值山顶（水平切线）；
+3. **斜率 $< 0$（负斜率）**：说明 $x$ 增加时，$y$ 会减少（向右看在下坡下降）。
+</ConceptCard>
+
+简单的二次函数 $f(x) = x^2$ 的导数公式为：
+
+$$f'(x) = 2x$$
+
+<ConceptCard title="手算演练：一元函数导数与切线斜率" type="tip">
+**已知函数 $f(x) = x^2$，其导数 $f'(x) = 2x$**：
+- 当 $x = 3$ 时，导数 $f'(3) = 2 \times 3 = 6 > 0$（斜率为正数，说明往右走 $f(x)$ 会变大）；
+- 当 $x = -2$ 时，导数 $f'(-2) = 2 \times (-2) = -4 < 0$（斜率为负数，说明往右走 $f(x)$ 会变小）；
+- 当 $x = 0$ 时，导数 $f'(0) = 2 \times 0 = 0$（斜率为零，说明到达极小值谷底）。
+</ConceptCard>
+
+---
+
+## 4. 偏导数与多维梯度 (Gradient Vector)
+
+在现实的 AI 模型中，损失函数往往由成百上千个参数共同决定（如 $L(w_1, w_2, b)$）。
+
+### 4.1 偏导数 (Partial Derivative)
+**偏导数 $\frac{\partial f}{\partial w_1}$** 的直觉非常简单：当有多个变量时，假设其他变量（如 $w_2, b$）全部保持冻结不动，只观察 $w_1$ 变化时对整体误差产生的改变。
+
+### 4.2 梯度向量 (Gradient Vector)
+将多维函数对各个自变量的偏导数打包组合成一个向量，就得到了**梯度向量 $\nabla f$**：
+
+$$\nabla f = \left[ \frac{\partial f}{\partial w_1}, \frac{\partial f}{\partial w_2}, \dots, \frac{\partial f}{\partial w_n} \right]$$
+
+<ConceptCard title="梯度的核心定理" type="intuition">
+在多维空间中，**梯度向量 $\nabla f$ 永远指向函数增长最快（最陡峭）的方向**。
+
+因此，它的反方向（加上负号 $-\nabla f$）就**永远指向函数下降最快（最陡峭）的方向**！
+</ConceptCard>
+
+<ConceptCard title="手算演练：二元函数偏导数与梯度向量计算" type="tip">
+**已知二元函数 $f(x, y) = 3x^2 + 2xy + y^2$，计算其偏导数与在点 $(1, 2)$ 处的梯度**：
+
+1. **求对 $x$ 的偏导数 $\frac{\partial f}{\partial x}$**（将 $y$ 当作常数）：
+   $$\frac{\partial f}{\partial x} = \frac{\partial}{\partial x}(3x^2) + \frac{\partial}{\partial x}(2xy) + 0 = 6x + 2y$$
+2. **求对 $y$ 的偏导数 $\frac{\partial f}{\partial y}$**（将 $x$ 当作常数）：
+   $$\frac{\partial f}{\partial y} = 0 + \frac{\partial}{\partial y}(2xy) + \frac{\partial}{\partial y}(y^2) = 2x + 2y$$
+3. **计算在点 $(1, 2)$ 处的梯度向量 $\nabla f(1, 2)$**：
+   $$\nabla f(1, 2) = \begin{bmatrix} 6(1) + 2(2) \\ 2(1) + 2(2) \end{bmatrix} = \begin{bmatrix} 10 \\ 6 \end{bmatrix}$$
+4. **结论与最陡下山方向**：
+   - 在点 $(1, 2)$ 处，函数增长最快方向为 $\nabla f = [10, 6]^T$；
+   - 最陡下山方向为反梯度 $-\nabla f = [-10, -6]^T$。
+</ConceptCard>
+
+---
+
+## 5. 梯度下降法 (Gradient Descent) 与下山比喻
+
+### 5.1 下山比喻 (Mountain Descent Analogy)
+想象一下：你被蒙上双眼置身于一座大雾笼罩的山上（山的高度代表误差 Loss），你的目标是走到最底部的山谷（Loss 最小点）。
+
+因为看不见远方，你只能用脚感受此时此刻脚下地面最陡峭的倾斜方向（计算梯度），然后向**倾斜的相反方向迈出一步**。重复这个过程，你就能一步步抵达谷底。
+
+### 5.2 梯度下降更新公式
+
+$$\text{新参数 } w_{new} = \text{旧参数 } w_{old} - \alpha \cdot \frac{\partial L}{\partial w}$$
+
+其中：
+- $\frac{\partial L}{\partial w}$：当前位置的梯度；
+- **$\alpha$ (alpha) / 学习率 (Learning Rate)**：用来控制每次下山迈出的**步幅大小**。
+
+<ConceptCard title="手算演练：梯度下降参数更新 2 步推演" type="tip">
+**已知损失函数 $L(w) = (w - 3)^2 + 5$，其梯度公式为 $\frac{dL}{dw} = 2(w - 3)$。假设初始位置 $w_0 = 5.0$，学习率 $\alpha = 0.1$**：
+
+**第 1 次迭代更新：**
+1. **计算当前梯度**：$\text{grad}_0 = 2(5.0 - 3) = 4.0$；
+2. **更新参数**：$w_1 = w_0 - \alpha \times \text{grad}_0 = 5.0 - 0.1 \times 4.0 = 4.6$；
+3. 参数 $w$ 从 $5.0 \rightarrow 4.6$（成功向谷底 $w=3$ 靠近了第一步！）。
+
+**第 2 次迭代更新：**
+1. **计算新的梯度**：$\text{grad}_1 = 2(4.6 - 3) = 3.2$；
+2. **更新参数**：$w_2 = w_1 - \alpha \times \text{grad}_1 = 4.6 - 0.1 \times 3.2 = 4.28$；
+3. 参数 $w$ 从 $4.6 \rightarrow 4.28$（继续向谷底 $w=3$ 平稳靠拢！）。
+</ConceptCard>
+
+---
+
+### 5.3 学习率 $\alpha$ 对下山过程的影响
+
+学习率 $\alpha$ 是机器学习中最核心的超参数：
+
+| 学习率设置 | 现象与几何直觉 | 后果与问题 |
+|---|---|---|
+| **学习率太小** ($\alpha = 0.05$) | 下山步幅极微小，像乌龟爬行 | 训练速度极慢，需要迭代成千上万次 |
+| **学习率适中** ($\alpha = 0.20$) | 每次步幅合理，平稳迈向山谷 | 迅速且稳定地收敛到最低点 |
+| **学习率过大** ($\alpha = 0.70$) | 一步跨度太大，直接跨过了谷底 | 在山谷两端来回剧烈震荡，无法完美下山 |
+| **学习率极高** ($\alpha \ge 1.10$) | 越跳越远，直接飞出山谷 | 数值暴涨爆炸，导致 Loss 变为 `NaN` 崩溃 |
+
+<CalculusIntuitionLab />
+
+---
+
+## 6. 动手实战：纯 Python 手写梯度下降寻找最小值
+
+请在下方的代码块中，点击 **“运行代码”**，体验如何用十几行 Python 代码找到二次函数 $f(x) = (x - 3)^2 + 5$ 的最小值点 $x = 3$：
+
+<RunnableCodeBlock title="纯 Python 实现一维梯度下降法">
+{`# 1. 定义目标损失函数 f(x) = (x - 3)^2 + 5
+def loss_function(x):
+    return (x - 3) ** 2 + 5
+
+# 2. 导数公式 f'(x) = 2 * (x - 3)
+def get_gradient(x):
+    return 2 * (x - 3)
+
+# 3. 梯度下降参数配置
+x = 10.0          # 随机初始位置 (离最小值 x=3 很远)
+learning_rate = 0.2  # 学习率 (步幅)
+epochs = 15          # 迭代步数
+
+print(f"起始初始位置: x = {x:.4f}, 初始 Loss = {loss_function(x):.4f}\n")
+
+for step in range(1, epochs + 1):
+    grad = get_gradient(x)               # 计算梯度
+    x = x - learning_rate * grad         # 梯度下降更新公式
+    current_loss = loss_function(x)     # 计算新的 Loss
+    
+    print(f"Step {step:2d} | 梯度 grad = {grad:7.4f} | 更新后 x = {x:6.4f} | Loss = {current_loss:6.4f}")
+
+print(f"\n最终优化结果: x 趋近于 {x:.4f} (理论最小值 x = 3)")
+`}
+</RunnableCodeBlock>
+
+---
+
+## 7. 常见错误排查 (Troubleshooting)
+
+| 错误现象 / 异常类型 | 常见原因 | 标准排查与处理方式 |
+|---|---|---|
+| Loss 变成 `inf` 或 `NaN` 爆炸崩溃 | 学习率 $\alpha$ 设置得过大，导致梯度更新步幅过大震荡飞出山谷 | 将学习率缩小 10 倍（如从 `0.1` 调小为 `0.01` 或 `0.001`） |
+| Loss 下降极其缓慢或长时间没有变化 | 学习率 $\alpha$ 设置得过于微小，或者梯度在平坦区域趋近于 0 | 适当增大学习率，或者检查损失函数导数计算是否正确 |
+| 无法找到全局极小值 | 损失函数存在多个局部山谷 (Local Minima)，卡在了局部凹坑中 | 引入动量 (Momentum) 优化器或使用随机梯度下降 (SGD) |
+
+---
+
+## 8. 本节检查清单 (Checklist)
+
+- [ ] 我理解导数 $f'(x)$ 的几何含义是曲线在该点切线的斜率；
+- [ ] 我理解梯度向量 $\nabla f$ 指向函数值增长最快（最陡峭）的方向；
+- [ ] 我能说出梯度下降更新公式 $w_{new} = w_{old} - \alpha \cdot \text{grad}$ 中减号“-”的含义；
+- [ ] 我能分析学习率 $\alpha$ 过大（震荡爆炸）与过小（收敛极慢）的后果；
+- [ ] 我能用 Python 手写实现简单二次函数的梯度下降迭代代码。
+
+---
+
+## 9. 课后互动自测
+
+<InteractiveQuiz
+  title="02. 微积分直觉：导数与梯度下降 课后互动自测"
+  questions={[
+    {
+      id: "q1",
+      type: "single",
+      question: "在梯度下降公式 w_new = w_old - alpha * grad 中，为什么在梯度 grad 前面必须加上减号“-”？",
+      options: [
+        "A. 因为梯度向量 grad 指向函数增长最快的方向，加上减号才能沿着反方向迈步，使损失 Loss 减少",
+        "B. 减号是为了防止 Python 代码抛出 SyntaxError 语法错误",
+        "C. 加上减号能让矩阵相乘速度提升 10 倍",
+        "D. 减号没有任何实际意义，加号和减号效果完全相同"
+      ],
+      answer: 0,
+      explanation: "梯度向量 grad 永远指向函数上升最快的方向。为了降低损失 Loss，我们必须沿着梯度的反方向（即 -grad）移动。"
+    },
+    {
+      id: "q2",
+      type: "single",
+      question: "如果一个损失函数 L(w) 在当前参数 w = 5 处的切线斜率（导数）为 -4.0，学习率 alpha = 0.1，更新后的 w_new 是多少？更新方向是向左还是向右？",
+      options: [
+        "A. w_new = 5.4，向右移动",
+        "B. w_new = 4.6，向左移动",
+        "C. w_new = 5.0，保持不变",
+        "D. w_new = 0.4，向左移动"
+      ],
+      answer: 0,
+      explanation: "根据公式 w_new = 5 - 0.1 * (-4.0) = 5 + 0.4 = 5.4。因为切线斜率为负（向右下降），参数向右增加使 Loss 进一步降低。"
+    },
+    {
+      id: "q3",
+      type: "single",
+      question: "在训练神经网络时，如果控制台打印出的损失值 Loss 迅速变为 NaN 或 inf，最有可能的原因是？",
+      options: [
+        "A. 学习率 alpha 设置得过大，导致梯度更新步幅过大震荡飞出山谷",
+        "B. 学习率 alpha 设置得过于微小",
+        "C. 电脑显卡没有连接电源",
+        "D. 训练数据集样本数量过多"
+      ],
+      answer: 0,
+      explanation: "学习率过大会导致梯度下降在山谷两端越跨越大，引发数值爆炸 (Gradient Explosion)，最终变成 NaN 或 inf。"
+    },
+    {
+      id: "q4",
+      type: "tf",
+      question: "判断题：当模型参数 w 恰好到达损失函数的最低点谷底时，在该点算出的梯度 grad 为 0，此时参数 w 将停止更新。",
+      options: [
+        "A. 正确",
+        "B. 错误"
+      ],
+      answer: 0,
+      explanation: "正确！在函数的极小值谷底，切线水平，斜率/梯度 grad 为 0。带入公式 w_new = w_old - alpha * 0 = w_old，参数自然保持稳定停止更新。"
+    }
+  ]}
+/>
+
+---
+
+## 10. 下一步
+
+恭喜你掌握了导数与梯度下降的几何直觉！
+
+下一步我们将学习 [03. 概率统计直觉：均值、方差与概率](/learn/foundations/math/03-math-probability-stats)，用直观视角理解数据分布、不确定性与分类概率！
+
+---
+
+## 11. 参考资料
+
+- [3Blue1Brown: 微积分的本质](https://www.bilibili.com/video/BV1qW411N7FU/) —— 全网最优质的微积分直觉可视化动画教程。
+- [Google Machine Learning Crash Course: 梯度下降说明](https://developers.google.com/machine-learning/crash-course/reducing-loss/gradient-descent) —— 谷歌官方 ML 下山比喻指引。

@@ -24,7 +24,13 @@ import { PdbDebuggerAnimation } from '@/components/animations/PdbDebuggerAnimati
 import { VectorProjectionLab } from '@/components/animations/VectorProjectionLab';
 import { SvdRankLab } from '@/components/animations/SvdRankLab';
 import { GradientDescentLab } from '@/components/animations/GradientDescentLab';
+import { CalculusIntuitionLab } from '@/components/animations/CalculusIntuitionLab';
+import { LinearRegressionLab } from '@/components/animations/LinearRegressionLab';
+import { MultivariateRegressionLab } from '@/components/animations/MultivariateRegressionLab';
+import { FeatureScalingLab } from '@/components/animations/FeatureScalingLab';
+import { RegularizationGeometryLab } from '@/components/animations/RegularizationGeometryLab';
 import { CentralLimitTheoremLab } from '@/components/animations/CentralLimitTheoremLab';
+import { LogisticRegressionLab } from '@/components/animations/LogisticRegressionLab';
 import { PandasDataImportLab } from '@/components/animations/PandasDataImportLab';
 import { MatplotlibParamsLab } from '@/components/animations/MatplotlibParamsLab';
 import { ReactFlowDiagram } from '@/components/mdx/ReactFlowDiagram';
@@ -171,7 +177,14 @@ export const mdxComponents = {
   VectorProjectionLab,
   SvdRankLab,
   GradientDescentLab,
+  CalculusIntuitionLab,
+  UnivariateRegressionLab: LinearRegressionLab,
+  LinearRegressionLab,
+  MultivariateRegressionLab,
+  FeatureScalingLab,
+  RegularizationGeometryLab,
   CentralLimitTheoremLab,
+  LogisticRegressionLab,
   PandasDataImportLab,
   MatplotlibParamsLab,
   ReactFlowDiagram,
@@ -184,14 +197,18 @@ export const mdxComponents = {
       <hr className="border-t-2 border-slate-200 my-0" {...props} />
     </div>
   ),
-  a: (props: any) => (
-    <a
-      className="text-teal-700 font-extrabold underline underline-offset-4 hover:text-teal-900 hover:bg-teal-50 px-1 py-0.5 rounded transition-all"
-      target="_blank"
-      rel="noreferrer"
-      {...props}
-    />
-  ),
+  a: (props: any) => {
+    const isDownload = typeof props.href === 'string' && (props.href.startsWith('/assets/') || /\.(csv|py|json|zip|txt)$/i.test(props.href));
+    return (
+      <a
+        className="text-teal-700 font-extrabold underline underline-offset-4 hover:text-teal-900 hover:bg-teal-50 px-1 py-0.5 rounded transition-all"
+        target={isDownload ? '_self' : '_blank'}
+        download={isDownload ? true : undefined}
+        rel={isDownload ? undefined : 'noreferrer'}
+        {...props}
+      />
+    );
+  },
   h1: (props: any) => <h1 className="text-2xl font-extrabold text-slate-900 mt-14 mb-6 scroll-mt-24" {...props} />,
 
   // H2 Heading with exact line-height border matching and comfortable padding

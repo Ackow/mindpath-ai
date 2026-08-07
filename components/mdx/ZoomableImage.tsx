@@ -161,18 +161,18 @@ export const ZoomableImage: React.FC<ZoomableImageProps> = ({ src, alt, classNam
 
   return (
     <span className="my-6 flex flex-col items-center justify-center">
-      {/* 行内图片容器 */}
+      {/* 行内图片容器：设置 max-h-[480px] 彻底防止竖图 (高度>宽度) 过大挤压页面 */}
       <span
         onClick={handleOpen}
-        className="group relative cursor-pointer inline-block overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50 shadow-xs transition-all hover:shadow-md hover:border-teal-400"
+        className="group relative cursor-pointer inline-flex items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50 p-1 shadow-xs transition-all hover:shadow-md hover:border-teal-400 max-w-full"
       >
         <img
           src={src}
           alt={alt || '插图'}
-          className={`max-w-full h-auto object-contain rounded-xl transition-transform duration-300 group-hover:scale-[1.01] ${className || ''}`}
+          className={`max-w-full max-h-[460px] sm:max-h-[500px] w-auto h-auto object-contain rounded-lg transition-transform duration-300 group-hover:scale-[1.01] ${className || ''}`}
         />
         {/* 鼠标悬浮提示层 */}
-        <span className="absolute inset-0 bg-slate-900/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100 flex items-center justify-center gap-1.5 text-white font-medium text-xs backdrop-blur-[1px]">
+        <span className="absolute inset-0 bg-slate-900/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100 flex items-center justify-center gap-1.5 text-white font-medium text-xs backdrop-blur-[1px] rounded-xl">
           <Maximize2 className="w-4 h-4" />
           <span>点击放大查看</span>
         </span>
@@ -185,7 +185,7 @@ export const ZoomableImage: React.FC<ZoomableImageProps> = ({ src, alt, classNam
         </span>
       )}
 
-      {/* 全屏 Modal 使用 React Portal 挂载到 document.body，彻底避免 <p> 标签嵌套 <div> 的 Hydration 错误 */}
+      {/* 全屏 Modal 使用 React Portal 挂载到 document.body */}
       {mounted && modalContent && createPortal(modalContent, document.body)}
     </span>
   );

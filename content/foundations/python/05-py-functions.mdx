@@ -1,479 +1,552 @@
 ---
 id: py-functions
-title: 05.函数、作用域与函数式工具
+title: 05.函数与作用域
 module: foundations
 submodule: python
 order: 5
 difficulty: beginner
-prerequisites: [py-control-flow, py-data-structures]
-relatedNotes: [py-modules, py-files-debugging]
-nextNotes: [py-modules, py-files-debugging]
-map:
-  layoutGroup: foundations-python
-estimatedMinutes: 35
-tags: [Python, 函数, 作用域, lambda, map/filter, 类型标注, docstring]
-summary: 位置/关键字参数、*args与**kwargs、LEGB作用域法则与可变默认参数陷阱、lambda与map/filter适用边界、docstring与类型标注，以及将 AI 流程拆分为可测试函数。
+prerequisites: [py-data-structures]
+estimatedMinutes: 25
+tags: [Python, 函数, def, 参数, 返回值, 作用域, LEGB法则, 类型标注, Docstring]
+summary: 掌握 Python 函数定义（def）、位置与关键字参数、默认参数、*args 与 **kwargs 打包、返回值 return，LEGB 作用域法则、函数设计规范与静态类型标注 (Type Hints)。
 symbols:
   - symbol: "def"
-    mean: "定义函数关键字"
+    mean: "函数定义关键字，声明一个可重复调用的代码块"
   - symbol: "return"
-    mean: "从函数返回值并结束函数"
-  - symbol: "*args/**kwargs"
-    mean: "可变位置与关键字参数"
-  - symbol: "LEGB"
-    mean: "局部/闭包/全局/内置作用域查找规则"
-  - symbol: "lambda"
-    mean: "单行匿名函数表达式"
+    mean: "返回值关键字，结束函数执行并向调用者返回结果"
+  - symbol: "默认参数"
+    mean: "形参设有默认值，调用时未传参则自动使用默认值"
+  - symbol: "*args / **kwargs"
+    mean: "*args 收集多余位置参数为元组，**kwargs 收集关键字参数为字典"
+  - symbol: "LEGB 法则"
+    mean: "Python 变量作用域查找顺序：L(Local) -> E(Enclosing) -> G(Global) -> B(Built-in)"
   - symbol: "Type Hints"
-    mean: "静态类型标注契约"
+    mean: "静态类型标注语法（如 x: int -> str），提示参数与返回值数据类型"
 ---
 
-## 本节要解决什么问题？
+## 1. 问题导入
 
-随着 AI 任务复杂度增加，如果把所有代码堆叠在单个 Notebook 单元格或主脚本中，程序会迅速变得难以调试、难以复用，也极易出现全局变量污染。**函数（Function）** 是编程中最重要的抽象手段，它把复杂的计算逻辑封装为带明确输入（参数）和输出（返回值）的黑盒。
+如果在程序的不同地方，都需要对数据进行相同的清洗或计算（如计算商品打折后的总价、求一组数字的平均值），不断复制粘贴相同代码会导致程序冗长且难以维护。
 
-完成本节后，你应能：
+一旦计算逻辑需要修改，你就必须手动修改几十处重复的代码，极易产生遗漏报错。
 
-- 掌握函数定义、形参与实参传递、位置参数、关键字参数与默认参数。
-- 区分仅位置参数（`/`）与仅关键字参数（`*`），写出接口明确的可复用函数。
-- 理解 LEGB 作用域查找法则、`global`/`nonlocal` 机制以及**可变默认参数陷阱**的底层原理。
-- 熟练使用 `*args` 和 `**kwargs` 处理不定长参数与配置解包。
-- 理性评估 `lambda`、`map`、`filter` 与列表推导式的适用边界。
-- 编写符合 Google 规范的 Docstring，并结合类型标注（Type Hints）提高 AI 代码可靠性。
-- 将 AI 的数据加载、特征预处理、模型训练与指标评估拆分为解耦、可独立测试的函数。
+**函数 (Function)** 就是解决这个问题的金钥匙。它可以将实现特定功能的代码打包成一个独立的模块，赋予其一个名字。在需要时，只需调用名字即可重复使用这段代码。
 
-<ConceptCard title="函数的黑盒契约" type="intuition">
-把函数看作一台工业流水线机器：给它输入原料（参数），它经过内部逻辑加工，产出成品（返回值）。外界不需要关心机器内部的局部临时变量；机器也不应该隐式修改外界的全局状态。明确的输入与输出契约，是编写高质量 AI 系统的核心。
+---
+
+## 2. 学习目标
+
+完成本章学习后，你将能够：
+
+- 掌握使用 `def` 定义函数与使用 `return` 返回计算结果的标准语法；
+- 理解形参 (Parameter) 与实参 (Argument) 的区别，熟练使用位置参数与关键字参数；
+- 掌握默认参数的使用规则，避开“可变默认参数陷阱”；
+- 理解 `*args` 与 `**kwargs` 参数打包与解包的工作原理；
+- 掌握 LEGB 变量作用域查找规则，正确使用 `global` 关键字；
+- 掌握 Docstring 文档规范与卫语句编写技巧，提升代码可读性；
+- 掌握 Python 静态类型标注 (Type Hints) 基础语法，增强 IDE 提示与代码可靠性。
+
+---
+
+## 3. 函数的定义与调用
+
+在 Python 中，使用 `def` 关键字来定义一个函数。
+
+### 3.1 标准语法格式
+
+```python
+def 函数名(参数1, 参数2, ...):
+    """函数文档说明（可选）"""
+    # 函数体代码
+    return 返回值
+```
+
+### 3.2 无参数无返回值 vs 有参数有返回值
+
+```python
+# 1. 无参数无返回值的简单函数
+def greet():
+    print("欢迎来到 Python 编程世界！")
+
+greet()  # 调用函数
+
+# 2. 有参数有返回值的计算函数
+def add_numbers(a, b):
+    result = a + b
+    return result  # 向调用者返回计算结果
+
+sum_val = add_numbers(10, 20)
+print(f"计算结果: {sum_val}")  # 输出: 计算结果: 30
+```
+
+<ConceptCard title="return 的两个关键作用" type="intuition">
+1. 向函数外部传递计算结果；
+2. **立即结束函数执行**：一旦程序遇到 return 语句，就会立刻退出当前函数，return 后面的代码不会被执行。如果函数没有写 return，默认返回 None。
 </ConceptCard>
 
 ---
 
-## 1. 函数基础：定义、参数与返回值
+## 4. 参数类型全解：位置、关键字与默认参数
 
-### 1.1 语法结构与卫语句
+为了让函数适应不同的场景，Python 提供了多种传参方式。
 
-在 Python 中使用 `def` 关键字定义函数。函数体需缩进，使用 `return` 语句返回结果。若没有显示的 `return`，默认返回 `None`。
+### 4.1 位置参数与关键字参数
 
 ```python
-def calculate_loss(y_true: float, y_pred: float) -> float:
-    """计算均方误差 (MSE) 损失值。"""
-    error = y_true - y_pred
-    return error ** 2
+def describe_person(name, age):
+    print(f"姓名: {name}, 年龄: {age}")
 
-loss = calculate_loss(1.0, 0.8)
-print(f"Loss: {loss:.4f}")  # Loss: 0.0400
+# 1. 位置参数：按照形参位置顺序一一对应传入
+describe_person("小明", 18)
+
+# 2. 关键字参数：明确指定 参数名=数值，无需关心传入顺序
+describe_person(age=20, name="小红")
 ```
 
-在处理边界条件时，推荐使用 **卫语句（Guard Clause）** 提前返回，避免深层嵌套的 `if-else`：
+### 4.2 默认参数 (Default Arguments)
+可以为形参设定默认值。当调用者没有传入该参数时，函数会自动使用默认值：
 
 ```python
-def safe_divide(numerator: float, denominator: float) -> float | None:
-    # 卫语句：优先拦截非法输入
-    if denominator == 0:
-        print("警告：分母为 0，返回 None")
-        return None
-    return numerator / denominator
+def calculate_price(price, discount=0.9):
+    """计算折扣价格，默认给予 9 折优惠"""
+    return price * discount
+
+print(calculate_price(100))       # 未传 discount，使用默认 9 折，输出: 90.0
+print(calculate_price(100, 0.8))  # 传入 0.8，使用 8 折，输出: 80.0
 ```
 
----
+> **语法限制**：在定义函数时，**默认参数必须放在非默认参数的后面**。如 `def func(a, b=10)` 是合法的，但 `def func(b=10, a)` 会报 `SyntaxError`。
 
-### 1.2 多返回值与元组解包
+### 4.3 经典避坑：可变默认参数陷阱
 
-Python 函数可以返回多个值，本质上是把多个对象包装为一个元组（Tuple）返回：
+在定义函数时，**切记不要使用可变对象（如列表 `[]` 或字典 `{}`）作为默认参数**！
 
-```python
-def evaluate_predictions(y_true: list[int], y_pred: list[int]):
-    correct = sum(t == p for t, p in zip(y_true, y_pred))
-    total = len(y_true)
-    accuracy = correct / total if total > 0 else 0.0
-    return correct, total, accuracy  # 返回元组 (correct, total, accuracy)
-
-# 使用元组解包接收返回值
-correct_cnt, total_cnt, acc = evaluate_predictions([1, 0, 1], [1, 1, 1])
-print(f"准确率: {acc:.2%} ({correct_cnt}/{total_cnt})")
-```
-
----
-
-### 1.3 位置参数、关键字参数与默认参数
-
-- **位置参数 (Positional Arguments)**：按定义顺序传入实参。
-- **关键字参数 (Keyword Arguments)**：显式通过 `name=value` 形式传参，顺序可自由调整。
-- **默认参数 (Default Arguments)**：在形参列表中提供预设默认值。**注意：带默认值的参数必须排在无默认值参数之后！**
+![可变默认参数陷阱图解](/assets/python/mutable-default-trap.png)
 
 ```python
-def train_model(data: list, epochs: int = 10, lr: float = 0.001):
-    print(f"训练数据量: {len(data)}, 轮数: {epochs}, 学习率: {lr}")
+# 错误示范：默认参数使用可变列表 []
+def add_item_bad(item, target_list=[]):
+    target_list.append(item)
+    return target_list
 
-# 混合调用
-train_model([1, 2, 3])                           # 均使用默认配置
-train_model([1, 2, 3], 20)                       # 位置传参覆盖 epochs
-train_model([1, 2, 3], lr=0.01, epochs=5)       # 关键字传参指定配置
+# 多次调用会共享同一个默认列表！
+print(add_item_bad("苹果")) # 输出: ['苹果']
+print(add_item_bad("香蕉")) # 输出: ['苹果', '香蕉'] （产生了意外累加副作用！）
+
+# 正确写法：使用 None 作为默认值标志
+def add_item_good(item, target_list=None):
+    if target_list is None:
+        target_list = []  # 在函数内部创建新列表
+    target_list.append(item)
+    return target_list
 ```
 
 ---
 
-### 1.4 现代 Python 参数定界符：仅位置参数 (`/`) 与仅关键字参数 (`*`)
+## 5. 不定长参数：*args 与 **kwargs
 
-在复杂的 AI 框架或可复用工具库中，为了保护 API 契约或防止误传实参，使用 `/` 和 `*` 进行参数边界分割：
+如果你在定义函数时，无法提前确定调用者会传入多少个参数，可以使用 `*args` 和 `**kwargs`。
 
-- **仅位置参数 (`/`)**：`/` 左侧的参数只能通过位置传递，不能使用 `name=value`。
-- **仅关键字参数 (`*`)**：`*` 右侧的参数必须通过关键字传递。
+![*args 与 **kwargs 参数打包解包图解](/assets/python/args-kwargs-unpacking.png)
+
+### 5.1 `*args`：收集多余的位置参数为元组
+
+`*args` 用于接收任意数量的非关键字位置参数，在函数内部会被打包为一个**元组 (`tuple`)**：
 
 ```python
-def configure_pipeline(
-    dataset_path: str,          # 只能按位置传递 (仅位置参数)
-    /,
-    mode: str = "train",        # 位置或关键字传递
-    *,
-    batch_size: int = 32,       # 只能按关键字传递 (仅关键字参数)
-    learning_rate: float = 0.01
-):
-    print(f"加载路径: {dataset_path}, 模式: {mode}, BatchSize: {batch_size}, LR: {learning_rate}")
+def calculate_sum(*args):
+    # args 是一个包含了所有传入位置参数的元组
+    total = 0
+    for num in args:
+        total += num
+    return total
 
-# 正确调用：
-configure_pipeline("./data/iris.csv", "train", batch_size=64, learning_rate=0.005)
-
-# 错误调用示例：
-# configure_pipeline(dataset_path="./data/iris.csv") 
-# -> TypeError: configure_pipeline() got some positional-only arguments passed as keyword arguments: 'dataset_path'
-
-# configure_pipeline("./data/iris.csv", "train", 64) 
-# -> TypeError: configure_pipeline() takes from 1 to 2 positional arguments but 3 were given
+print(calculate_sum(1, 2, 3))        # 输出: 6
+print(calculate_sum(10, 20, 30, 40)) # 输出: 100
 ```
 
-参数排列的标准公式如下：
+### 5.2 `**kwargs`：收集多余的关键字参数为字典
 
-$$\text{仅位置参数 (/)} \longrightarrow \text{普通参数} \longrightarrow \text{*args} \longrightarrow \text{仅关键字参数 (*)} \longrightarrow \text{**kwargs}$$
+`**kwargs` 用于接收任意数量的 `key=value` 关键字参数，在函数内部会被打包为一个**字典 (`dict`)**：
 
----
+```python
+def print_user_info(**kwargs):
+    # kwargs 是一个包含了所有关键字参数的字典
+    for key, value in kwargs.items():
+        print(f"{key}: {value}")
 
-## 2. 作用域与变量生存期 (LEGB 规则)
-
-作用域（Scope）决定了变量在代码中的可见性与生命周期。
-
-### 2.1 LEGB 作用域查找法则
-
-当 Python 遇到一个变量名时，会严格按照 **L $\rightarrow$ E $\rightarrow$ G $\rightarrow$ B** 的单向顺序查找变量：
-
-1. **L (Local)**：当前函数内部定义的局部变量。
-2. **E (Enclosing)**：外层嵌套函数的局部作用域（闭包作用域）。
-3. **G (Global)**：当前 `.py` 模块顶层定义的全局变量。
-4. **B (Built-in)**：Python 内置函数与异常对象（如 `len`、`range`、`ValueError`）。
-
-![Python 作用域与 LEGB 查找规则](/assets/python/legb-scope.png)
+print_user_info(name="张三", role="管理员", score=98)
+```
 
 ---
 
-### 2.2 `global` 与 `nonlocal` 关键字
+## 6. 局部变量与全局变量 (LEGB 作用域法则)
 
-默认情况下，在函数内部给变量赋值会创建一个**局部变量**。如果需要修改外层作用域的变量，需显式声明：
+**作用域 (Scope)** 决定了变量在代码的哪些区域是可以被访问到的。
 
-- **`global`**：声明修改全局模块层级的变量。
-- **`nonlocal`**：声明修改外层嵌套函数的变量（常用于闭包）。
+### 6.1 局部变量与全局变量的区别
+
+- **局部变量 (Local Variable)**：在函数内部定义的变量，只能在该函数内部使用，函数执行完毕后立刻被从内存中销毁；
+- **全局变量 (Global Variable)**：在函数外部主程序中定义的变量，在整个文件的任意位置都可以读取。
+
+```python
+total_count = 100  # 全局变量
+
+def my_func():
+    local_val = 10 # 局部变量
+    print(total_count) # 可以读取全局变量
+
+my_func()
+# print(local_val) # 报错 NameError！在函数外部无法访问局部变量
+```
+
+### 6.2 在函数内部修改全局变量：`global` 关键字
+如果在函数内部尝试对全局变量重新赋值，Python 会默认创建一个同名的局部变量。如果想要直接修改全局变量，需要使用 `global` 声明：
 
 ```python
 counter = 0
 
-def increment_global():
-    global counter
-    counter += 1  # 显式修改全局变量
+def increment():
+    global counter  # 声明使用全局变量 counter
+    counter += 1
 
-def make_accumulator():
-    total = 0
-    def add(val: float):
-        nonlocal total  # 声明修改闭包外层变量
-        total += val
-        return total
-    return add
-
-acc = make_accumulator()
-print(acc(10))  # 10
-print(acc(5))   # 15
+increment()
+print(counter)  # 输出: 1
 ```
 
-> [!WARNING]
-> **避坑防范：内置名称遮蔽 (Built-in Shadowing)**
-> 切勿将变量或参数命名为内置函数名（如 `len`, `list`, `dict`, `str`, `type`, `input` 等）。这会把内置名称遮蔽掉，导致后续代码调用内置函数报错：
->
-> ```python
-> list = [1, 2, 3]    # 危险！遮蔽了内置类型 list
-> # new_data = list("abc")  # TypeError: 'list' object is not callable
-> ```
+### 6.3 LEGB 作用域查找顺序法则
+
+当你在代码中引用一个变量时，Python 解释器会严格按照 **LEGB** 的顺序向上逐层查找变量：
+
+![LEGB 作用域查找顺序图解](/assets/python/legb-scope.png)
+
+1. **L (Local)**：**局部作用域** —— 函数内部；
+2. **E (Enclosing)**：**嵌套作用域** —— 外层嵌套函数的区域；
+3. **G (Global)**：**全局作用域** —— 当前 Python 模块文件顶层；
+4. **B (Built-in)**：**内置作用域** —— Python 系统预设的内置函数与异常（如 `len()`, `print()`, `str`）。
 
 ---
 
-### 2.3 深度剖析：“可变默认参数陷阱”
+## 7. 函数设计规范：Docstring 与卫语句
 
-这是 Python 初学者最容易遇到的隐蔽 Bug：**函数的默认参数对象在函数定义（模块装载）时仅被创建一次，而不是在每次调用时新建！**
+高质量的代码不仅要能正确运行，还要易于阅读和维护。
 
-若使用可变对象（列表、字典、集合）作为默认参数，多次调用将共享同一个内存地址。
-
-![可变默认参数陷阱内存对比图](/assets/python/mutable-default-trap.png)
-
-<RunnableCodeBlock title="验证可变默认参数陷阱">
-{`# ❌ 错误做法：默认参数被多次调用共享污染
-def record_loss_bad(loss, history=[]):
-    history.append(loss)
-    return history
-
-print("Bad 1:", record_loss_bad(0.5))  # ['0.5']
-print("Bad 2:", record_loss_bad(0.3))  # 预期 ['0.3']，实际 ['0.5', '0.3']！
-
-# ✅ 标准正确写法：使用 None 哨兵对象
-def record_loss_good(loss, history=None):
-    if history is None:
-        history = []  # 在每次调用时独立创建新列表
-    history.append(loss)
-    return history
-
-print("Good 1:", record_loss_good(0.5))  # [0.5]
-print("Good 2:", record_loss_good(0.3))  # [0.3]` }
-</RunnableCodeBlock>
-
----
-
-## 3. 可变参数与灵活传参 (*args, **kwargs)
-
-当不确定调用者会传入多少参数，或者需要透传配置字典时，使用可变参数。
-
-### 3.1 `*args` 与 `**kwargs` 机制
-
-- **`*args`**：将多余的**位置实参**打包为一个**元组 (tuple)**。
-- **`**kwargs`**：将多余的**关键字实参**打包为一个**字典 (dict)**。
-
-<RunnableCodeBlock title="*args与 **kwargs机制">
-{`
-def log_experiment(experiment_name: str, *metrics, **hyperparams):
-    print(f"实验名称: {experiment_name}")
-    print(f"位置指标 (*args): {metrics} (类型: {type(metrics).__name__})")
-    print(f"超参数 (**kwargs): {hyperparams} (类型: {type(hyperparams).__name__})")
-
-log_experiment("ResNet-50", 0.92, 0.89, lr=0.001, batch_size=32, optimizer="Adam")
-`}
-</RunnableCodeBlock>
-
----
-
-### 3.2 实参解包 (Unpacking)
-
-在调用函数时，使用 `*` 和 `**` 可以将已有的列表、元组或字典解包展开后传给函数：
-
-![*args 与 **kwargs 参数打包与解包图](/assets/python/args-kwargs-unpacking.png)
-
-<RunnableCodeBlock title="实参解包">
-{`
-def create_model(input_dim: int, hidden_dim: int, output_dim: int, lr: float = 0.01):
-    return f"Model[{input_dim}->{hidden_dim}->{output_dim}], LR={lr}"
-
-dims = [784, 128, 10]
-config = {"lr": 0.005}
-
-# 使用 * 解包列表作为位置参数，使用 ** 解包字典作为关键字参数
-model_info = create_model(*dims, **config)
-print(model_info)  # Model[784->128->10], LR=0.005
-`}
-</RunnableCodeBlock>
-
----
-
-## 4. 函数式工具与表达式
-
-### 4.1 `lambda` 匿名函数
-
-`lambda` 用于定义简洁的单行匿名函数。语法为 `lambda arg1, arg2: expression`。它的主体只能是一个单行表达式，不能包含多行赋值或复杂的循环语句。
+### 7.1 单一职责原则与 Docstring 文档规范
+一个良好的函数应当遵循**单一职责原则**（只做一件事）。使用三引号 `"""..."""` 在函数首行编写 Docstring，能让团队成员及 IDE 快速明白函数的用途与参数约束：
 
 ```python
-# 常见用法：作为排序或过滤的 key
-samples = [("cat", 0.95), ("dog", 0.88), ("bird", 0.99)]
-
-# 按置信度得分降序排序
-sorted_samples = sorted(samples, key=lambda item: item[1], reverse=True)
-print(sorted_samples)  # [('bird', 0.99), ('cat', 0.95), ('dog', 0.88)]
-```
-
----
-
-### 4.2 `map`、`filter` 与列表推导式的对比
-
-`map()` 和 `filter()` 返回惰性迭代器（Iterator），在现代 Python 中，通常更推荐使用**列表推导式**，因为它具有更好的可读性和效率。
-
-| 工具 | 语法示例 | 特点与适用边界 |
-|---|---|---|
-| **`map`** | `map(lambda x: x*2, data)` | 惰性求值；需要配合 `list()` 显式转换；在处理现有内置函数（如 `map(int, str_list)`）时极简 |
-| **`filter`** | `filter(lambda x: x>0, data)` | 惰性过滤符合条件的元素 |
-| **列表推导式** | `[x*2 for x in data if x>0]` | **（推荐）** 语法直观，可同时完成变换与过滤，读写性能优异 |
-
-```python
-raw_scores = [-0.5, 0.2, 0.8, -0.1]
-
-# map + filter 方式
-positive_doubled_map = list(map(lambda x: x * 2, filter(lambda x: x > 0, raw_scores)))
-
-# 列表推导式方式 (更具可读性)
-positive_doubled_comp = [x * 2 for x in raw_scores if x > 0]
-
-print(positive_doubled_comp)  # [0.4, 1.6]
-```
-
----
-
-## 5. 可复用函数设计规范
-
-### 5.1 Docstring 文档规范
-
-为了让团队和 AI 助手准确理解函数用途，应遵循 Google 风格的文档字符串规范：
-
-```python
-def normalize_features(features: list[float], min_val: float = 0.0, max_val: float = 1.0) -> list[float]:
-    """对连续数值特征进行 Min-Max 归一化缩放。
+def calculate_discount_price(original_price: float, discount_rate: float = 0.9) -> float:
+    """计算商品打折后的实际应付金额。
 
     Args:
-        features: 待缩放的原始数值列表。
-        min_val: 缩放后的最小值，默认为 0.0。
-        max_val: 缩放后的最大值，默认为 1.0。
+        original_price: 商品原价 (必须大于 0)
+        discount_rate: 折扣率，默认为 0.9 (9 折)
 
     Returns:
-        缩放到指定范围 [min_val, max_val] 后的新列表。
-
-    Raises:
-        ValueError: 当输入列表为空或 max_val <= min_val 时抛出。
+        折后实际金额 (float)
     """
-    if min_val >= max_val:
-        raise ValueError("max_val 必须大于 min_val")
-    if not features:
-        return []
-    
-    f_min, f_max = min(features), max(features)
-    if f_min == f_max:
-        return [min_val] * len(features)
-        
-    return [min_val + (x - f_min) / (f_max - f_min) * (max_val - min_val) for x in features]
+    return original_price * discount_rate
 ```
 
----
-
-### 5.2 静态类型标注 (Type Hints) 与版本兼容性
-
-类型标注提升了 IDE 智能补全和 `mypy` 静态检查的能力。
-
-> [!NOTE]
-> **关键澄清**：Python 的 Type Hints 属于**静态契约**，解释器在运行时默认**不会强制拦截**不匹配的类型。如需运行时类型校验，可结合 `pydantic` 或 `beartype` 等第三方库。
-
-版本兼容性写法区别：
+### 7.2 卫语句 (Guard Clause) 提前拦截非法输入
+在处理异常或边界条件时，推荐使用**卫语句**：优先拦截非法输入并用 `return` 或 `raise` 提前退出，避免深层嵌套的 `if-else`：
 
 ```python
-# Python 3.10+ 原生简洁写法：
-def parse_config(path: str | None = None) -> dict[str, float]:
-    ...
+# 不推荐：深层嵌套 if-else
+def process_score_bad(score):
+    if score is not None:
+        if 0 <= score <= 100:
+            return score * 1.1
+        else:
+            print("分数超出范围")
+    else:
+        print("分数不能为空")
 
-# Python 3.7 - 3.9 兼容写法 (通过 typing 模块导入)：
-from typing import Optional, Union, Any
+# 推荐：卫语句提前拦截，逻辑清晰
+def process_score_good(score):
+    if score is None:
+        print("分数不能为空")
+        return None
+    if not (0 <= score <= 100):
+        print("分数超出范围")
+        return None
 
-def parse_config_compat(path: Optional[str] = None) -> dict[str, Any]:
-    ...
+    return score * 1.1
 ```
 
 ---
 
-## 6. AI 场景：将 AI 流程拆分为可测试函数
+## 8. 静态类型标注 (Type Hints) 深度解析
 
-在机器学习实践中，应当把数据加载、前处理、预测规则与评估绘图拆解为解耦的独立函数。
+Python 是一门**动态类型语言**。在传统的 Python 代码中，声明变量或定义函数参数时无需指定数据类型。这带来了极高的书写自由度，但也留下了隐患：
+
+随着代码规模扩大，当你阅读他人编写的函数 `process(data)` 时，无法一眼判断 `data` 应该传 `list`、`dict` 还是 `str`，在调用其方法时非常容易出现 `AttributeError` 或 `TypeError` 运行期崩溃。
+
+为了解决这一痛点，Python 3.5 引入了**静态类型标注 (Type Hints)** 机制，允许我们在定义变量和函数时显式地标注“期待的数据类型”。
+
+### 8.1 为什么要使用类型标注？
+
+1. **极其强大的 IDE 智能补全**：当你在函数参数上写了 `user_ids: list[int]` 后，编辑器 (VS Code / PyCharm) 就能立刻知道 `user_ids` 是一个列表，并在你敲下 `user_ids.` 时精准弹出列表的所有方法提示；
+2. **代码即文档 (Self-Documenting Code)**：函数的形参和返回值类型一目了然，无需在注释中费力解释参数格式；
+3. **编写期捕获潜在 Bug**：结合 `mypy` 或 VS Code 的 Pylance 插件，能在代码运行之前就检测出“企图向要求传入 int 的函数传入 str”的类型错误。
+
+---
+
+### 8.2 类型标注核心语法
+
+#### 1. 基础变量与函数类型标注
+在变量名或形参名后使用 `: 类型`，在函数形参列表后使用 `-> 返回值类型`：
+
+```python
+# 变量类型标注
+age: int = 18
+name: str = "小明"
+is_active: bool = True
+
+# 函数参数与返回值标注
+def calculate_bmi(height: float, weight: float) -> float:
+    """计算身高体重指数 BMI"""
+    return weight / (height ** 2)
+```
+
+#### 2. 常用组合容器类型标注 (`list`, `dict`, `tuple`, `set`)
+对于组合容器，可以使用方括号 `[]` 进一步明确容器内部元素的类型：
+
+| 标注语法 | 含义说明 | 示例代码 |
+|---|---|---|
+| `list[T]` | 内部元素全为类型 `T` 的列表 | `scores: list[int] = [85, 90, 95]` |
+| `dict[K, V]` | 键为 `K` 类型、值为 `V` 类型的字典 | `user_scores: dict[str, float] = {"小明": 92.5}` |
+| `tuple[T1, T2, ...]` | 包含指定位置类型元素的元组 | `point: tuple[int, int] = (10, 20)` |
+| `set[T]` | 内部元素全为类型 `T` 的集合 | `tags: set[str] = {"python", "ai"}` |
+
+```python
+def process_user_data(user_list: list[dict[str, Any]]) -> dict[str, int]:
+    """处理用户列表数据，返回名称与年龄映射字典"""
+    result = {}
+    for user in user_list:
+        result[user["name"]] = user["age"]
+    return result
+```
+
+#### 3. 多类型联合与可选类型 (`Union` / `|` / `Optional`)
+在实际开发中，一个变量或函数返回值可能属于多种类型，或者可能返回 `None`：
+
+- **Python 3.10+ 原生管道符 `|`（推荐）**：使用 `A | B` 表示类型属于 `A` 或 `B`；
+- **Python 3.7~3.9 兼容写法**：从 `typing` 模块导入 `Union` 或 `Optional`。
+
+```python
+# 1. 多类型联合：既可以接收整数也可以接收浮点数
+def parse_number(val: int | float) -> float:
+    return float(val)
+
+# 2. 可选类型：可能返回字符串，也可能返回 None
+def find_user_email(user_id: int) -> str | None:
+    if user_id == 101:
+        return "xiaoming@example.com"
+    return None  # 找不到用户时返回 None
+
+# 3. Python 3.7 - 3.9 的兼容写法
+from typing import Optional, Union
+
+def legacy_find_user(user_id: int) -> Optional[str]:
+    # Optional[str] 等价于 str | None
+    return "xiaoming@example.com" if user_id == 101 else None
+```
+
+#### 4. 特殊类型：`Any` 与 `Callable`
+
+```python
+from typing import Any, Callable
+
+# Any: 放弃类型检查，表示可以是任意类型
+def log_raw_data(data: Any) -> None:
+    print(f"日志记录: {data}")
+
+# Callable[[参数类型列表], 返回值类型]: 表示传入的参数本身是一个函数
+def apply_operation(x: int, y: int, func: Callable[[int, int], int]) -> int:
+    return func(x, y)
+
+def add(a: int, b: int) -> int:
+    return a + b
+
+print(apply_operation(3, 4, add)) # 输出: 7
+```
+
+---
+
+### 8.3 核心概念澄清：静态契约 vs 运行时强校验
+
+理解类型标注在 Python 中的执行机制非常关键：
+
+<ConceptCard title="Type Hints 的静态契约属性" type="intuition">
+Python 的 Type Hints 属于**静态代码提示**。Python 解释器在运行时**默认不会强行拦截**类型不匹配的代码。
+例如：即使你定义了 def add(x: int) -> int，当传入 add("abc") 时，Python 解释器在启动运行该行之前**不会**直接报 TypeError 崩溃。
+静态类型标注的使命在于：在**编码阶段**让 IDE 和类型检查工具 (mypy) 捕获错误，以及生成清晰的工程接口文档。如果需要在运行时强行校验数据类型，可结合 FastAPI 或 Pydantic 等第三方框架。
+</ConceptCard>
+
+---
+
+## 9. 匿名函数 lambda 表达式
+
+对于逻辑极其简单、只有一行的临时函数，可以使用 **`lambda` 表达式** 简化书写。
+
+### 9.1 语法格式
+```python
+lambda 参数1, 参数2 : 单行表达式
+```
+
+```python
+# 传统函数写法
+def square(x):
+    return x ** 2
+
+# 简化为 lambda 表达式
+square_lambda = lambda x: x ** 2
+
+print(square_lambda(5))  # 输出: 25
+
+# 常用场景：配合列表 sort() 的 key 参数按特定规则排序
+students = [("小明", 88), ("小红", 95), ("小刚", 72)]
+students.sort(key=lambda student: student[1], reverse=True) # 按成绩降序
+print(students) # 输出: [('小红', 95), ('小明', 88), ('小刚', 72)]
+```
+
+---
+
+## 10. 动手实战：模块化 AI 数据与评估流水线
 
 ![模块化 AI 数据预处理与评估流水线架构图](/assets/python/ai-modular-pipeline.png)
 
-<RunnableCodeBlock title="解耦模块化的 AI 数据与评估流水线">
-{`from typing import Optional
+请在下方的代码块中，点击 **“运行代码”**，体验使用 Type Hints、Docstring 与函数解耦搭建的数据处理流水线：
 
-# 1. 独立的数据提取函数
-def load_raw_dataset() -> list[dict]:
-    return [
-        {"id": 1, "feature": 12.5, "label": 1},
-        {"id": 2, "feature": 3.0, "label": 0},
-        {"id": 3, "feature": 8.1, "label": 1},
-        {"id": 4, "feature": 1.2, "label": 0},
-    ]
+<RunnableCodeBlock title="模块化数据处理与评估流水线">
+{`# 1. 带 Type Hints 的特征归一化处理函数
+def normalize_scores(scores: list[float], max_score: float = 100.0) -> list[float]:
+    """对原始成绩进行百分比归一化。"""
+    if not scores:
+        return []
+    return [round(s / max_score, 2) for s in scores]
 
-# 2. 特征变换预处理函数
-def preprocess_features(dataset: list[dict], threshold: float = 5.0) -> list[dict]:
-    processed = []
-    for item in dataset:
-        processed.append({
-            "id": item["id"],
-            "scaled_feature": item["feature"] / 10.0,
-            "label": item["label"]
-        })
-    return processed
+# 2. 带卫语句的数据校验与计算函数
+def compute_statistics(scores: list[float]) -> dict[str, float] | None:
+    """计算成绩的统计指标。"""
+    if not scores:
+        print("警告：无法对空列表计算统计指标")
+        return None
 
-# 3. 核心模型规则决策函数 (纯函数，便于单体测试)
-def predict_sample(scaled_feature: float, threshold: float = 0.5) -> int:
-    return 1 if scaled_feature >= threshold else 0
+    avg = sum(scores) / len(scores)
+    return {
+        "count": len(scores),
+        "mean": round(avg, 2),
+        "max": max(scores),
+        "min": min(scores)
+    }
 
-# 4. 指标评估汇总函数
-def evaluate_pipeline(dataset: list[dict], threshold: float = 0.5) -> dict[str, float]:
-    y_true = [item["label"] for item in dataset]
-    y_pred = [predict_sample(item["scaled_feature"], threshold) for item in dataset]
-    
-    correct = sum(t == p for t, p in zip(y_true, y_pred))
-    acc = correct / len(y_true) if y_true else 0.0
-    return {"sample_count": len(y_true), "accuracy": acc}
+# 3. 流水线主执行流程
+raw_data = [88.0, 95.5, 72.0, 60.0]
+norm_data = normalize_scores(raw_data)
+stats = compute_statistics(raw_data)
 
-# 主执行代码组装流水线
-raw_data = load_raw_dataset()
-clean_data = preprocess_features(raw_data)
-metrics = evaluate_pipeline(clean_data, threshold=0.5)
-
-print("数据流水线评估结果:", metrics)`}
+print("归一化比例结果:", norm_data)
+print("统计评估结果:", stats)
+`}
 </RunnableCodeBlock>
 
 ---
 
-## 常见错误排查
+## 11. 常见错误排查 (Troubleshooting)
 
-| 现象 / 报错信息 | 常见根本原因 | 规范处理方式 |
+| 错误现象 / 异常类型 | 常见原因 | 标准排查与处理方式 |
 |---|---|---|
-| `UnboundLocalError: local variable 'x' referenced before assignment` | 在函数内部给与全局同名的变量 `x` 赋值，导致 `x` 被 Python 判定为局部变量，但在赋值前就尝试读取它 | 若需读取并修改全局变量，显式加上 `global x`；更推荐将 `x` 作为参数传入并返回 |
-| `TypeError: func() missing 1 required positional argument` | 函数定义中缺少默认值的必填形参在调用时未被传入 | 检查形参列表，补全对应位置的实参 |
-| 默认参数每次调用互相影响、数据污染 | 使用了列表、字典或集合等可变对象作为默认参数（如 `def fn(x=[])`） | 改用 `def fn(x=None)` 并在函数内部初始化 `if x is None: x = []` |
-| `TypeError: load() got positional-only arguments passed as keyword: 'path'` | 试图给在 `/` 仅位置参数定界符左侧的参数使用 `path="..."` 关键字传参 | 对 `/` 左侧的参数一律使用位置传参 |
-| `TypeError: func() takes 0 positional arguments but 1 was given` | 参数定义中使用了 `*`（仅关键字参数），但调用时使用了位置传参 | 在调用该参数时显式加上关键字名称 `key=value` |
-| 变量类型与 Type Hints 不符但代码正常运行未报错 | Python 解释器默认不会在运行时自动拦截校验 Type Hints | 使用 `mypy` 静态检查，或借助 `pydantic`/`beartype` 库进行运行时强制强校验 |
-| `TypeError: 'list' object is not callable` | 局部或全局变量覆盖了 Python 内置标识符 `list = [...]` | 检查变量名，禁止使用 `list`, `dict`, `len`, `str`, `input` 等内置关键字命名 |
+| `TypeError: func() missing 1 required positional argument` | 调用函数时未提供必须的位置参数 | 检查函数定义中的必填参数，补齐缺少的实参 |
+| `SyntaxError: non-default argument follows default argument` | 定义函数时，默认参数写在了普通位置参数的前面 | 重新调整参数顺序，将所有带默认值的参数（如 `b=10`）统一写在末尾 |
+| `UnboundLocalError: local variable 'x' referenced before assignment` | 在函数内部对全局变量进行了修改赋值，但忘记写 `global x` | 如果需要在函数内修改全局变量，必须在函数首行添加 `global 变量名` 声明 |
+| 函数多次调用时列表产生意外累加 | 默认参数使用了可变对象 `[]` 或 `{}` | 将默认参数设为 `None`，并在函数内部通过 `if arg is None:` 初始化新列表 |
 
 ---
 
-## 本节检查清单
+## 12. 本节检查清单 (Checklist)
 
-- [ ] 能解释位置参数、关键字参数、默认参数的区别与定义次序规则。
-- [ ] 能使用 `/`（仅位置参数）与 `*`（仅关键字参数）规范函数契约。
-- [ ] 能准确画出 LEGB 作用域查找链，并能正确使用 `global` 与 `nonlocal`。
-- [ ] 能清晰解释“可变默认参数陷阱”的底层原因，并熟练使用 `None` 哨兵模式。
-- [ ] 能在函数定义中使用 `*args` 和 `**kwargs`，并在实参传递时进行展开解包。
-- [ ] 能理清 `lambda`、`map`、`filter` 与列表推导式的适用场景边界。
-- [ ] 能为函数编写 Google 风格 Docstring 与静态 Type Hints。
-
----
-
-## 自测
-
-1. 为什么 `def append_to(element, target=[])` 会在多次调用中产生隐蔽的数据污染？如何安全修复？
-2. 在函数调用 `func(*args, **kwargs)` 中，`*` 和 `**` 分别代表什么含义？
-3. `def train(model_name, /, *, lr=0.01)` 中，`/` 和 `*` 分别对 `model_name` 和 `lr` 的传参方式做了怎样的限制？
-4. 当局部变量、全局变量与内置函数名称相同时，Python 按照什么顺序决定使用哪一个？如果误将 `len = 10` 会发生什么？
-5. 为什么说 Python 的类型标注（Type Hints）不会在运行时自动抛出类型报错？我们在工程中如何利用它们？
+- [ ] 我能使用 `def` 定义带参数与 `return` 返回值的函数；
+- [ ] 我能区分位置参数与关键字参数，并知道默认参数必须写在末尾；
+- [ ] 我理解默认参数使用 `[]` 的危险性，并能使用 `None` 解决累加陷阱；
+- [ ] 我能使用 `*args` 打包位置参数，使用 `**kwargs` 打包关键字参数；
+- [ ] 我能说出 LEGB 变量作用域查找顺序（局部 -> 嵌套 -> 全局 -> 内置）；
+- [ ] 我能编写带 Docstring 的规范函数，并使用卫语句进行错误拦截；
+- [ ] 我掌握了 `x: int -> str` 静态类型标注 (Type Hints) 基础语法。
 
 ---
 
-## 下一步
+## 13. 课后互动自测
 
-下一章：[06.模块、包与第三方库](/learn/foundations/python/06-py-modules)。你将学习如何把本章编写的独立函数拆分保存到不同的 `.py` 模块中，并通过 `import` 组织大中型 AI 项目。
+<InteractiveQuiz
+  title="05. 函数与作用域 课后互动自测"
+  questions={[
+    {
+      id: "q1",
+      type: "code-output",
+      question: "运行以下 Python 代码，控制台最终打印出的输出结果是什么？\n\ndef calc(a, b=5):\n    return a * b\n\nprint(calc(3))",
+      codeSnippet: "def calc(a, b=5):\n    return a * b\n\nprint(calc(3))",
+      options: [
+        "A. 15",
+        "B. 3",
+        "C. 5",
+        "D. 抛出 TypeError 提示缺少参数 b"
+      ],
+      answer: 0,
+      explanation: "形参 b 带有默认值 5。调用 calc(3) 时只传入了 a=3，未传入 b，因此自动使用默认值 b=5，计算 3 * 5 = 15。"
+    },
+    {
+      id: "q2",
+      type: "single",
+      question: "关于 Python 静态类型标注 (Type Hints) 的说法，以下正确的是？",
+      options: [
+        "A. 解释器在运行时如果发现传入的参数与 Type Hints 不符，会立刻抛出 TypeError 强行拦截",
+        "B. Type Hints 属于静态契约，解释器在运行时默认不会强制拦截，主要用于 IDE 代码补全、文档提示与静态检查",
+        "C. 必须安装第三方扩展才能在 Python 中书写 Type Hints",
+        "D. Type Hints 会导致代码运行速度变慢 10 倍"
+      ],
+      answer: 1,
+      explanation: "Python 的 Type Hints 属于静态代码契约，解释器运行时默认不会进行强制拦截，主要用于编辑器提示与类型静态检查。"
+    },
+    {
+      id: "q3",
+      type: "single",
+      question: "在 Python 函数内部寻找一个变量时，LEGB 作用域法则的正确查找顺序是？",
+      options: [
+        "A. Global 全局 -> Local 局部 -> Enclosing 嵌套 -> Built-in 内置",
+        "B. Local 局部 -> Enclosing 嵌套 -> Global 全局 -> Built-in 内置",
+        "C. Built-in 内置 -> Global 全局 -> Local 局部",
+        "D. Local 局部 -> Built-in 内置 -> Global 全局"
+      ],
+      answer: 1,
+      explanation: "LEGB 法则顺序为：L (Local 局部作用域) -> E (Enclosing 嵌套作用域) -> G (Global 全局作用域) -> B (Built-in 内置作用域)。"
+    },
+    {
+      id: "q4",
+      type: "tf",
+      question: "判断题：在处理函数的边界或异常输入时，推荐使用卫语句 (Guard Clause) 提前 return 退出，避免写出多重嵌套的 if-else。",
+      options: [
+        "A. 正确",
+        "B. 错误"
+      ],
+      answer: 0,
+      explanation: "正确！卫语句优先拦截非法或边界输入并提前返回，能有效消除代码深层缩进嵌套，提升可读性。"
+    }
+  ]}
+/>
 
 ---
 
-## 参考资料
+## 14. 下一步
 
-- [Python 官方教程：定义函数 (Defining Functions)](https://docs.python.org/3/tutorial/controlflow.html#defining-functions)
-- [PEP 570 – Positional-Only Parameters (仅位置参数规范)](https://peps.python.org/pep-0570/)
-- [PEP 3102 – Keyword-Only Arguments (仅关键字参数规范)](https://peps.python.org/pep-3102/)
-- [PEP 484 – Type Hints (静态类型标注规范)](https://peps.python.org/pep-0484/)
-- [Google Python 风格指南：Docstrings 规范](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings)
+恭喜你掌握了 Python 函数封装、设计规范与类型标注！
+
+下一步我们将深入学习 [06. 模块、包与面向对象基础](/learn/foundations/python/06-py-modules)，掌握如何使用 `import` 导入官方与第三方标准库，以及面向对象类与对象的基本概念。
+
+---
+
+## 15. 参考资料
+
+- [Python 官方教程：定义函数](https://docs.python.org/zh-cn/3/tutorial/controlflow.html#defining-functions) —— 官方函数权威使用指引。
+- [Python 官方 typing 模块文档](https://docs.python.org/zh-cn/3/library/typing.html) —— 静态类型标注指南。

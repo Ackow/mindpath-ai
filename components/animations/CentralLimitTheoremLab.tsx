@@ -1,7 +1,21 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Play, RotateCcw, BarChart2 } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Play, RotateCcw, BarChart2, CheckCircle2 } from 'lucide-react';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+
+function MathSpan({ math, sizeClass = 'text-xs sm:text-sm font-bold' }: { math: string; sizeClass?: string }) {
+  const html = useMemo(() => {
+    try {
+      return katex.renderToString(math, { displayMode: false, throwOnError: false });
+    } catch {
+      return math;
+    }
+  }, [math]);
+
+  return <span className={`inline-inline ${sizeClass}`} dangerouslySetInnerHTML={{ __html: html }} />;
+}
 
 type DistType = 'Exponential' | 'Uniform' | 'Bimodal';
 
@@ -85,17 +99,15 @@ export function CentralLimitTheoremLab() {
       : 0;
 
   return (
-    <div className="my-8 rounded-2xl border border-slate-700/60 bg-slate-900/90 p-6 shadow-2xl backdrop-blur-md">
-      {/* 标题 */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
-        <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-gradient-to-tr from-purple-500 to-indigo-600 p-2.5 shadow-lg shadow-purple-500/20">
-            <BarChart2 className="h-5 w-5 text-white" />
-          </div>
-          <div>
-            <h3 className="text-lg font-bold text-white">中心极限定理 (CLT) 动态收敛实验室</h3>
-            <p className="text-xs text-slate-400">调整样本量 N，观察均值抽样分布如何从偏斜分布收敛为完美正态钟形曲线</p>
-          </div>
+    <div className="my-7 rounded-2xl border border-slate-200 bg-white p-5 space-y-5 shadow-card font-sans">
+      {/* 标题栏 - 与项目通用 Light Theme 保持一致 */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200">
+            <BarChart2 className="w-4 h-4" />
+            中心极限定理 (CLT) 实验室
+          </span>
+          <h4 className="text-base sm:text-lg font-bold text-slate-800">总体分布到样本均值正态收敛演练</h4>
         </div>
 
         {/* 播放控制 */}
@@ -105,19 +117,19 @@ export function CentralLimitTheoremLab() {
               if (!isSampling) runBatchSampling(500);
               setIsSampling(!isSampling);
             }}
-            className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold shadow-md transition-all ${
+            className={`flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs sm:text-sm font-bold shadow-sm transition-all cursor-pointer ${
               isSampling
-                ? 'bg-amber-500 text-slate-950 hover:bg-amber-400'
-                : 'bg-purple-500 text-white hover:bg-purple-400 shadow-purple-500/20'
+                ? 'bg-amber-500 text-white hover:bg-amber-600'
+                : 'bg-teal-600 text-white hover:bg-teal-700 shadow-teal-600/20'
             }`}
           >
-            <Play className="h-4 w-4 fill-current" />
+            <Play className="h-3.5 w-3.5 fill-current" />
             {isSampling ? '暂停连续抽样' : '连续抽样 (500次/秒)'}
           </button>
 
           <button
             onClick={handleReset}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-700 hover:text-white"
+            className="flex items-center gap-1 text-slate-600 hover:text-slate-900 text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors cursor-pointer"
           >
             <RotateCcw className="h-3.5 w-3.5" />
             重置
@@ -125,11 +137,11 @@ export function CentralLimitTheoremLab() {
         </div>
       </div>
 
-      {/* 控制面板 */}
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+      {/* 控制参数区 */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {/* 总体分布类型 */}
-        <div className="rounded-xl bg-slate-800/50 p-3 border border-slate-700/40">
-          <label className="mb-1.5 block text-xs font-semibold text-slate-300">原始总体分布形态</label>
+        <div className="rounded-xl bg-slate-50 p-3.5 border border-slate-200 space-y-2">
+          <label className="block text-xs sm:text-sm font-bold text-slate-800">原始总体分布形态</label>
           <div className="grid grid-cols-3 gap-1.5">
             {[
               { id: 'Exponential', name: '偏斜 (指数)' },
@@ -139,10 +151,10 @@ export function CentralLimitTheoremLab() {
               <button
                 key={d.id}
                 onClick={() => setDistType(d.id as DistType)}
-                className={`rounded-lg py-1.5 text-xs font-medium transition-all ${
+                className={`rounded-lg py-1.5 text-xs font-bold transition-all cursor-pointer ${
                   distType === d.id
-                    ? 'bg-purple-500 text-white font-bold shadow'
-                    : 'bg-slate-900/60 text-slate-400 hover:text-slate-200'
+                    ? 'bg-teal-600 text-white shadow-sm'
+                    : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
                 }`}
               >
                 {d.name}
@@ -152,45 +164,45 @@ export function CentralLimitTheoremLab() {
         </div>
 
         {/* 每次抽样样本量 N */}
-        <div className="rounded-xl bg-slate-800/50 p-3 border border-slate-700/40">
-          <div className="mb-1.5 flex justify-between text-xs font-semibold">
-            <span className="text-slate-300">每次抽样的样本量 N</span>
-            <span className="font-mono text-purple-400 font-bold">{sampleSize}</span>
+        <div className="rounded-xl bg-slate-50 p-3.5 border border-slate-200 space-y-2">
+          <div className="flex justify-between text-xs sm:text-sm font-bold">
+            <span className="text-slate-800">每次抽样的样本量 <MathSpan math="N" sizeClass="text-sm font-bold text-teal-800" /></span>
+            <span className="font-mono text-teal-700 font-bold">{sampleSize}</span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             {[1, 2, 5, 15, 30, 100].map((n) => (
               <button
                 key={n}
                 onClick={() => setSampleSize(n)}
-                className={`flex-1 rounded-lg py-1 text-xs font-mono font-bold transition-all ${
+                className={`flex-1 rounded-lg py-1 text-xs font-mono font-bold transition-all cursor-pointer ${
                   sampleSize === n
-                    ? 'bg-indigo-500 text-white shadow'
-                    : 'bg-slate-900/60 text-slate-400 hover:text-slate-200'
+                    ? 'bg-teal-600 text-white shadow-sm'
+                    : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
                 }`}
               >
                 {n}
               </button>
             ))}
           </div>
-          <div className="mt-2 text-[10px] text-slate-500 flex justify-between">
-            <span>N=1 (数据原始分布)</span>
+          <div className="text-[11px] text-slate-500 font-semibold flex justify-between pt-0.5">
+            <span>N=1 (原始数据形态)</span>
             <span>N≥30 (满足大样本 CLT)</span>
           </div>
         </div>
       </div>
 
-      {/* 直方图视口 */}
-      <div className="relative grid grid-cols-1 gap-6 md:grid-cols-3">
-        {/* 直方图 SVG (占 2 列) */}
-        <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl border border-slate-700/60 bg-slate-950 p-4 md:col-span-2">
-          <div className="h-full w-full flex items-end justify-between gap-1 pt-6 pb-4 px-2">
+      {/* 视觉直方图与数据监测 */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        {/* 直方图 SVG 视图 (占 2 列) */}
+        <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-4 md:col-span-2 shadow-sm">
+          <div className="h-full w-full flex items-end justify-between gap-1 pt-7 pb-5 px-2">
             {bins.map((count, i) => {
               const heightPct = (count / maxBinCount) * 100;
               return (
                 <div key={i} className="group relative flex-1 h-full flex items-end">
                   <div
                     style={{ height: `${heightPct}%` }}
-                    className="w-full rounded-t bg-gradient-to-t from-indigo-600 to-purple-400 transition-all duration-150 group-hover:brightness-125"
+                    className="w-full rounded-t bg-gradient-to-t from-teal-600 to-sky-500 transition-all duration-150 group-hover:brightness-110"
                   />
                 </div>
               );
@@ -198,7 +210,7 @@ export function CentralLimitTheoremLab() {
           </div>
 
           {/* 底部坐标标尺 */}
-          <div className="absolute bottom-1 left-4 right-4 flex justify-between font-mono text-[10px] text-slate-500">
+          <div className="absolute bottom-1.5 left-4 right-4 flex justify-between font-mono text-xs text-slate-600 font-bold">
             <span>0.0</span>
             <span>1.0</span>
             <span>2.0 (均值)</span>
@@ -207,34 +219,36 @@ export function CentralLimitTheoremLab() {
           </div>
 
           {/* 实时状态悬浮条 */}
-          <div className="absolute top-3 left-3 rounded-lg bg-slate-900/80 px-3 py-1.5 text-[11px] font-mono text-slate-300 border border-slate-700/50 backdrop-blur-sm">
-            已积累均值抽样数: <span className="text-purple-400 font-bold">{means.length}</span>
+          <div className="absolute top-3 left-3 rounded-lg bg-white/90 px-3 py-1 text-xs font-mono text-slate-700 border border-slate-200 shadow-sm backdrop-blur-sm">
+            积累均值抽样数: <span className="text-teal-700 font-bold">{means.length}</span>
           </div>
         </div>
 
-        {/* 右侧统计信息 (占 1 列) */}
-        <div className="flex flex-col justify-between gap-4 rounded-xl border border-slate-700/60 bg-slate-950 p-4">
+        {/* 右侧统计特征面板 (占 1 列) */}
+        <div className="flex flex-col justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 font-sans">
           <div>
-            <h4 className="mb-3 text-xs font-bold text-slate-300 uppercase tracking-wider">均值抽样统计特征</h4>
-            <div className="space-y-2 font-mono text-xs">
-              <div className="flex justify-between rounded-lg bg-slate-900 p-2.5 border border-slate-800">
-                <span className="text-slate-400">样本均值 x̄</span>
-                <span className="text-purple-300 font-bold">{overallMean.toFixed(4)}</span>
+            <h4 className="mb-3 text-xs font-bold text-slate-800 uppercase tracking-wider">均值抽样统计特征</h4>
+            <div className="space-y-2.5 font-mono text-xs sm:text-sm">
+              <div className="flex justify-between items-center rounded-lg bg-white p-2.5 border border-slate-200 shadow-sm">
+                <span className="text-slate-600 font-semibold">样本均值 <MathSpan math="\bar{x}" sizeClass="text-sm font-bold" /></span>
+                <span className="text-teal-700 font-bold">{overallMean.toFixed(4)}</span>
               </div>
-              <div className="flex justify-between rounded-lg bg-slate-900 p-2.5 border border-slate-800">
-                <span className="text-slate-400">标准误 SE (标准差)</span>
-                <span className="text-indigo-300 font-bold">{overallStd.toFixed(4)}</span>
+              <div className="flex justify-between items-center rounded-lg bg-white p-2.5 border border-slate-200 shadow-sm">
+                <span className="text-slate-600 font-semibold">标准误 <MathSpan math="SE" sizeClass="text-sm font-bold" /></span>
+                <span className="text-sky-700 font-bold">{overallStd.toFixed(4)}</span>
               </div>
             </div>
           </div>
 
           {/* CLT 观察直觉 */}
-          <div className="rounded-xl border border-purple-500/30 bg-purple-950/20 p-3 text-[11px] text-purple-200/90 leading-relaxed">
-            💡 <strong className="text-purple-300">现象观察：</strong>
+          <div className="rounded-xl border border-teal-200 bg-teal-50/80 p-3 text-xs text-teal-950 leading-relaxed font-semibold">
+            <div className="font-bold flex items-center gap-1 mb-1 text-teal-900">
+              <CheckCircle2 className="w-4 h-4 text-teal-600" />
+              CLT 现象观察要点：
+            </div>
+            1. 当 <MathSpan math="N = 1" sizeClass="text-xs font-bold" /> 时，直方图反映的是倾斜的原始总体分布形态；
             <br />
-            1. 当 <strong>N = 1</strong> 时，直方图反映的是极度倾斜的原始分布形态；
-            <br />
-            2. 随着 <strong>N 增大到 30</strong>，直方图瞬间重构为**完美的对称正态钟形**！且标准误 SE 随样本量 N 的增大而快速缩小！
+            2. 随着 <MathSpan math="N" sizeClass="text-xs font-bold" /> 增大至 <strong>30</strong>，直方图瞬间自动重构为**完美的对称正态钟形**！且标准误 <MathSpan math="SE" sizeClass="text-xs font-bold" /> 显著缩小！
           </div>
         </div>
       </div>

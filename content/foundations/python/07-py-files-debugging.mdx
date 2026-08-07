@@ -1,200 +1,133 @@
 ---
 id: py-files-debugging
-title: 07.文件、异常、调试与测试
+title: 07.文件读写与调试技巧
 module: foundations
 submodule: python
 order: 7
 difficulty: beginner
 prerequisites: [py-modules]
-relatedNotes: [py-pandas, py-ml-workflow]
-nextNotes: [py-pandas]
-map:
-  layoutGroup: foundations-python
-estimatedMinutes: 30
-tags: [Python, 文件IO, pathlib, 异常处理, pdb, pytest, logging, 调试]
-summary: pathlib 现代路径处理、文本/CSV/JSON UTF-8 健壮读写、with 上下文管理器、try-except-finally 异常拦截、logging 日志记录、pdb 调试与 pytest 单元测试基础。
+estimatedMinutes: 25
+tags: [Python, 文件读写, pathlib, json, 异常处理, try-except, pdb调试, logging]
+summary: 掌握 Python 现代路径处理（pathlib）、文本与 JSON 文件安全读写（with/encoding）、try-except-finally 异常捕获机制，以及 pdb 单步调试与 logging 日志排错技巧。
 symbols:
   - symbol: "pathlib.Path"
-    mean: "跨平台面向对象的现代路径处理对象"
+    mean: "跨平台面向对象的现代路径处理类"
   - symbol: "with"
-    mean: "自动管理资源打开与释放的上下文管理器"
+    mean: "自动管理文件资源打开与关闭释放的上下文管理器"
+  - symbol: "json"
+    mean: "用于 JSON 数据格式序列化与反序列化的标准库"
   - symbol: "try/except/finally"
     mean: "捕获并优雅处理运行时异常的流程控制结构"
-  - symbol: "logging"
-    mean: "替代 print 用于记录不同级别运行日志的标准库模块"
-  - symbol: "assert"
-    mean: "用于内部状态检查与契约断言的调试关键字"
-  - symbol: "pytest"
-    mean: "Python 最流行的自动化单元测试框架"
+  - symbol: "pdb"
+    mean: "Python 标准库提供的交互式单步断点调试器"
 ---
 
-## 本节要解决什么问题？
+## 1. 问题导入
 
-在 AI 项目开发中，绝大部分运行时崩溃并不发生在模型算法内部，而是源于**数据文件路径错误、编码不一致、内存资源未释放或训练中突发的异常数据（如 NaN 震荡）**。掌握健壮的文件读写、异常防御、日志定位与单元测试，是保证 AI 数据 Pipeline 与长时间模型训练稳定运行的必备技能。
+在实际开发和 AI 项目中，绝大部分崩溃并不发生在核心算法内部，而是源于**文件路径不存在、字符编码错乱、文件读取未关闭导致内存泄漏，或遇到了异常的数据格式**。
 
-完成本节后，你应能：
+如何以跨平台的方式优雅操作文件路径？如何读写文本与 JSON 配置文件？程序报错时如何优雅捕获异常而不是任由程序崩溃？如何使用专业调试器一行行跟踪代码寻找 Bug？
 
-- 使用现代 `pathlib.Path` 替代字符串路径拼凑，写出跨平台的路径代码。
-- 熟练使用 `with` 上下文管理器安全读写文本、CSV 与 JSON 文件，明确指定 `encoding="utf-8"`。
-- 使用 `try-except-finally` 构建不崩溃的数据 Pipeline，并能编写自定义异常类型。
-- 使用 `logging` 替代 `print()` 输出分级日志，使用 `assert` 拦截维度不匹配与非数值错误。
-- 掌握 `pdb` 断点调试技巧与使用 `pytest` 编写最小单元测试。
-- 遵守防泄漏工程规范，合理配置 `.gitignore` 保护密钥与大型数据。
-
-<ConceptCard title="数据 Pipeline 的安全防护网" type="intuition">
-把 AI 训练流程看作高压水管：数据文件是源头水源，上下文管理器 (with) 是自动阀门，异常拦截 (try-except) 是泄压阀，而日志 (logging) 与测试 (pytest) 则是高精度的压力监控仪表。缺少防护网的水管一旦遇到异常数据就会破裂爆缸。
-</ConceptCard>
+本章将带你掌握 **文件 I/O 安全读写**、**异常防御机制** 与 **专业调试排错技能**。
 
 ---
 
-## 1. 现代路径处理与文件 I/O
+## 2. 学习目标
 
-### 1.1 使用 `pathlib.Path` 跨平台处理路径
+完成本章学习后，你将能够：
 
-在传统 Python 代码中，人们常用 `os.path.join` 处理路径。现代 Python 推荐使用 **`pathlib.Path`**，它用面向对象的方式重构了路径操作，并且支持斜杠 `/` 运算符重载：
+- 使用现代 `pathlib.Path` 进行跨平台路径拼接与目录管理；
+- 熟练使用 `with` 上下文管理器安全读写文本与 JSON 文件，规范使用 `encoding="utf-8"`；
+- 掌握 `try-except-else-finally` 异常捕获结构，编写防御性强的代码；
+- 掌握 `assert` 内部断言与自定义异常类的抛出；
+- 熟练使用 `logging` 模块替代 `print()` 输出分级日志；
+- 掌握 `pdb` 调试器的核心指令（`n`, `s`, `p`, `c`, `q`）进行单步跟踪排错。
 
-<RunnableCodeBlock title="实例演练：pathlib 现代路径操作与 UTF-8 文件读写">
-{`
+---
+
+## 3. 现代路径处理与文件 I/O
+
+### 3.1 使用 `pathlib.Path` 跨平台处理路径
+
+传统 Python 中常用 `os.path.join` 拼凑字符串路径。现代 Python 推荐使用 **`pathlib.Path`**，它采用面向对象方式管理路径，并重载了斜杠 `/` 运算符：
+
+```python
 from pathlib import Path
 
-# 创建模拟实验目录
-exp_dir = Path("./sample_exp")
-exp_dir.mkdir(exist_ok=True)
-config_file = exp_dir / "config.txt"
+# 1. 创建跨平台路径对象
+data_dir = Path("./data")
+data_dir.mkdir(exist_ok=True)  # 若目录不存在则自动创建
 
-# UTF-8 健壮写入
-config_file.write_text("model: resnet50\\nlr: 0.001\\nbatch_size: 32", encoding="utf-8")
+# 2. 使用斜杠 / 拼接子路径
+config_path = data_dir / "config.json"
 
-# UTF-8 健壮读取
-content = config_file.read_text(encoding="utf-8")
-print("读取到的配置文件内容:\\n" + content)
-`}
-</RunnableCodeBlock>
-读写文件时，务必使用 **`with` 语句**。它保证即便在读取过程中发生异常，文件句柄也会被自动关闭，防止文件锁死与内存泄漏。
+print(f"配置文件路径: {config_path}")
+print(f"路径是否存在: {config_path.exists()}")
+```
 
-同时，**必须显式指定 `encoding="utf-8"`**，防止 Windows 与 Linux 在字符编码上产生冲突。
+---
 
-#### 1. 读写文本文件与 JSON
+### 3.2 使用 `with` 语句安全读写文件
+
+读写文件时，务必使用 **`with` 上下文管理器**。它保证即便在读取过程中发生异常，文件句柄也会被自动关闭，防止文件锁定与资源泄漏。
+
+同时，**必须显式指定 `encoding="utf-8"`**，防止 Windows 与 Linux 之间因字符编码差异产生乱码崩溃。
+
+#### 1. 文本文件读写
+```python
+from pathlib import Path
+
+file_path = Path("./sample.txt")
+
+# 写入文本文件
+with open(file_path, "w", encoding="utf-8") as f:
+    f.write("Python 基础教程\n文件读写与调试技巧")
+
+# 读取文本文件
+with open(file_path, "r", encoding="utf-8") as f:
+    content = f.read()
+    print("读取结果:\n" + content)
+```
+
+#### 2. JSON 配置文件读写
+JSON 是一种通用的轻量级数据交换格式。Python 标准库 `json` 提供了完美的转换方法：
+
+- **`json.dump(obj, f)` / `json.load(f)`**：直接与文件对象读写交互；
+- **`json.dumps(obj)` / `json.loads(s)`**：在内存中进行字符串与对象的转换。
 
 ```python
 import json
 from pathlib import Path
 
-output_dir = Path("./output")
-output_dir.mkdir(exist_ok=True)
+json_path = Path("./hyperparams.json")
 
-# 写入与读取 JSON 配置文件
-config_data = {
-    "dataset_name": "mnist",
+config = {
+    "model_name": "ResNet-50",
     "learning_rate": 0.001,
-    "metrics": ["accuracy", "f1_score"]
+    "batch_size": 32,
+    "use_gpu": True
 }
 
-json_path = output_dir / "experiment_config.json"
-
-# 使用 with 安全写入
+# 保存为 JSON 配置文件 (ensure_ascii=False 保持中文正常显示)
 with open(json_path, "w", encoding="utf-8") as f:
-    json.dump(config_data, f, ensure_ascii=False, indent=2)
+    json.dump(config, f, indent=2, ensure_ascii=False)
 
-# 使用 with 安全读取
+# 加载 JSON 配置文件
 with open(json_path, "r", encoding="utf-8") as f:
     loaded_config = json.load(f)
+
+print(f"加载的模型学习率: {loaded_config['learning_rate']}")
 ```
 
-<RunnableCodeBlock title="实例演练：JSON 序列化与格式化输出">
-{`import json
-
-metrics = {
-    "model_name": "Transformer-Small",
-    "accuracy": 0.945,
-    "epochs": 20,
-    "tags": ["nlp", "evaluation"]
-}
-
-# 序列化为 JSON 格式字符串
-json_str = json.dumps(metrics, indent=2, ensure_ascii=False)
-print("格式化 JSON 输出:\\n" + json_str)
-
-# 反序列化
-parsed_data = json.loads(json_str)
-print("\\n解析得到的模型准确率:", parsed_data["accuracy"])`}
-</RunnableCodeBlock>
-
-#### 2. 读写 CSV 表格与标注数据
-
-| 方法                           | 说明                                | 示例                                               |
-| :----------------------------- | :---------------------------------- | :------------------------------------------------- |
-| **`csv.reader()`**             | 从文件对象读取 CSV 数据             | `reader = csv.reader(file)`                        |
-| **`csv.writer()`**             | 将数据写入 CSV 文件                 | `writer = csv.writer(file)`                        |
-| **`csv.DictReader()`**         | 将 CSV 行读取为字典（带表头）       | `dict_reader = csv.DictReader(file)`               |
-| **`csv.DictWriter()`**         | 将字典写入 CSV 文件（需指定字段名） | `dict_writer = csv.DictWriter(file, fieldnames)`   |
-| **`csv.register_dialect()`**   | 注册自定义 CSV 格式（如分隔符）     | `csv.register_dialect('mydialect', delimiter='|')` |
-| **`csv.unregister_dialect()`** | 删除已注册的方言                    | `csv.unregister_dialect('mydialect')`              |
-| **`csv.list_dialects()`**      | 列出所有已注册的方言                | `print(csv.list_dialects())`                       |
-
-在 AI 数据清洗中，经常需要读写 CSV 格式的样本列表与标注信息。标准库 `csv` 配合 `DictWriter` / `DictReader` 可以高效安全地读写字典格式的表格行：
-
-```python
-import csv
-
-csv_path = output_dir / "dataset_annotations.csv"
-records = [
-    {"image_id": "img_001.jpg", "label": "cat", "confidence": "0.95"},
-    {"image_id": "img_002.jpg", "label": "dog", "confidence": "0.88"},
-]
-
-# 写入 CSV 标注文件 (指定 newline='' 防止 Windows 下出现多余空行)
-with open(csv_path, "w", encoding="utf-8", newline="") as f:
-    writer = csv.DictWriter(f, fieldnames=["image_id", "label", "confidence"])
-    writer.writeheader()
-    writer.writerows(records)
-
-# 读取 CSV 标注文件
-with open(csv_path, "r", encoding="utf-8") as f:
-    reader = csv.DictReader(f)
-    loaded_records = [row for row in reader]
-
-print(f"成功读取 {len(loaded_records)} 条 CSV 标注数据, 样例: {loaded_records[0]}")
-# 预期输出: 成功读取 2 条 CSV 标注数据, 样例: {'image_id': 'img_001.jpg', 'label': 'cat', 'confidence': '0.95'}
-```
-
-> **注意二进制模式 (`rb`/`wb`)**：读取图片文件、保存模型权重 (`.pth`/`.bin`) 或 NumPy 序列化数组时，必须使用二进制模式 `open(filename, "rb")`，此时**无需**且**不能**指定 `encoding` 参数。
+> **注意二进制模式 (`rb`/`wb`)**：当读取图片文件、保存模型权重 (`.pth`) 或二进制字节流时，必须使用二进制模式 `open(filename, "rb")`，此时**不能也不必**指定 `encoding` 参数。
 
 ---
 
-## 2. 异常处理与防御性编程
+## 4. 异常处理与防御性编程
 
-在处理几万张图片或海量文本时，只要有一张损坏的图片或空文件，未加保护的代码就会直接中断运行。
+在处理批量数据时，如果其中包含损坏的数据，未加保护的代码会直接崩停。
 
-### 2.1 `try-except-else-finally` 结构
-
-```python
-def load_sample_file(file_path: str) -> str | None:
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            content = f.read()
-    except FileNotFoundError:
-        print(f"[错误] 目标文件不存在: {file_path}")
-        return None
-    except UnicodeDecodeError:
-        print(f"[错误] 编码解析失败，请检查是否为非 UTF-8 文件")
-        return None
-    except Exception as e:
-        print(f"[未知错误] 读取时发生意外异常: {e}")
-        return None
-    else:
-        print("[成功] 文件读取完毕，未触发任何异常")
-        return content
-    finally:
-        print("[清理] 无论是否发生异常，本行 finally 均会执行")
-
-# 测试非意外路径
-result = load_sample_file("./non_existent_file.txt")
-![AI 数据 Pipeline 异常防护与调试流示意图](/assets/python/python-files-debugging.jpg)
-```
-<ExceptionPipelineAnimation />
-
----
+### 4.1 `try-except-else-finally` 完整结构
 
 ```mermaid
 flowchart TD
@@ -202,52 +135,77 @@ flowchart TD
     B -- 无异常 --> C["进入 else 块<br/>(执行后续正常逻辑)"]
     B -- 发生捕获的异常 --> D["匹配并执行对应的 except 块<br/>(处理异常/记录日志)"]
     B -- 发生未捕获异常 --> E["寻找上层调用栈或中断进程"]
-    C --> F["必然执行 finally 块<br/>(清理句柄/释放显存/关闭文件)"]
+    C --> F["必然执行 finally 块<br/>(清理句柄/释放资源/关闭文件)"]
     D --> F
     E --> F
     F --> End["结束异常拦截控制"]
-
-    style A fill:#6366f1,color:#fff
-    style C fill:#10b981,color:#fff
-    style D fill:#f59e0b,color:#fff
-    style F fill:#64748b,color:#fff
 ```
 
----
-
-### 2.2 自定义异常与断言拦截
-
-编写自定义异常类可以帮助 AI 工程师快速定位领域专属问题（如“梯度爆炸”、“输入维度不匹配”）：
+<ExceptionPipelineAnimation />
 
 ```python
-class DataValidationError(Exception):
-    """自定义数据校验异常类"""
-    pass
+def load_data_file(filepath: str) -> str | None:
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            content = f.read()
+    except FileNotFoundError:
+        print(f"错误：指定的文件 {filepath} 不存在！")
+        return None
+    except UnicodeDecodeError:
+        print("错误：文件编码解析失败，请确认是否为 UTF-8 编码！")
+        return None
+    except Exception as err:
+        print(f"未知异常崩溃: {err}")
+        return None
+    else:
+        print("成功读取文件内容，无任何异常！")
+        return content
+    finally:
+        print("不管是否发生异常，finally 块都会被自动执行！")
 
-def process_batch(features: list[float], batch_id: int):
-    # 使用 assert 进行契约检查
-    assert len(features) > 0, "输入特征批次不能为空！"
-    
-    # 模拟非法数值校验
-    if any(val != val for val in features):  # val != val 是检查 NaN 的简单写法
-        raise DataValidationError(f"批次 #{batch_id} 中检测到 NaN 异常数值！")
-
-    return sum(features) / len(features)
-
-try:
-    process_batch([0.5, float('nan'), 1.2], batch_id=42)
-except DataValidationError as err:
-    print(f"捕获自定义异常: {err}")
-# 预期输出: 捕获自定义异常: 批次 #42 中检测到 NaN 异常数值！
+# 测试拦截不存在的文件路径
+result = load_data_file("./not_exist.txt")
 ```
 
 ---
 
-## 3. 调试、日志与单元测试
+### 4.2 自定义异常与 `assert` 断言拦截
 
-### 3.1 使用 `logging` 替代 `print()`
+#### 1. 自定义异常 (Custom Exception)
+可以通过继承 `Exception` 类来自定义领域专用的异常：
 
-`print()` 会不加区分地输出所有信息。工程项目中应该使用标准库 **`logging`**，按日志级别（DEBUG, INFO, WARNING, ERROR, CRITICAL）进行输出控制：
+```python
+class DataFormatError(Exception):
+    """自定义数据格式异常类"""
+    pass
+
+def parse_score(score_str: str) -> float:
+    try:
+        score = float(score_str)
+    except ValueError:
+        raise DataFormatError(f"无法将 '{score_str}' 转换为有效数值！")
+
+    if not (0 <= score <= 100):
+        raise DataFormatError(f"成绩数值 {score} 超出合法区间 [0, 100]！")
+    return score
+```
+
+#### 2. `assert` 契约断言检查
+`assert 表达式, "错误提示字符串"` 常用于内部条件检验。如果表达式为 `False`，会自动抛出 `AssertionError`：
+
+```python
+def train_epoch(batch_size: int):
+    assert batch_size > 0, "批次大小 batch_size 必须大于 0！"
+    print(f"正在以 batch_size = {batch_size} 开始训练...")
+```
+
+---
+
+## 5. 调试与日志排错
+
+### 5.1 使用 `logging` 模块替代 `print()`
+
+工程项目中应该使用标准库 **`logging`** 输出分级日志，方便控制日志显示过滤与保存至日志文件：
 
 ```python
 import logging
@@ -259,132 +217,176 @@ logging.basicConfig(
     datefmt="%H:%M:%S"
 )
 
-logging.debug("这是调试信息（默认级别下不会显示）")
-logging.info("AI 训练开始，正在载入数据集...")
-logging.warning("GPU 显存使用率超过 85%")
-logging.error("无法找到指定的预训练权重文件")
+logging.debug("调试信息（DEBUG 级别在 INFO 下不会显示）")
+logging.info("程序正常启动，开始导入数据...")
+logging.warning("警告：内存使用率超过 80%")
+logging.error("错误：未能找到指定的权重文件！")
 ```
 
 ---
 
-### 3.2 使用 `pdb` 进行交互式调试
+### 5.2 使用 `pdb` 进行交互式单步断点调试
 
-当程序在深度循环内部报错时，插入 `import pdb; pdb.set_trace()`（或 Python 3.7+ 的 `breakpoint()`）可以暂停程序并进入交互式终端：
+当程序出现复杂的逻辑 Bug 时，可以在关键行上方插入 `breakpoint()` 唤起 **`pdb` 交互式调试器**。
 
 ```python
-def compute_metrics(y_true, y_pred):
-    # 插入断点：运行到此处自动暂停并唤起 pdb 调试终端
-    # breakpoint()  # 取消注释即可启动调试
-    return [t == p for t, p in zip(y_true, y_pred)]
+def compute_average(numbers: list[float]) -> float:
+    total = sum(numbers)
+    count = len(numbers)
+
+    # 插入断点：程序运行到此处会自动暂停并唤起 pdb 调试终端
+    # breakpoint()
+
+    return total / count
 ```
 
-#### pdb 常用交互指令速查表
+#### pdb 常用调试指令速查表
 
-| 指令 | 全称 | 说明与适用场景 |
-| :--- | :--- | :--- |
+| 指令 | 完整命令 | 指令功能与使用说明 |
+|---|---|---|
 | **`n`** | `next` | 单步执行下一行代码（不进入调用的函数内部） |
 | **`s`** | `step` | 单步步入（如果当前行包含函数调用，进入函数内部） |
-| **`p var`** | `print` | 打印变量当前值，例如 `p batch_size` 或 `p inputs.shape` |
-| **`l`** | `list` | 查看当前断点周围的代码上下文上下文 |
-| **`c`** | `continue` | 继续运行程序，直到遇到下一个断点或结束 |
+| **`p 变量名`** | `print` | 打印变量当前的实际数值，如 `p total` |
+| **`l`** | `list` | 查看当前断点周围的代码上下文内容 |
+| **`c`** | `continue` | 继续运行程序，直到遇到下一个断点或执行结束 |
 | **`q`** | `quit` | 立即强制终止并退出调试器 |
 
 <PdbDebuggerAnimation />
 
 ---
 
-### 3.3 使用 `pytest` 编写单元测试
+## 6. 动手实战：健壮的配置文件加载与日志记录器
 
-**单元测试** 用于保证代码在重构或新增功能后依然运行正确。创建以 `test_` 开头的测试文件：
+请在下方的代码块中，点击 **“运行代码”**，体验包含 `pathlib`、`json`、`try-except` 与 `logging` 的完整数据加载程序：
 
-```python
-# test_utils.py
+<RunnableCodeBlock title="健壮配置文件加载与异常防御系统">
+{`import json
+import logging
+from pathlib import Path
 
-def add_shapes(shape_a: tuple, shape_b: tuple) -> tuple:
-    return (shape_a[0] + shape_b[0], shape_a[1] + shape_b[1])
+# 配置日志
+logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 
-def test_add_shapes():
-    assert add_shapes((2, 3), (4, 5)) == (6, 8)
-    assert add_shapes((0, 0), (1, 1)) == (1, 1)
+def load_or_create_config(config_path: Path) -> dict:
+    """加载 JSON 配置文件，若文件损坏或不存在则自动重建默认配置"""
+    default_config = {"model": "LinearRegression", "learning_rate": 0.01, "epochs": 10}
 
-# 在终端运行命令: pytest test_utils.py
-```
+    try:
+        logging.info(f"正在尝试加载配置文件: {config_path}")
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = json.load(f)
+            logging.info("配置文件读取成功！")
+            return config
+    except FileNotFoundError:
+        logging.warning("未找到配置文件，正在创建默认配置...")
+        config_path.parent.mkdir(exist_ok=True)
+        with open(config_path, "w", encoding="utf-8") as f:
+            json.dump(default_config, f, indent=2)
+        return default_config
+    except json.JSONDecodeError:
+        logging.error("配置文件格式校验失败，已损坏！返回默认配置。")
+        return default_config
 
----
-
-## 4. 工程防泄漏规范与 .gitignore
-
-为了保障项目安全与代码仓库轻量化，绝不能把敏感密钥、本地大型数据集或临时文件提交到 Git：
-
-最小规范 `.gitignore` 文件示例：
-
-```text
-# 凭证与密钥
-.env
-*.pem
-secrets.json
-
-# 数据集与大文件
-data/
-*.csv
-*.bin
-*.pth
-
-# 临时文件与测试输出
-.pytest_cache/
-__pycache__/
-.ipynb_checkpoints/
-output/
-```
+# 运行实战测试
+test_path = Path("./sample_output/app_config.json")
+config = load_or_create_config(test_path)
+print("最终使用的模型配置:", config)
+`}
+</RunnableCodeBlock>
 
 ---
 
-## AI 场景连接
+## 7. 常见错误排查 (Troubleshooting)
 
-1. **Checkpoint 健壮保存与恢复**：在训练 PyTorch / TensorFlow 模型时，使用 `try-except` 包装权重保存代码（`torch.save`），避免因磁盘空间不足打断训练。
-2. **数据清洗防护**：在图像或文本预处理数据流中，自动捕获空文件、损坏图片（如 `PIL.UnidentifiedImageError`），跳过坏样本并记录日志，保证整个训练 Epoch 顺利完成。
-
----
-
-## 常见错误排查 (Troubleshooting)
-
-| 错误现象 / 异常类型 | 常见原因 | 解决方案 |
-| :--- | :--- | :--- |
-| `UnicodeDecodeError: 'gbk' codec can't decode byte...` | Windows 下 open() 默认使用了系统的 GBK 编码 | 永远在 open() 中显式加上 `encoding="utf-8"` |
-| `PermissionError: [Errno 13] Permission denied` | 目标文件正在被其他进程（如 Excel）占用，或者缺少写权限 | 关闭占用文件的软件；检查文件操作权限 |
-| `AssertionError` | `assert` 条件判定为 False | 查看断言提示，检查上游输入数据格式、Shape 或数值范围 |
-| `FileNotFoundError: [Errno 2]` | 相对路径参照的工作目录与预期不符 | 使用 `Path(__file__).resolve().parent` 锁定脚本所在绝对路径 |
+| 错误现象 / 异常类型 | 常见原因 | 标准排查与处理方式 |
+|---|---|---|
+| `FileNotFoundError: [Errno 2] No such file or directory` | 访问的文件路径不存在或当前相对路径基准目录不对 | 使用 `pathlib.Path` 并通过 `path.exists()` 检查，或先用 `mkdir(exist_ok=True)` 创目录 |
+| `UnicodeDecodeError: 'gbk' codec can't decode byte...` | Windows 系统上未指定 `encoding="utf-8"` 导致默认按 GBK 编码打开 UTF-8 文件 | 在 `open()` 方法中显式添加 `encoding="utf-8"` 参数 |
+| `json.decoder.JSONDecodeError` | 打开的 JSON 文件存在语法错误（如末尾多逗号、单引号代替双引号） | 使用在线 JSON 验证工具检查语法，确保 JSON 内部使用双引号 `""` |
+| `AttributeError: 'NoneType' object has no attribute...` | 在 `except` 捕获异常后返回了 `None`，后续代码未判断就直接调用其属性 | 在调用返回值前先通过 `if result is not None:` 增加空值拦截检查 |
 
 ---
 
-## 本节检查清单
+## 8. 本节检查清单 (Checklist)
 
-- [ ] 掌握 `pathlib.Path` 构建跨平台路径。
-- [ ] 读写所有文件时一律使用 `with open(..., encoding="utf-8")`。
-- [ ] 能熟练使用 `try-except-else-finally` 防御损坏数据与文件缺失。
-- [ ] 理解自定义 Exception 的用途并能在数据清洗中触发它。
-- [ ] 能配置 `logging` 模块打印带分级的标准运行日志。
-- [ ] 理解 `assert` 作用，能用 `pytest` 编写简单的断言函数。
-- [ ] 会使用 `.gitignore` 规避密钥与大型数据集泄漏。
-
----
-
-## 自测题
-
-1. **代码改错**：以下代码在 Windows 上处理中文文本时容易报错，请找出并修复它：
-   ```python
-   f = open("data/chinese_text.txt", "r")
-   content = f.read()
-   ```
-2. **简答题**：在处理包含 10 万条数据的训练集时，为什么要用 `try-except` 捕获单条数据的处理，而不是让程序直接报错崩溃？
-3. **实战练习**：使用 `pathlib` 创建一个 `logs` 目录，并在其中使用 `logging` 写入一条日志，记录当前训练已完成的轮次。
+- [ ] 我能使用 `pathlib.Path` 对象拼接路径与创建目录；
+- [ ] 我能使用 `with` 语句安全读写文件，并知道显式加上 `encoding="utf-8"`；
+- [ ] 我能使用 `json.dump()` 和 `json.load()` 处理 JSON 配置文件；
+- [ ] 我能掌握 `try-except-else-finally` 的捕获逻辑；
+- [ ] 我能使用 `assert` 与自定义异常类进行防错检验；
+- [ ] 我知道使用 `logging` 输出日志，并熟练掌握 `pdb` 的 `n`, `s`, `p`, `c`, `q` 调试指令。
 
 ---
 
-## 下一步与参考资料
+## 9. 课后互动自测
 
-- **下一步**：进入下一个专项模块 [08.NumPy 数值计算](/learn/foundations/python/08-py-numpy)，开启 AI 矩阵与数值计算大门。
-- **参考资料**：
-  - [Python 官方 pathlib 文档](https://docs.python.org/3/library/pathlib.html)
-  - [Python 官方 logging 教程](https://docs.python.org/3/howto/logging.html)
-  - [pytest 官方快速入门指南](https://docs.pytest.org/)
+<InteractiveQuiz
+  title="07. 文件读写与调试技巧 课后互动自测"
+  questions={[
+    {
+      id: "q1",
+      type: "single",
+      question: "在 Python 文件读写中，使用 with open('data.txt', 'r', encoding='utf-8') as f: 的核心优势是什么？",
+      options: [
+        "A. 能自动将文件中的文字翻译成英文",
+        "B. 保证无论读取过程中是否发生异常，文件句柄都会在代码块结束后自动安全关闭，防止文件锁定与内存泄漏",
+        "C. 读取速度提升 100 倍",
+        "D. 可以自动跳过所有的语法错误"
+      ],
+      answer: 1,
+      explanation: "with 上下文管理器核心优势是自动资源释放，确保文件打开后无论是否遇到异常都会自动执行 close()。"
+    },
+    {
+      id: "q2",
+      type: "single",
+      question: "在 try-except-else-finally 结构中，finally 代码块会在什么时候执行？",
+      options: [
+        "A. 只有代码发生异常时才执行",
+        "B. 只有代码没有发生任何异常时才执行",
+        "C. 无论是否触发异常，finally 代码块都一定会执行",
+        "D. 永远不会执行"
+      ],
+      answer: 2,
+      explanation: "finally 代码块具备最高优先级的资源清理保证，无论 try 中是否触发异常、或者是否已经被 except 捕获，finally 都会必然执行。"
+    },
+    {
+      id: "q3",
+      type: "single",
+      question: "在使用 pdb 进行单步调试时，如果想要单步执行下一行代码（不进入调用的函数内部），应该输入什么指令？",
+      options: [
+        "A. s (step)",
+        "B. n (next)",
+        "C. c (continue)",
+        "D. q (quit)"
+      ],
+      answer: 1,
+      explanation: "n (next) 指令用于单步执行下一行代码；如果希望进入被调用的函数内部，则使用 s (step)。"
+    },
+    {
+      id: "q4",
+      type: "tf",
+      question: "判断题：当使用 open('image.png', 'rb') 以二进制读取图像文件时，不能且不需要指定 encoding='utf-8' 参数。",
+      options: [
+        "A. 正确",
+        "B. 错误"
+      ],
+      answer: 0,
+      explanation: "正确！二进制模式 (rb/wb) 处理的是原始字节流 (bytes)，不涉及字符编码转换，因此不能指定 encoding 参数。"
+    }
+  ]}
+/>
+
+---
+
+## 10. 下一步
+
+恭喜你完成了 Python 基础核心语法（阶段 0.1）的全部学习！你已经具备了编写高质量、健壮、模块化 Python 程序的所有基础。
+
+下一步我们将开启 [0.2 Python 数据科学工具库] 的学习，第一站是 [01. NumPy 数值计算基础](/learn/foundations/data/01-py-numpy)，掌握高效科学计算与高维张量的核心技能！
+
+---
+
+## 11. 参考资料
+
+- [Python 官方教程：读写文件](https://docs.python.org/zh-cn/3/tutorial/inputoutput.html#reading-and-writing-files) —— 官方文件 I/O 使用指引。
+- [Python 官方 pdb 模块文档](https://docs.python.org/zh-cn/3/library/pdb.html) —— 交互式调试器权威说明。

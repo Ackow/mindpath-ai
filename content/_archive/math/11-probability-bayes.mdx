@@ -1,0 +1,192 @@
+---
+id: math-probability-bayes
+title: 11. 随机变量、条件概率与贝叶斯定理
+module: foundations
+submodule: math
+order: 11
+difficulty: beginner
+prerequisites: [math-loss-logistic-regression]
+relatedNotes: [math-loss-logistic-regression, math-distributions-moments]
+nextNotes: [math-distributions-moments]
+map:
+  layoutGroup: foundations-math
+estimatedMinutes: 50
+tags: [概率论, 随机变量, 条件概率, 贝叶斯公式, 基础率谬误]
+summary: 掌握随机变量、联合/条件概率与独立性，严密推导贝叶斯公式，识别基础率谬误并用蒙特卡洛代码模拟 Bayes 更新。
+symbols:
+  - symbol: "P(A|B) = \\frac{P(B|A) P(A)}{P(B)}"
+    mean: "贝叶斯定理 (Bayes' Theorem)"
+  - symbol: "P(A \\cap B) = P(A) P(B)"
+    mean: "事件 A 与 B 相互独立条件"
+  - symbol: "P(A) = \\sum_i P(A|B_i) P(B_i)"
+    mean: "全概率公式 (Law of Total Probability)"
+---
+
+## 从一个问题开始
+
+如果某种罕见疾病在人群中的患病率只有 0.1%（千分之一），而医院的最新试纸检测准确率高达 99%。如果你的检测结果不幸呈现“阳性”，你真正患病的概率是多少？是 99% 吗？
+
+答案出乎意料：**你真正患病的概率只有大约 9%！** 
+
+这种 intuition 的错觉被称为**基础率谬误（Base-Rate Fallacy）**。要理清这一现象，必须依靠**贝叶斯定理（Bayes' Theorem）**。这一章我们将从随机变量与条件概率出发，手算贝叶斯更新，并用 Python 进行蒙特卡洛模拟。
+
+<ConceptCard title="初学者直觉：根据新证据更新信念 (Updating Beliefs)" type="tip">
+把贝叶斯公式想象成探案过程：
+- **先验概率 $P(\text{主张})$**：在你看到新证据之前，根据历史常识对事件发生的初始估计（如罕见病患病率极低）。
+- **似然度 $P(\text{证据}|\text{主张})$**：如果主张成立，出现该新证据的可能性有多大。
+- **后验概率 $P(\text{主张}|\text{证据})$**：获得了新证据（检测呈现阳性）后，修正后的真实概率！
+</ConceptCard>
+
+![贝叶斯更新基础率面积树状图](/assets/math/bayes-base-rate-tree.png)
+---
+
+## 1. 随机变量与条件概率
+
+![条件概率与联合概率 Venn 韦恩图与缩小的样本空间](/assets/math/conditional-probability-venn.png)
+### 1.1 随机变量 (Random Variable) 与样本空间
+
+- **样本空间 $\Omega$**：随机试验所有可能结果的集合（如掷骰子 $\Omega = \{1, 2, 3, 4, 5, 6\}$）。
+- **离散随机变量**：取值为可数孤立值的变量（如抛硬币正面次数）。
+- **连续随机变量**：取值为连续区间内任意值的变量（如身高、温度）。
+
+### 1.2 联合概率、边缘概率与条件概率
+
+对于两个随机事件 $A$ 与 $B$：
+- **联合概率 $P(A, B)$**：事件 $A$ 和事件 $B$ 同时发生的概率。
+- **条件概率 $P(A|B)$**：在已知事件 $B$ 已经发生的条件下，事件 $A$ 发生的概率：
+
+$$P(A|B) = \frac{P(A, B)}{P(B)} \quad (P(B) > 0)$$
+
+- **独立性（Independence）**：若 $P(A, B) = P(A) \cdot P(B)$，说明 $B$ 的发生对 $A$ 的概率没有任何影响，称 $A$ 与 $B$ 相互独立。
+
+---
+
+## 2. 贝叶斯定理推导
+
+由条件概率定义：
+
+$$P(A, B) = P(A|B) P(B) = P(B|A) P(A)$$
+
+两边同时除以 $P(B)$，即得出著名的**贝叶斯定理**：
+
+$$P(A|B) = \frac{P(B|A) P(A)}{P(B)}$$
+
+结合全概率公式 $P(B) = P(B|A)P(A) + P(B|\neg A)P(\neg A)$，可写为：
+
+$$P(A|B) = \frac{P(B|A) P(A)}{P(B|A)P(A) + P(B|\neg A)P(\neg A)}$$
+
+---
+
+## 3. 手算演练
+
+### 手算练习：医疗筛查的基础率谬误计算
+
+给定已知条件：
+1. 人群患病率（先验概率）：$P(D) = 0.001$（则非患病率 $P(\neg D) = 0.999$）
+2. 试纸敏感度（真阳性率）：$P(T^+ | D) = 0.99$
+3. 试纸特异度（真阴性率）：$P(T^- | \neg D) = 0.99$（则假阳性率 $P(T^+ | \neg D) = 0.01$）
+
+**求：当一个人检测为阳性时，真正患病的后验概率 $P(D | T^+)$**：
+
+1. **第一步：计算全概率 $P(T^+)$（分母）**：
+   - 患病且检测为阳性的概率：$P(T^+ | D) P(D) = 0.99 \times 0.001 = 0.00099$
+   - 没病但误报阳性的概率：$P(T^+ | \neg D) P(\neg D) = 0.01 \times 0.999 = 0.00999$
+   - 阳性总概率：$P(T^+) = 0.00099 + 0.00999 = 0.01098$
+
+2. **第二步：代入贝叶斯公式求解后验概率**：
+   $$P(D | T^+) = \frac{P(T^+ | D) P(D)}{P(T^+)} = \frac{0.00099}{0.01098} \approx 0.09016$$
+   即真正患病的后验概率仅为 **9.02%**！因为基数中庞大的健康人口基数导致假阳性人数远超过真阳性人数。
+
+---
+
+## 4. 动手实战：蒙特卡洛模拟贝叶斯更新
+
+下面的代码模拟 1,000,000 巨量人群的医疗筛查实验，验证模拟计算结果与贝叶斯公式推导完全吻合：
+
+<RunnableCodeBlock title="蒙特卡洛模拟医疗筛查与贝叶斯更新代码">
+{`import numpy as np
+
+# 1. 模拟 1,000,000 巨量人群
+N = 1_000_000
+prior_disease_rate = 0.001  # 先验患病率 0.1%
+sensitivity = 0.99          # 敏感度 (真阳性率)
+specificity = 0.99          # 特异度 (真阴性率)
+
+rng = np.random.default_rng(seed=42)
+
+# 2. 生成真实患病状态 (1 表示患病，0 表示健康)
+has_disease = rng.choice([1, 0], size=N, p=[prior_disease_rate, 1 - prior_disease_rate])
+
+# 3. 模拟检测过程
+test_result = np.zeros(N, dtype=int)
+for i in range(N):
+    if has_disease[i] == 1:
+        test_result[i] = rng.choice([1, 0], p=[sensitivity, 1 - sensitivity])
+    else:
+        test_result[i] = rng.choice([1, 0], p=[1 - specificity, specificity])
+
+# 4. 统计阳性人群中真正患病的比例
+positive_mask = (test_result == 1)
+total_positives = np.sum(positive_mask)
+true_positives = np.sum(has_disease[positive_mask] == 1)
+simulated_posterior = true_positives / total_positives
+
+print(f"总模拟人数: {N}")
+print(f"检测为阳性的总人数: {total_positives}")
+print(f"阳性中真正患病的人数: {true_positives}")
+print(f"蒙特卡洛模拟后验概率 P(D|T+): {simulated_posterior * 100:.2f}%")
+print(f"理论计算贝叶斯后验概率: {0.09016 * 100:.2f}%")
+`}
+</RunnableCodeBlock>
+
+---
+
+## 5. 常见错误与避坑指南
+
+| 现象 | 先问什么 | 处理方式 |
+| :--- | :--- | :--- |
+| 混淆 $P(A \mid B)$ 与 $P(B \mid A)$ | 哪个是已知证据，哪个是推断结论 | $P(A \mid B)$ 是已知 $B$ 推 $A$；$P(B \mid A)$ 是已知 $A$ 推 $B$，两者绝不相等 |
+| 忽视先验概率（基础率） | 是否只关注了检测准确率 99% | 在稀有事件中，先验概率极小会导致即使检测非常准，后验概率依然很低 |
+| 误认为“独立”等于“互斥” | 事件 $A$ 和 $B$ 能否同时发生 | 互斥意味着 $P(A,B)=0$；独立意味着 $P(A, B)=P(A)P(B) \ne 0$，概念完全不同 |
+
+---
+
+## 检查清单 (Checklist)
+
+- [ ] 能解释样本空间、随机变量与条件概率的定义。
+- [ ] 能区分联合概率 $P(A, B)$、边缘概率 $P(A)$ 与条件概率 $P(A|B)$。
+- [ ] 能严密推导贝叶斯定理 $P(A|B) = \frac{P(B|A) P(A)}{P(B)}$。
+- [ ] 能手算罕见病检测例题并解释“基础率谬误”。
+- [ ] 能编写蒙特卡洛模拟代码验证条件概率与 Bayes 更新。
+
+---
+
+## 自测题
+
+1. 在某垃圾邮件过滤器中，垃圾邮件比例 $P(\text{Spam}) = 0.2$。词语 "Buy" 在垃圾邮件中出现的概率为 0.8，在正常邮件中出现的概率为 0.05。如果收到一封包含 "Buy" 的邮件，请手算它是垃圾邮件的后验概率。
+2. 解释：为什么 $P(A|B) + P(\neg A|B) = 1$，而 $P(A|B) + P(A|\neg B)$ 不一定等于 1？
+3. 假设事件 $A$ 与事件 $B$ 相互独立，已知 $P(A) = 0.4, P(B) = 0.5$，计算 $P(A \cup B)$（$A$ 或 $B$ 至少有一个发生的概率）。
+4. 【代码阅读题】在上一节代码中，为什么当 `positive_mask` 计算出的 `total_positives` 增加时，蒙特卡洛模拟结果会越来越接近理论计算值？
+
+<details>
+<summary>点击查看参考答案</summary>
+
+1. $P(\text{Buy}) = (0.8 \times 0.2) + (0.05 \times 0.8) = 0.16 + 0.04 = 0.20$。后验概率 $P(\text{Spam}|\text{Buy}) = \frac{0.8 \times 0.2}{0.20} = \frac{0.16}{0.20} = 0.80$（即 80% 概率是垃圾邮件）。
+2. 因为给定相同已知条件 $B$ 时，$A$ 与 $\neg A$ 构成完备事件组，概率和为 1；而 $B$ 与 $\neg B$ 是两种截然不同的已知条件上下文，不能直接相加。
+3. 由独立性，$P(A, B) = P(A)P(B) = 0.4 \times 0.5 = 0.2$。根据容斥原理，$P(A \cup B) = P(A) + P(B) - P(A, B) = 0.4 + 0.5 - 0.2 = 0.7$。
+4. 因为遵循大数定律（LLN），当实验重采样样本量巨大时，频率会无限逼近理论概率。
+</details>
+
+---
+
+## 下一步
+
+进入下一个专项 [12. 常见分布、期望方差与协方差](/learn/foundations/probability/12-distributions-moments)，学习伯努利、二项、高斯正态、泊松 4 大核心分布、期望、方差与协方差矩阵。
+
+---
+
+## 参考资料
+
+- [OpenIntro Statistics](https://www.openintro.org/book/os/)：第 2 章 概率与条件概率。
+- [Think Stats 2](https://allendowney.github.io/ThinkStats2/)：第 5 章 贝叶斯推断与蒙特卡洛模拟。
+- [3Blue1Brown: Bayes Theorem](https://www.3blue1brown.com/topics/probability)：贝叶斯定理面积直觉。

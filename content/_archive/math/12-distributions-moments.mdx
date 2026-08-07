@@ -1,0 +1,198 @@
+---
+id: math-distributions-moments
+title: 12. 常见分布、期望方差与协方差
+module: foundations
+submodule: math
+order: 12
+difficulty: beginner
+prerequisites: [math-probability-bayes]
+relatedNotes: [math-probability-bayes, math-lln-clt-bootstrap]
+nextNotes: [math-lln-clt-bootstrap]
+map:
+  layoutGroup: foundations-math
+estimatedMinutes: 55
+tags: [概率分布, 高斯分布, 伯努利分布, 期望, 方差, 协方差]
+summary: 掌握伯努利、二项、高斯与泊松四大分布，理解期望、方差与协方差的数字特征，对比理论矩与样本矩。
+symbols:
+  - symbol: "\\mathbb{E}[X]"
+    mean: "随机变量 X 的数学期望（均值）"
+  - symbol: "\\text{Var}(X) = \\mathbb{E}[(X - \\mu)^2]"
+    mean: "随机变量 X 的方差"
+  - symbol: "\\text{Cov}(X, Y) = \\mathbb{E}[(X - \\mu_X)(Y - \\mu_Y)]"
+    mean: "随机变量 X 与 Y 的协方差"
+---
+
+## 从一个问题开始
+
+在 AI 模型构建中，为什么有的问题用高斯分布拟合（如回归预测房价），而有的问题用伯努利分布拟合（如二分类预测点击）？数据的“期望”和“方差”在几何上代表什么？
+
+答案就在于**概率分布模型与矩特征**。这一章我们将梳理 AI 领域 4 大最关键的概率分布，手算期望与方差，并编写 Python 代码对比理论矩与样本采样矩。
+
+<ConceptCard title="初学者直觉：射箭靶心与分布形状" type="tip">
+把数据分布想象成一名运动员在射箭靶纸上的落点：
+- **期望 $\mathbb{E}[X]$**：所有箭头的**平均中心位置**（靶心）。
+- **方差 $\text{Var}(X)$**：箭头落点围绕靶心的**散开程度**（方差越小，射击稳定性越高）。
+- **协方差 $\text{Cov}(X, Y)$**：横向偏离 $X$ 与纵向偏离 $Y$ 是否存在**联动同步趋势**。
+</ConceptCard>
+
+![高斯与伯努利分布概率密度对比图](/assets/math/distributions-gaussian-bernoulli.png)
+---
+
+## 1. AI 领域 4 大核心概率分布
+
+### 1.1 伯努利分布 (Bernoulli Distribution)
+
+单次试验只有两种结果（成功 $1$，失败 $0$），成功概率为 $p$：
+
+$$P(X = k) = p^k (1-p)^{1-k}, \quad k \in \{0, 1\}$$
+
+- 期望：$\mathbb{E}[X] = p$，方差：$\text{Var}(X) = p(1-p)$。
+
+### 1.2 二项分布 (Binomial Distribution)
+
+$n$ 次独立重复的伯努利试验中，成功次数 $k$ 的分布：
+
+$$P(X = k) = \binom{n}{k} p^k (1-p)^{n-k}$$
+
+- 期望：$\mathbb{E}[X] = np$，方差：$\text{Var}(X) = np(1-p)$。
+
+### 1.3 高斯正态分布 (Gaussian / Normal Distribution)
+
+连续随机变量最核心的分布，概率密度函数 (PDF)：
+
+$$f(x) = \frac{1}{\sqrt{2\pi \sigma^2}} \exp\left( -\frac{(x - \mu)^2}{2\sigma^2} \right)$$
+
+- 期望：$\mathbb{E}[X] = \mu$，方差：$\text{Var}(X) = \sigma^2$。
+
+### 1.4 泊松分布 (Poisson Distribution)
+
+单位时间内稀有随机事件发生次数的分布（如客服每分钟接到电话数）：
+
+$$P(X = k) = \frac{\lambda^k e^{-\lambda}}{k!}$$
+
+---
+
+## 2. 期望、方差与协方差
+
+![正相关、负相关与零相关二维散点分布与协方差示意图](/assets/math/covariance-correlation-scatter.png)
+### 2.1 期望与方差性质
+
+- **线性期望**：$\mathbb{E}[aX + bY] = a\mathbb{E}[X] + b\mathbb{E}[Y]$（对任意变量恒成立）。
+- **方差平移缩放**：$\text{Var}(aX + b) = a^2 \text{Var}(X)$。
+
+### 2.2 协方差与相关系数
+
+对于两个随机变量 $X$ 和 $Y$：
+
+$$\text{Cov}(X, Y) = \mathbb{E}[(X - \mu_X)(Y - \mu_Y)] = \mathbb{E}[XY] - \mathbb{E}[X]\mathbb{E}[Y]$$
+
+归一化得到 **Pearson 相关系数 $\rho$**：
+
+$$\rho_{X, Y} = \frac{\text{Cov}(X, Y)}{\sigma_X \sigma_Y} \in [-1, 1]$$
+
+---
+
+## 3. 手算演练
+
+### 手算练习：手算高斯分布概率与矩特征
+
+给定高斯随机变量 $X \sim \mathcal{N}(\mu = 10, \sigma^2 = 4)$（标准差 $\sigma = 2$）：
+
+1. **求 $X$ 的期望与方差**：
+   $$\mathbb{E}[X] = \mu = 10$$
+   $$\text{Var}(X) = \sigma^2 = 4$$
+
+2. **手算标准化变换 $Z = \frac{X - \mu}{\sigma}$ 的期望与方差**：
+   $$\mathbb{E}[Z] = \mathbb{E}\left[\frac{X - 10}{2}\right] = \frac{\mathbb{E}[X] - 10}{2} = \frac{10 - 10}{2} = 0$$
+   $$\text{Var}(Z) = \text{Var}\left[\frac{X - 10}{2}\right] = \left(\frac{1}{2}\right)^2 \text{Var}(X) = \frac{1}{4} \times 4 = 1$$
+   这严密证明了：**任何高斯变量标准化后必变成标准正态分布 $\mathcal{N}(0, 1)$**！
+
+---
+
+## 4. 动手实战：理论矩 vs 样本采样矩对比
+
+下面的代码使用 NumPy 对高斯分布与伯努利分布采样 100,000 个点，比较理论计算值与样本实测值：
+
+<RunnableCodeBlock title="高斯与伯努利分布采样及理论矩 vs 样本矩对比代码">
+{`import numpy as np
+
+rng = np.random.default_rng(seed=42)
+
+# 1. 模拟高斯分布 N(mu=5.0, sigma^2=2.25) => sigma=1.5
+mu_true = 5.0
+sigma_true = 1.5
+N_samples = 100_000
+
+gaussian_samples = rng.normal(loc=mu_true, scale=sigma_true, size=N_samples)
+
+# 计算样本矩
+gaussian_sample_mean = np.mean(gaussian_samples)
+gaussian_sample_var = np.var(gaussian_samples)
+
+# 2. 模拟伯努利分布 Bernoulli(p=0.3)
+p_true = 0.3
+bernoulli_samples = rng.choice([1, 0], size=N_samples, p=[p_true, 1 - p_true])
+
+bernoulli_sample_mean = np.mean(bernoulli_samples)
+bernoulli_sample_var = np.var(bernoulli_samples)
+
+print(f"{'分布类型':<12} | {'指标':<8} | {'理论值':<10} | {'样本实测值':<10} | {'绝对误差':<10}")
+print("-" * 60)
+print(f"{'Gaussian':<12} | {'期望':<8} | {mu_true:<10.4f} | {gaussian_sample_mean:<10.4f} | {abs(gaussian_sample_mean - mu_true):<10.6f}")
+print(f"{'Gaussian':<12} | {'方差':<8} | {sigma_true**2:<10.4f} | {gaussian_sample_var:<10.4f} | {abs(gaussian_sample_var - sigma_true**2):<10.6f}")
+print(f"{'Bernoulli':<12} | {'期望':<8} | {p_true:<10.4f} | {bernoulli_sample_mean:<10.4f} | {abs(bernoulli_sample_mean - p_true):<10.6f}")
+print(f"{'Bernoulli':<12} | {'方差':<8} | {p_true*(1-p_true):<10.4f} | {bernoulli_sample_var:<10.4f} | {abs(bernoulli_sample_var - p_true*(1-p_true)):<10.6f}")
+`}
+</RunnableCodeBlock>
+
+---
+
+## 5. 常见错误与避坑指南
+
+| 现象 | 先问什么 | 处理方式 |
+| :--- | :--- | :--- |
+| 计算样本方差时混淆 `ddof=0` 与 `ddof=1` | 是否需要无偏估计 | 全量总体用 `ddof=0`（除以 $N$）；样本估计总体方差必须用 `ddof=1`（无偏方差，除以 $N-1$） |
+| 以为相关系数 $\rho=0$ 就说明两变量独立 | 是否存在非线性相关性 | 零相关仅说明无线性关系；如果存在 $Y = X^2$ 强非线性关系，$\rho$ 也为 0，但变量绝对不独立 |
+| 高斯 3-sigma 原理应用错误 | 数据是否符合正态分布 | 只有在数据集符合正态分布时，才满足 99.7% 落在 $\mu \pm 3\sigma$ 内的规律 |
+
+---
+
+## 检查清单 (Checklist)
+
+- [ ] 能写出伯努利、二项、高斯与泊松分布的公式与其适用场景。
+- [ ] 能解释数学期望（均值）、方差与协方差的物理与几何含义。
+- [ ] 能推导线性变换下期望与方差的缩放公式 $\text{Var}(aX + b) = a^2 \text{Var}(X)$。
+- [ ] 能手算标准化高斯变量转换过程。
+- [ ] 能编写 Python 采样代码对比理论矩与样本矩的误差距阵。
+
+---
+
+## 自测题
+
+1. 某硬币抛掷 10 次，正面朝上的概率为 0.5。计算正面朝上次数 $X$ 的期望与方差。
+2. 解释：为什么在计算样本方差时要除以 $N-1$ 而不是除以 $N$？
+3. 如果随机变量 $X$ 和 $Y$ 相互独立，且 $\text{Var}(X) = 3, \text{Var}(Y) = 4$，求解 $\text{Var}(2X - Y)$ 的值。
+4. 【代码阅读题】在上一节代码中，为什么当采样样本量 $N$ 从 100 增加到 100,000 时，绝对误差会急剧缩小？
+
+<details>
+<summary>点击查看参考答案</summary>
+
+1. $X \sim \text{Binomial}(n=10, p=0.5)$。期望 $\mathbb{E}[X] = np = 5$；方差 $\text{Var}(X) = np(1-p) = 10 \times 0.5 \times 0.5 = 2.5$。
+2. 因为样本均值 $\bar{X}$ 本身是用同一批数据估算出来的，使得样本点围绕样本均值的离散程度偏小。除以 $N-1$（自由度）可以纠正这种系统性偏小，实现总体方差的无偏估计（Unbiased Estimate）。
+3. 由于 $X$ 与 $Y$ 独立，$\text{Cov}(X, Y) = 0$。根据方差性质，$\text{Var}(2X - Y) = 2^2 \text{Var}(X) + (-1)^2 \text{Var}(Y) = 4(3) + 1(4) = 12 + 4 = 16$。
+4. 因为满足弱大数定律，大样本采样下样本矩会依概率收敛于总体理论矩。
+</details>
+
+---
+
+## 下一步
+
+进入下一个专项 [13. 大数定律、中心极限定理与 Bootstrap](/learn/foundations/probability/13-lln-clt-bootstrap)，学习弱大数定律、中心极限定理渐进正态收敛与手写 Bootstrap 非参数重采样。
+
+---
+
+## 参考资料
+
+- [OpenIntro Statistics](https://www.openintro.org/book/os/)：第 3-4 章 随机变量与连续概率分布。
+- [Think Stats 2](https://allendowney.github.io/ThinkStats2/)：第 3 章 累积分布函数与矩。
+- [SciPy Stats Documentation](https://docs.scipy.org/doc/scipy/tutorial/stats.html)：`scipy.stats` 常见分布 API 教程。

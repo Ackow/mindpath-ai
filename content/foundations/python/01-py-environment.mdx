@@ -1,21 +1,25 @@
 ---
 id: py-environment
-title: 01.Python 环境与 Notebook
+title: 01.Python 环境与 Notebook 入门
 module: foundations
 submodule: python
 order: 1
 difficulty: beginner
 prerequisites: []
-relatedNotes: [py-modules, py-files-debugging]
-nextNotes: [py-basics]
-map:
-  layoutGroup: foundations-python
 estimatedMinutes: 25
-tags: [Python, 环境配置, Jupyter]
-summary: AI 学习所需的 Python 解释器、Anaconda/venv 隔离环境、Conda/pip 包管理与 Jupyter Notebook 交互界面。
+tags: [Python, 环境配置, 虚拟环境, pip, Jupyter Notebook, VS Code]
+summary: 学习 Python 解释器安装与 PATH 配置、使用 venv 创建独立虚拟环境与 pip 包管理，掌握 VS Code 解释器选择与 Jupyter Notebook 快捷键，运行你的第一行 Python 代码。
 symbols:
-  - symbol: "python"
-    mean: "Python 解释器"
+  - symbol: "python --version"
+    mean: "验证 Python 解释器安装版本的终端命令"
+  - symbol: "python -m venv"
+    mean: "创建项目独立虚拟环境的 Python 标准指令"
+  - symbol: "pip install"
+    mean: "Python 第三方依赖扩展包安装命令"
+  - symbol: "print()"
+    mean: "内置函数，用于在屏幕控制台输出文本与结果"
+  - symbol: "Shift + Enter"
+    mean: "Notebook 核心快捷键：运行当前单元格并跳到下一个单元格"
   - symbol: "pip"
     mean: "第三方包安装工具"
   - symbol: "venv"
@@ -24,349 +28,362 @@ symbols:
     mean: "Jupyter 交互实验文档"
 ---
 
-## 本节要解决什么问题？
+## 1. 问题导入
 
-开始学习人工智能前，先建立一个**可复现、互不干扰、便于记录实验**的 Python 环境。
+为什么全世界 90% 以上的数据分析师和人工智能工程师，都选择 **Python** 作为第一门编程语言？
 
-本节以 Windows + VS Code 为主。完成后，你将能够：
+答案非常简单：**优雅、简洁、像英语一样自然**。在其他语言中打印一段文字可能需要 5 到 10 行模板代码，而在 Python 中只需一行：
 
-- 确认电脑正确安装了 Python。
-- 为项目创建独立的虚拟环境 `.venv`。
-- 使用 `pip` 安装并记录依赖。
-- 在 VS Code 中选择正确的 Python 解释器。
-- 使用 Jupyter Notebook 做交互实验。
-- 判断“为什么明明安装了包，程序却提示找不到”。
-
-<ConceptCard title="本节核心原则" type="intuition">
-一个项目对应一个虚拟环境。安装包、运行脚本和打开 Notebook 时，都使用该项目自己的 `.venv`，不要依赖系统全局 Python。
-</ConceptCard>
-
-## 1. 先理解四个概念
-
-| 名称 | 它是什么 | 你会用它做什么 |
-|---|---|---|
-| Python 解释器 | 执行 Python 代码的程序 | 运行 `.py` 文件、创建虚拟环境 |
-| pip | Python 的包安装工具 | 安装 NumPy、pandas、Jupyter 等库 |
-| 虚拟环境（venv） | 项目专属的 Python 与第三方包目录 | 隔离不同项目的依赖版本 |
-| Jupyter Notebook | 可逐格运行代码、文字和图表的实验文档 | 学习、验证公式、绘制图像 |
-
-可以把它们理解成：Python 是实验设备，pip 是购买实验材料的工具，虚拟环境是一间专属实验室，Notebook 是实验记录本。
-
-## 2. 安装 Python
-
-### 2.1 从官网下载
-
-打开 [Python 官方下载页](https://www.python.org/downloads/)，下载当前稳定版 Python 3 的 Windows 安装程序。
-
-安装界面中建议勾选：
-
-```text
-Add python.exe to PATH
+```python
+print("Hello, World!")
 ```
 
-它会让终端识别 `python` 命令。安装完成后，重新打开 PowerShell，运行：
+但在开始写代码前，我们面临的第一关就是**搭建一个稳定、独立、不踩坑的 Python 开发环境**。如果环境没配好，经常会出现“明明安装了包却提示找不到”、“不同项目依赖版本冲突”等头疼问题。
+
+本章将手把手带你理解 Python 环境构成、完成 Python 安装与虚拟环境隔离，并掌握数据科学领域最受欢迎的交互式工具 —— **Jupyter Notebook**！
+
+---
+
+## 2. 学习目标
+
+完成本章学习后，你将能够：
+
+- 说出 Python 解释器、`pip`、虚拟环境与 Jupyter Notebook 的作用与关系；
+
+- 独立检查 Python 安装状态并理解 `PATH` 环境变量的作用；
+
+- 使用 `python -m venv` 为项目创建独立的虚拟环境并进行激活；
+
+- 在 VS Code 中正确选择项目解释器，并使用 `python -m pip` 安全安装依赖包；
+
+- 熟练使用 Jupyter Notebook 进行代码编写、单元格运行与快捷键操作；
+
+- 识别并独立排查环境找不到、中英文标点、变量未定义等初学者高频报错。
+
+---
+
+## 3. 理解四大核心概念
+
+开始配置前，我们先建立对 Python 开发环境的直觉认知：
+
+| 核心概念 | 它是什么 | 生活比喻 | 你会用它做什么 |
+|---|---|---|---|
+| **Python 解释器** | 执行 Python 代码的电脑程序 | **实验设备引擎** | 运行 `.py` 脚本、翻译代码给电脑 |
+| **`pip` 包管理器** | Python 官方的第三方扩展库安装工具 | **材料采购工具** | 安装 NumPy、Pandas、Matplotlib 等工具库 |
+| **虚拟环境 (`venv`)** | 项目专属、相互隔离的 Python 目录 | **专属独立实验室** | 避免不同项目之间的工具包版本冲突 |
+| **Jupyter Notebook** | 基于网页的交互式开发与实验文档 | **实验记录本** | 逐格运行代码、查看可视化图表与笔记 |
+
+<ConceptCard title="环境配置第一原则：一项目一虚拟环境" type="intuition">
+切记：不要把所有的第三方包都一股脑装在电脑全局的 Python 中！每个项目都应该有自己独立的 `.venv` 虚拟环境。这样即使一个项目的包损坏了，也不会影响电脑上的其他项目。
+</ConceptCard>
+
+---
+
+## 4. Python 安装与 PATH 配置
+
+### 4.1 从官网下载与安装
+1. 打开 [Python 官方下载页面](https://www.python.org/downloads/)，下载适用于你操作系统的当前稳定版（推荐 Python 3.10 及以上版本）。
+2. **最关键的一步**：在 Windows 安装界面底部，**务必勾选 “Add python.exe to PATH”**（将 Python 添加到系统环境变量），然后点击 Install Now。
+
+>  **什么是 PATH？**
+> `PATH` 是操作系统的快捷搜索路径。勾选后，系统终端（PowerShell 或 CMD）才能在任意目录下识别并执行 `python` 命令。
+
+### 4.2 验证 Python 是否安装成功
+打开终端（Windows 快捷键 `Win + R` 输入 `powershell`，或 Mac/Linux 打开 `Terminal`），输入以下命令并回车：
 
 ```powershell
 python --version
 python -m pip --version
 ```
 
-预期会看到类似结果：
-
+**预期输出**：
 ```text
-Python 3.x.x
-pip x.x.x from ...
+Python 3.11.x
+pip 23.x.x from ...
 ```
+只要能正常显示 Python 和 pip 的版本号，就说明基础环境已经安装成功！
 
-如果系统提示找不到 `python`，先关闭并重新打开终端；仍无效时，重新执行安装程序并确认已勾选 PATH 选项。不要通过复制网上不明来源的安装脚本来解决问题。
+---
 
-### 2.2 为什么使用 `python -m pip`
+## 5. 为项目创建虚拟环境与安装包
 
-后续安装包时，优先使用：
+### 5.1 创建项目专属虚拟环境
+在终端中切换到你的项目根目录（例如 `F:\Project\AILearning`），运行以下命令：
 
 ```powershell
-python -m pip install 包名
-```
-
-而不是单独使用 `pip install 包名`。前一种写法明确要求“用当前 `python` 对应的 pip 安装”，能减少多版本 Python 环境下装错位置的问题。Python Packaging User Guide 也建议用 `venv` 和 pip 在隔离环境中管理项目依赖。[官方指南](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/)
-
-## 3. 用 VS Code 打开项目
-
-1. 安装 [Visual Studio Code](https://code.visualstudio.com/)。
-2. 在扩展市场安装微软发布的 **Python** 扩展。
-3. 选择“文件 → 打开文件夹”，打开本项目：`F:\Project\AILearning`。
-4. 使用 ``Ctrl + ` `` 打开集成终端。
-
-VS Code 会探测常见位置的 Python 和工作区内的虚拟环境。选中的解释器会用于补全、调试、终端运行和 Notebook；可点击状态栏中的 Python 版本，或按 `Ctrl+Shift+P` 后执行 `Python: Select Interpreter` 更换解释器。[VS Code 官方文档](https://code.visualstudio.com/docs/languages/python)
-
-## 4. 为项目创建虚拟环境
-
-在 VS Code 的 PowerShell 终端中，确认当前目录是项目根目录，然后运行：
-
-```powershell
+# 在当前目录下创建一个名为 .venv 的独立虚拟环境
 python -m venv .venv
 ```
 
-这会在项目根目录创建 `.venv` 文件夹。Python 标准库的 `venv` 就是用于创建虚拟环境的工具；它会在该目录中放置独立的 Python 解释器与包目录。[Python 官方文档](https://docs.python.org/3/library/venv.html)
+运行后，你会发现项目文件夹下多出了一个名为 `.venv` 的隐藏目录，里面包含了一套全新的 Python 解释器。
 
-激活环境：
+### 5.2 激活虚拟环境
+根据你的操作系统，在终端运行激活脚本：
 
-```powershell
-.venv\Scripts\Activate.ps1
-```
+- **Windows PowerShell**:
+  ```powershell
+  .venv\Scripts\Activate.ps1
+  ```
+- **Mac / Linux 终端**:
+  ```bash
+  source .venv/bin/activate
+  ```
 
-激活成功后，终端提示符前通常会出现：
+激活成功后，终端命令行最前方会出现 **`(.venv)`** 前缀标志：
 
 ```text
 (.venv) PS F:\Project\AILearning>
 ```
 
-再次验证：
+> [!WARNING]
+>
+> **Windows 提示“禁止运行脚本”怎么办？**
+> 如果 PowerShell 提示 `Set-ExecutionPolicy` 相关报错，只需在当前终端运行以下命令 temporary 放宽策略后重新激活即可：
+>
+> ```powershell
+> Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+> .venv\Scripts\Activate.ps1
+> ```
 
-```powershell
-python --version
-python -c "import sys; print(sys.executable)"
-```
-
-第二条命令输出的路径应包含：
-
-```text
-F:\Project\AILearning\.venv\Scripts\python.exe
-```
-
-### PowerShell 提示禁止运行脚本怎么办？
-
-若出现“因为此系统上禁止运行脚本”之类的报错，不要关闭系统安全设置。可以仅对**当前终端会话**临时放宽策略：
-
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.venv\Scripts\Activate.ps1
-```
-
-关闭该终端后，这个临时设置会失效。也可以不激活环境，直接使用 `.venv\Scripts\python.exe` 运行命令，但初学阶段建议学会激活和验证解释器。
-
-## 5. 安装 AI 学习的基础包
-
-确认终端前有 `(.venv)` 后，依次执行：
+### 5.3 为什么推荐使用 `python -m pip`
+激活虚拟环境后，安装第三方包时建议使用 `python -m pip` 语法：
 
 ```powershell
 python -m pip install --upgrade pip
-python -m pip install numpy pandas matplotlib jupyterlab
 ```
 
-这些包的作用：
+使用 `python -m pip` 可以 100% 保证是将工具包安装到**当前 Python 解释器对应的虚拟环境**中，彻底杜绝“装错位置”的隐患。
 
-| 包 | 用途 |
-|---|---|
-| `numpy` | 向量、矩阵和数值计算，是机器学习计算基础。 |
-| `pandas` | 读取与处理表格数据。 |
-| `matplotlib` | 画散点图、直方图、训练曲线等。 |
-| `jupyterlab` | 提供 Notebook 实验环境。 |
+### 5.4 安装与启动 Jupyter Notebook
 
-安装后，记录当前项目的依赖版本：
+确认虚拟环境 `(.venv)` 已激活后，使用 `pip` 显式安装 **Jupyter** 包：
 
 ```powershell
-python -m pip freeze > requirements.txt
+# 1. 安装 Jupyter Notebook 及其依赖包
+python -m pip install jupyter
 ```
 
-`requirements.txt` 的意义是：未来在另一台电脑或另一个环境中，可以用同一份依赖清单重建实验环境：
+安装完成后，有两种最常见的启动与使用方式：
+
+#### 方式一：网页版独立启动（浏览器界面）
+在激活了 `(.venv)` 的终端中运行以下命令：
 
 ```powershell
-python -m pip install -r requirements.txt
+# 2. 启动网页版 Jupyter Notebook
+jupyter notebook
 ```
+运行后终端会启动本地 Web 服务器，并自动在浏览器中打开 `http://localhost:8888` 页面。你可以在网页中点击 `New -> Python 3 (ipykernel)` 新建 Notebook 文档。
 
-<ConceptCard title="不要提交什么" type="warning">
-不要将 `.venv`、密钥、个人数据集或大型模型文件提交到 Git。`.venv` 应写入 `.gitignore`；`requirements.txt` 才是需要提交的依赖说明。
-</ConceptCard>
+#### 方式二：在 VS Code 中集成使用（推荐）
+1. 在 VS Code 插件市场搜索并安装 **Jupyter** 插件；
+2. 在 VS Code 中新建一个扩展名为 `.ipynb` 的文件（例如 `demo.ipynb`）；
+3. 点击编辑器右上角的 **选择 Kernel (Select Kernel)** 按钮，选择刚才创建的 `(.venv)` 解释器。
 
-## 6. 在 VS Code 中选择正确解释器
-
-创建 `.venv` 后，VS Code 通常会自动发现它。请确认状态栏显示的解释器路径包含：
-
-```text
-.venv\Scripts\python.exe
-```
-
-如果没有：
-
-1. 按 `Ctrl+Shift+P`。
-2. 输入并选择 `Python: Select Interpreter`。
-3. 选择工作区中的 `.venv` 解释器。
-4. 新建一个终端，再执行 `python -c "import sys; print(sys.executable)"` 验证。
-
-这一步非常重要。VS Code 的 Python 扩展会将当前解释器用于代码补全、格式检查、调试，以及新建终端中的 Python 运行环境。[官方环境说明](https://code.visualstudio.com/docs/python/environments)
-
-## 7. 第一个脚本：验证环境
-
-在项目根目录新建临时文件 `check_environment.py`：
-
-```python
-import sys
-
-import matplotlib
-import numpy as np
-import pandas as pd
+---
 
 
-print("Python:", sys.version.split()[0])
-print("解释器:", sys.executable)
-print("NumPy:", np.__version__)
-print("pandas:", pd.__version__)
-print("Matplotlib:", matplotlib.__version__)
-```
+## 6. VS Code 配置与解释器选择
 
-在已激活 `.venv` 的终端运行：
+Visual Studio Code (VS Code) 是目前最主流的代码编辑器。
 
-```powershell
-python check_environment.py
-```
+1. 打开 [VS Code 官网](https://code.visualstudio.com/) 下载并安装；
+2. 打开 VS Code，在左侧扩展市场（Extension）中搜索并安装 **Python** 插件与 **Jupyter** 插件；
+3. 选择 `文件 -> 打开文件夹`，打开你的项目目录 `F:\Project\AILearning`；
+4. 按快捷键 **`Ctrl + Shift + P`**（Mac 上为 `Cmd + Shift + P`），输入并选择：
+   ```text
+   Python: Select Interpreter
+   ```
+5. 在弹出的列表中，选择刚才创建的带 `(.venv)` 标识的解释器路径（如 `./.venv/Scripts/python.exe`）。
 
-如果每一行都正常输出版本号，说明：解释器、虚拟环境和基础包已经连通。
+---
 
-### 7.1 `.py`、Notebook、注释与帮助如何配合
+## 7. Jupyter Notebook 核心操作
 
-`.py` 是从上到下运行的脚本，适合把已经验证过的步骤保存为可重复执行的程序；`.ipynb` 是由许多单元格组成的实验记录，适合边写边观察。学习时可以先在 Notebook 探索，再把稳定的过程整理到 `.py`。无论使用哪一种，都要用注释说明“为什么这样做”，而不是重复代码表面意思。
+在数据科学中，我们最常用的是 Notebook 交互文档（扩展名为 `.ipynb`）。
 
-```python
-# 这条信息用于确认：运行代码的解释器来自当前虚拟环境。
-import sys
+### 7.1 单元格的两大类型
 
-print(sys.executable)
-help(len)  # 在终端显示 len 的内置帮助；Notebook 中也可以写 len?
-```
+Notebook 由一个个 **Cell（单元格）** 组成：
 
-下面的最小目录足以开始一个可复现实验。`requirements.txt` 记录依赖，`.gitignore` 告诉 Git 忽略可重新生成或不应公开的文件：
+1. **Code Cell（代码单元格）**：用于编写并运行 Python 代码，左侧带有 `In [ ]:` 标识；
+2. **Markdown Cell（文本单元格）**：用于编写带排版的说明文字、标题与公式。
 
-```text
-my-first-ai-project/
-  .gitignore
-  .venv/
-  check_environment.py
-  python-environment.ipynb
-  requirements.txt
-```
+### 7.2 必须掌握的高频快捷键
 
-`.gitignore` 至少加入：
+| 快捷键 | 功能描述 | 使用场景 |
+|---|---|---|
+| **Shift + Enter** | **运行当前单元格，并跳转到下一个单元格** | 最常用的代码运行方式 |
+| **Ctrl + Enter** | **运行当前单元格，但停留在当前位置** | 调试单行代码 |
+| **A** (选中单元格时) | 在当前单元格**上方**插入新单元格 (Above) | 补充前置代码 |
+| **B** (选中单元格时) | 在当前单元格**下方**插入新单元格 (Below) | 新增后续代码 |
+| **D + D** (双击 D) | **删除**当前单元格 (Delete) | 清理无用代码 |
 
-```text
-.venv/
-__pycache__/
-.ipynb_checkpoints/
-```
+### 7.3 单元格运行状态标识
+单元格左侧的 `In [ ]:` 括号代表了代码执行状态：
 
-## 8. 创建第一个 Notebook
-
-有两种方式，任选一种。
-
-### 方式 A：在 VS Code 中新建
-
-1. 新建文件，命名为 `python-environment.ipynb`。
-2. 点击右上角的内核选择器，选择 `.venv`。
-3. 新建代码单元格，运行：
-
-```python
-import sys
-import numpy as np
-
-print(sys.executable)
-print(np.arange(5) ** 2)
-```
-
-### 方式 B：启动 JupyterLab
-
-在激活环境的终端运行：
-
-```powershell
-jupyter lab
-```
-
-浏览器会打开 JupyterLab。官方文档将 JupyterLab 作为安装后可使用的编辑与实验界面；如果命令不可用，首先确认是在已激活的虚拟环境中安装和运行。[JupyterLab 安装文档](https://jupyterlab.readthedocs.io/en/stable/getting_started/installation.html)
-
-## 9. Notebook 最容易踩的坑
-
-Notebook 会保留内核中的变量。请按顺序运行下面两格：
-
-```python
-learning_rate = 0.1
-```
-
-```python
-print(learning_rate)
-```
-
-如果你先运行第二格，理论上会报错；但若之前运行过第一格，它仍可能成功。这会造成“文件看起来能运行，换电脑或重启后却失败”的问题。
-
-每次要保存、分享或提交 Notebook 前，请执行：
-
-```text
-Restart Kernel → Run All Cells
-```
-
-只有从空内核完整运行通过，实验才可复现。
+- `In [ ]:` —— **未运行**：代码尚未被执行；
+- `In [*]:` —— **正在运行**：代码正在计算中（如在处理大数据）；
+- `In [1]:` —— **已运行**：数字代表代码在当前会话中被执行的先后顺序。
 
 <NotebookLifecycle />
 
-先点击“重新赋值”，再运行输出单元格；然后重置内核并只运行输出单元格。这个演示把 Notebook 中看不见的内核状态变成可观察的状态，说明为什么共享 Notebook 前必须执行“Restart Kernel -> Run All Cells”。
+---
 
-## 小实验：生成第一个数据图
+## 8. 第一行 Python 代码与变量初体验
 
-下面代码验证 NumPy 与 Matplotlib 是否可用，同时预告后续的“数据可视化”章节：
+让我们开始编写真正的 Python 代码！
 
-<RunnableCodeBlock title="绘制 y = x²">
-{`import numpy as np
-import matplotlib.pyplot as plt
+### 8.1 输出文本与基础计算
+`print()` 是 Python 的内置输出函数。要输出文字，需要用**英文双引号 `""` 或单引号 `''`** 包围：
 
-x = np.linspace(-3, 3, 100)
-y = x ** 2
+```python
+print("欢迎来到 Python 的世界！")
+print(10 + 5)  # 输出 15
+```
 
-plt.plot(x, y, label="y = x²")
-plt.xlabel("x")
-plt.ylabel("y")
-plt.title("第一个 NumPy + Matplotlib 图像")
-plt.legend()
-plt.grid(True)
-plt.show()`}
+### 8.2 变量赋值
+把变量想象成一个**“贴有标签的盒子”**：使用单等号 `=` 把右边的数值放入左边的变量名中：
+
+```python
+# 1. 把 18 放入名为 age 的变量盒子里
+age = 18
+
+# 2. 把 "小明" 放入名为 user_name 的变量盒子里
+user_name = "小明"
+
+# 3. 打印变量
+print(user_name)
+print(age)
+```
+
+---
+
+## 9. 动手实战：环境验证与时长计算器
+
+请在下方的代码块中，点击 **“运行代码”**，体验环境验证与 Python 代码计算：
+
+<RunnableCodeBlock title="环境验证与学习时长计算器">
+{`import sys
+
+# 1. 验证当前的 Python 解释器版本
+print("当前运行的 Python 版本号:")
+print(sys.version)
+
+# 2. 模拟计算每周学习时长
+days_per_week = 5
+hours_per_day = 2
+total_hours_per_week = days_per_week * hours_per_day
+
+print("\\n每周学习总时长（小时）:")
+print(total_hours_per_week)
+
+# 3. 计算完成 20 小时入门课程预计需要的周数
+total_course_hours = 20
+weeks_needed = total_course_hours / total_hours_per_week
+
+print("完成入门课程预计需要的周数:")
+print(weeks_needed)
+`}
 </RunnableCodeBlock>
 
-如果你在当前网站的代码块中运行它，未来会由浏览器本地 Python 环境执行；在本地学习时，也可以先复制到 Notebook 中运行。
+---
 
-## 常见错误排查
+## 10. 常见错误排查 (Troubleshooting)
 
-| 现象 | 常见原因 | 处理方式 |
+在配置环境与初学代码时，常见的报错与解决排查方案如下：
+
+| 错误现象 / 异常类型 | 常见原因 | 标准排查与处理方式 |
 |---|---|---|
-| `python` 找不到 | Python 未加入 PATH 或终端未重开 | 重新打开终端；检查 Python 安装与 PATH。 |
-| `ModuleNotFoundError: No module named 'numpy'` | 包安装在另一个 Python/环境里 | 激活 `.venv`，用 `python -m pip install numpy` 安装。 |
-| VS Code 能运行，Notebook 找不到包 | Notebook 内核不是 `.venv` | 在 Notebook 右上角切换到 `.venv` 内核。 |
-| `pip` 与 `python` 版本不一致 | 系统有多个 Python | 总是使用 `python -m pip`。 |
-| Notebook 结果前后矛盾 | 单元格乱序执行、变量残留 | Restart Kernel 后 Run All。 |
-| 激活脚本被阻止 | PowerShell 当前策略限制 | 用 `Set-ExecutionPolicy -Scope Process` 临时处理。 |
+| `python : 无法将“python”项识别为 cmdlet...` | 安装 Python 时未勾选 **Add python.exe to PATH** | 重新运行 Python 安装包，选择 Modify，补勾选 PATH 选项并重启终端 |
+| `ModuleNotFoundError: No module named 'xxx'` | 第三方包未安装，或者装到了全局环境而非当前 `.venv` 中 | 确认终端前有 `(.venv)` 标志，运行 `python -m pip install 包名` |
+| `SyntaxError: invalid character` | 误用了**中文标点符号**（如中文双引号 `“”` 或中文括号 `（）`） | 切换为英文输入法，将所有引号、括号、逗号替换为**英文半角字符** |
+| `NameError: name 'xxx' is not defined` | 调用的变量名拼写错误，或定义该变量的单元格**尚未运行** | 检查变量拼写与大小写；确保上方定义变量的代码单元格已按 `Shift+Enter` 运行 |
+| `无法加载文件...因为在此系统上禁止运行脚本` | Windows PowerShell 默认禁止运行 `.ps1` 激活脚本 | 在终端运行 `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` 临时放宽限制 |
 
-## 本节检查清单
+---
 
-- [ ] `python --version` 能输出 Python 版本。
-- [ ] 项目根目录有 `.venv`，且它已在 `.gitignore` 中。
-- [ ] `python -c "import sys; print(sys.executable)"` 指向 `.venv`。
-- [ ] `numpy`、`pandas`、`matplotlib`、`jupyterlab` 可正常导入。
-- [ ] VS Code 和 Notebook 都选择 `.venv` 解释器/内核。
-- [ ] 已生成 `requirements.txt`。
-- [ ] Notebook 从 Restart Kernel 后 Run All 仍可完整运行。
+## 11. 本节检查清单 (Checklist)
 
-## 自测
+- [ ] 我能通过 `python --version` 验证本地 Python 解释器是否安装成功；
+- [ ] 我理解 `PATH` 环境变量的作用，并能在终端任意路径运行 Python 命令；
+- [ ] 我掌握了使用 `python -m venv .venv` 创建项目独立虚拟环境的方法；
+- [ ] 我知道如何在 VS Code 中按 `Ctrl+Shift+P` 切换选中的 Python 解释器；
+- [ ] 我能在 Jupyter Notebook 中使用 `Shift + Enter` 快捷键运行单元格代码；
+- [ ] 我能独立修复由于中文标点引起的 `SyntaxError` 与环境缺失引发的 `ModuleNotFoundError`。
 
-1. 为什么一个项目应使用一个独立虚拟环境？
-2. 为什么建议使用 `python -m pip install`，而不是只输入 `pip install`？
-3. VS Code 的解释器和 Notebook 的内核为什么都需要检查？
-4. 为什么 Notebook 提交前要从空内核运行全部单元格？
+---
 
-## 下一步
+## 12. 课后互动自测
 
-下一章：[02.变量、基本类型与表达式](/learn/python/02-basics)。
+<InteractiveQuiz
+  title="01. Python 环境与 Notebook 入门 课后互动自测"
+  questions={[
+    {
+      id: "q1",
+      type: "single",
+      question: "在 Windows 安装 Python 时，安装界面底部的 'Add python.exe to PATH' 选项如果未勾选，最直接的影响是什么？",
+      options: [
+        "A. Python 将无法进行加减乘除数学计算",
+        "B. 在命令行终端中输入 python 命令会提示“无法将 python 识别为命令”",
+        "C. 电脑会自动卸载 VS Code",
+        "D. 只能编写 Markdown 文本，不能编写代码"
+      ],
+      answer: 1,
+      explanation: "PATH 环境变量告诉操作系统去哪里寻找可执行程序。如果不勾选 Add to PATH，终端就无法在任意目录直接找到并运行 python 命令。"
+    },
+    {
+      id: "q2",
+      type: "single",
+      question: "在 Python 项目中，使用 python -m venv .venv 创建虚拟环境的最主要目的是什么？",
+      options: [
+        "A. 让代码的运行速度提升 10 倍",
+        "B. 为项目提供独立的包与解释器环境，防止不同项目间的依赖版本冲突",
+        "C. 自动将 Python 代码翻译成中文",
+        "D. 强制要求所有变量变成全局变量"
+      ],
+      answer: 1,
+      explanation: "虚拟环境 (venv) 核心作用是环境隔离，确保每个项目拥有独立的第三方包版本，避免全局 Python 环境被污染损坏。"
+    },
+    {
+      id: "q3",
+      type: "code-output",
+      question: "在 Jupyter Notebook 中按 Shift + Enter 运行以下两行代码，控制台打印的结果是什么？\n\nx = 5\nprint(x * 3)",
+      codeSnippet: "x = 5\nprint(x * 3)",
+      options: [
+        "A. 5",
+        "B. 15",
+        "C. x * 3",
+        "D. 抛出 NameError"
+      ],
+      answer: 1,
+      explanation: "变量 x 被赋值为 5，在 print(x * 3) 中计算 5 * 3，结果为 15。"
+    },
+    {
+      id: "q4",
+      type: "tf",
+      question: "判断题：为了防止包被安装到错的位置，推荐使用 python -m pip install 包名 代替单独的 pip install 命令。",
+      options: [
+        "A. 正确",
+        "B. 错误"
+      ],
+      answer: 0,
+      explanation: "正确！python -m pip install 会明确指定使用当前激活的 python 解释器对应的 pip，能有效防止多 Python 环境下装错位置。"
+    }
+  ]}
+/>
 
-## 参考资料
+---
 
-- [Python 下载页](https://www.python.org/downloads/)
-- [Python venv 官方文档](https://docs.python.org/3/library/venv.html)
-- [Python Packaging User Guide：pip 与虚拟环境](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/)
-- [VS Code Python 文档](https://code.visualstudio.com/docs/languages/python)
-- [VS Code Python 环境文档](https://code.visualstudio.com/docs/python/environments)
-- [JupyterLab 安装文档](https://jupyterlab.readthedocs.io/en/stable/getting_started/installation.html)
+## 13. 下一步
+
+恭喜你顺利完成了 Python 开发环境搭建与 Notebook 入门！
+
+下一步我们将深入学习 [02. 变量、数据类型与运算符](/learn/foundations/python/02-py-basics)，掌握整数、浮点数、字符串以及 Python 中丰富的数据类型转换技巧。
+
+---
+
+## 14. 参考资料
+
+- [Python 官方安装与包管理指南](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/) —— 官方 `pip` 与 `venv` 权威指南。
+- [VS Code Python 开发官方教程](https://code.visualstudio.com/docs/languages/python) —— 在 VS Code 中配置解释器与调试。
+- [Jupyter Notebook 用户手册](https://jupyter-notebook.readthedocs.io/) —— Jupyter Notebook 快捷键与使用技巧。

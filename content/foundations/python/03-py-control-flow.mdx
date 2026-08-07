@@ -1,447 +1,397 @@
 ---
 id: py-control-flow
-title: 03.控制流与推导式
+title: 03.控制流：条件判断与循环
 module: foundations
 submodule: python
 order: 3
 difficulty: beginner
 prerequisites: [py-basics]
-relatedNotes: [py-functions, py-data-structures]
-nextNotes: [py-data-structures]
-map:
-  layoutGroup: foundations-python
-estimatedMinutes: 30
-tags: [Python, 控制流, 条件分支, 循环, 推导式]
-summary: 用条件、循环和推导式把输入数据转换为可解释、可测试的处理流程。
+estimatedMinutes: 25
+tags: [Python, 控制流, if语句, for循环, while循环, 缩进规范]
+summary: 掌握 Python 条件分支判断（if-elif-else）、循环结构（for 与 while）、break 与 continue 流程控制，以及列表推导式基础与缩进语法。
+symbols:
+  - symbol: "if...elif...else"
+    mean: "条件分支语句，根据逻辑表达式真假执行不同代码块"
+  - symbol: "for...in"
+    mean: "计数/遍历循环，用于遍历序列或在固定次数内重复执行"
+  - symbol: "while"
+    mean: "条件循环，只要条件为 True 就会持续重复执行"
+  - symbol: "break"
+    mean: "关键字，用于强制立即终止并跳出当前循环"
+  - symbol: "continue"
+    mean: "关键字，用于跳过当前循环剩余代码并直接进入下一次循环"
+  - symbol: "range()"
+    mean: "内置函数，生成指定范围的整数序列"
+  - symbol: "缩进 (Indentation)"
+    mean: "Python 规定用 4 个空格缩进区分代码块的作用域"
 ---
 
-## 本节要解决什么问题？
+## 1. 问题导入
 
-模型训练脚本通常不是一条直线：需要先检查输入，再按条件选择策略，最后遍历批次并汇总结果。本节把这种“根据状态选择下一步”的思维翻译成 Python 语法。完成后，你应能写出清晰的分支、可终止的循环，并用推导式表达简单的数据转换。
+如果一个程序只能从头到尾按顺序一行行运行，那么它就无法应对现实生活中的各种复杂情况。
 
-<ConceptCard title="先画路径，再写语句" type="intuition">
-把每个条件看成一个决策节点，把每次循环看成一次状态更新。先写清楚“何时进入、何时退出、每轮改变什么”，再选择 `if`、`for` 或 `while`，能显著减少死循环和遗漏分支。
+例如：
+- 在登录界面中，如果密码正确则允许进入，否则提示密码错误；
+- 在成绩系统中，根据分数区间分别标记为优秀、合格或不合格；
+- 在批量处理数据时，需要对 1000 名员工的工资重复进行相同的计算。
+
+让程序根据条件做出“选择”，或者重复执行某项任务的机制，在编程中被称为**控制流 (Control Flow)**。本章将带你掌握 Python 中最核心的控制流工具：**条件判断 (`if`)** 与 **循环结构 (`for` / `while`)**。
+
+---
+
+## 2. 学习目标
+
+完成本章学习后，你将能够：
+
+- 理解 Python 依靠缩进区分代码块的作用域规则；
+
+- 熟练编写 `if-elif-else` 条件分支判断程序；
+
+- 掌握 `for` 循环与 `range()` 函数，对序列数据或固定次数进行遍历；
+
+- 掌握 `while` 条件循环，并学会避免死循环；
+
+- 灵活运用 `break` 与 `continue` 关键字控制循环中断与跳过；
+
+- 掌握列表推导式的极简语法，提升代码编写效率。
+
+---
+
+## 3. 代码块与严格的缩进语法规则
+
+在学习条件判断和循环之前，必须首先理解 Python 最独特、最重要的语法特性 —— **强制缩进 (Indentation)**。
+
+### 3.1 什么是代码块？
+在 C/C++ 或 Java 等语言中，大括号 `{ }` 用于包裹属于同一个分支的代码块。而在 Python 中，**取消了所有大括号，完全使用空格缩进**来表示代码块的层级与归属关系。
+
+### 3.2 缩进的核心规则
+
+1. **统一缩进标准**：官方 PEP 8 规范规定，每一个缩进层级统一使用 **4 个空格**；
+2. **冒号标志开始**：凡是以冒号 `:` 结尾的行（如 `if`、`else`、`for`、`while`），下一行必须缩进，标志着一个新的代码块开启；
+3. **同层级严格对齐**：属于同一个代码块的所有代码行，开头的缩进空格数必须完全相同。
+
+```python
+score = 85
+
+if score >= 60:
+    # 属于 if 分支的代码块，缩进 4 个空格
+    print("考试通过！")
+    print("恭喜你！")
+
+# 恢复顶格书写，代表 if 分支结束，属于主程序
+print("程序运行完毕。")
+```
+
+<ConceptCard title="缩进即作用域" type="intuition">
+在 Python 中，缩进不仅仅是为了排版美观，更是语法的一部分。缩进决定了一行代码究竟属于哪一个分支或哪一层循环。
 </ConceptCard>
 
-## 1. 条件分支：让程序做出选择
+---
 
-`if`、`elif`、`else` 使用布尔表达式决定代码块是否执行。缩进是语法的一部分，同一分支中的语句必须保持一致缩进。
+## 4. 条件判断语句 (if-elif-else)
+
+条件判断语句允许程序根据条件的真假 (`True` 或 `False`) 执行不同的代码分支。
+
+### 4.1 单分支与双分支结构
 
 ```python
-score = 72
+# 1. 单分支结构：只有当条件满足时才执行
+age = 20
+if age >= 18:
+    print("您已成年。")
+
+# 2. 双分支结构：非此即彼的选择
+is_vip = False
+if is_vip:
+    print("欢迎尊贵的 VIP 用户！")
+else:
+    print("欢迎普通用户！")
+```
+
+### 4.2 多分支结构 (if-elif-else)
+
+当需要处理三种或三种以上的不同情况时，使用 `elif`（`else if` 的缩写）连接多个判断条件：
+
+```python
+score = 82
 
 if score >= 90:
-    result = "优秀"
+    grade = "优秀 (A)"
+elif score >= 80:
+    grade = "良好 (B)"
 elif score >= 60:
-    result = "及格"
+    grade = "合格 (C)"
 else:
-    result = "需要复习"
+    grade = "不合格 (D)"
 
-print(result)
+print(f"您的成绩等级为: {grade}")
 ```
 
-条件应尽量表达一个业务判断；复杂判断可以先拆成有名字的布尔变量：
-
-```python
-has_data = len(samples) > 0
-has_labels = len(labels) == len(samples)
-ready = has_data and has_labels
-```
-
-### 1.1 条件的组合与嵌套
-
-条件分支可以组合比较、逻辑运算和成员判断。先写出“最具体的情况”，再写范围更大的情况，避免前面的条件把后面的分支遮住：
-
-```python
-label = "cat"
-confidence = 0.92
-
-if label not in {"cat", "dog"}:
-    decision = "未知类别"
-elif confidence < 0.5:
-    decision = "需要人工复核"
-elif label == "cat":
-    decision = "猫"
-else:
-    decision = "狗"
-
-print(decision)
-```
-
-只有在分支内部还需要再次判断时才嵌套 `if`。如果嵌套超过两层，通常应该提取成函数或拆成具名布尔变量。简单的二选一可以使用条件表达式：
-
-```python
-score = 0.73
-status = "通过" if score >= 0.6 else "未通过"
-```
-
-条件表达式适合一个短结果，不要把多条语句或复杂副作用塞进一行。
-
-### 1.2 多个 `if` 与 `elif` 链
-
-多个独立的 `if` 都会分别判断；`if/elif/else` 是一条互斥选择链，命中一个分支后就不再检查其余分支：
-
-```python
-score = 95
-
-if score >= 60:              # 独立的 if：会执行
-    print("及格")
-if score >= 90:              # 另一个独立的 if：也会执行
-    print("优秀")
-
-if score >= 90:              # elif 链：只执行第一个满足的分支
-    print("等级 A")
-elif score >= 60:
-    print("等级 B")
-else:
-    print("等级 C")
-```
-
-Python 用缩进表示代码块。推荐统一使用 4 个空格，`elif` 和 `else` 必须与 `if` 对齐；混用 Tab 和空格或少缩进一行，可能触发 `IndentationError`，也可能让语句落在错误分支中。
+### 4.3 条件分支的匹配机制
+Python 会从上到下依次评估条件：
+- 一旦某个 `if` 或 `elif` 的条件评估为 `True`，系统会立刻执行该分支下的代码块，并**跳过后续所有的 `elif` 和 `else` 分支**；
+- 只有当前面所有的条件均为 `False` 时，才会执行最终的 `else` 分支。
 
 <FlowControlAnimation />
 
-这个动画只演示本节最容易混淆的 `if / elif / else`，高亮流程图节点代表当前执行位置；可以手动输入“分数”和“及格阈值”，再点击播放或逐步按钮：分数为 95 会走 `if` 的“优秀”路径，72 会走 `elif` 的“及格”路径，低于阈值则走 `else`。
+---
 
-### 1.3 真值、短路与边界
+## 5. 循环结构一：for 循环与 range() 函数
 
-空容器、`0`、`None` 会被当作假值；非空容器和非零数字通常是真值。`and` 与 `or` 会短路，因此可以安全地把前置检查放在前面：
+当需要重复执行一段代码固定次数，或者遍历一串数据时，首选 `for` 循环。
+
+### 5.1 遍历序列
+`for` 循环可以依次取出容器中的每一个元素：
 
 ```python
-items = ["cat", "dog"]
-if items and items[0] == "cat":		# items非空并且一项为"cat"
-    print("第一项是 cat")
+for letter in "Python":
+    print(f"当前字符: {letter}")
 ```
 
-用 `is None` 判断缺失值，不要把 `is` 当作普通相等比较：`==` 比较内容，`is` 比较是否为同一个对象。
+### 5.2 使用 `range()` 函数生成数字序列
+内置函数 `range()` 用于快速生成连续的整数序列，常与 `for` 循环配合使用：
 
-## 2. 循环：重复执行并维护状态
-
-写循环前先回答三个问题：初始状态是什么？每轮循环改变什么？什么条件会停止？这三个答案分别对应初始化、循环体和退出条件。
-
-### 2.1 `for`：遍历已知序列
-
-`for` 适合遍历列表、字典、字符串或 `range`。循环体内只维护当前项和必要的累积状态：
+1. **`range(stop)`**：从 0 开始，到 `stop - 1` 结束（包头不包尾）。例如 `range(5)` 生成 `0, 1, 2, 3, 4`；
+2. **`range(start, stop)`**：从 `start` 开始，到 `stop - 1` 结束。例如 `range(1, 6)` 生成 `1, 2, 3, 4, 5`；
+3. **`range(start, stop, step)`**：指定步长 `step`。例如 `range(1, 10, 2)` 生成奇数 `1, 3, 5, 7, 9`。
 
 ```python
-losses = [0.9, 0.6, 0.4]
-total = 0.0
-# 遍历losses列表每一项，累加到total
-for loss in losses:
-    total += loss
-print(total / len(losses))
+# 案例：计算 1 到 100 的累加和
+total_sum = 0
+
+for i in range(1, 101):
+    total_sum += i  # 等价于 total_sum = total_sum + i
+
+print(f"1 到 100 的累加和为: {total_sum}")  # 输出 5050
 ```
 
-- **enumerate()**：
+<ConceptCard title="手算演练：range() 序列与循环累加手算" type="tip">
+**计算示例：推演 `range(1, 10, 2)` 生成奇数并求和的过程**
+- **第一步（推演数字序列）**：`range(1, 10, 2)` 从 $1$ 开始，每次步长加 $2$，不超过 $10$，生成的数字依次为 `[1, 3, 5, 7, 9]`（共 $5$ 次循环迭代）；
+- **第二步（手算累加过程）**：
+  - 第 1 次迭代：`total_sum = 0 + 1 = 1`；
+  - 第 2 次迭代：`total_sum = 1 + 3 = 4`；
+  - 第 3 次迭代：`total_sum = 4 + 5 = 9`；
+  - 第 4 次迭代：`total_sum = 9 + 7 = 16`；
+  - 第 5 次迭代：`total_sum = 16 + 9 = 25`；
+- 最终累加结果为 $25$。
+</ConceptCard>
 
-  - 作用：遍历同时拿到**下标+元素**
+---
 
-  - 语法：`enumerate(可迭代对象，start=0)`，start为下标从几开始，默认为0
+## 6. 循环结构二：while 循环与死循环防御
 
-  - ```python
-    for idx, val in enumerate(nums, start=1):
-        print(idx, val)
-    """
-    1 10
-    2 20
-    3 30
-    """
-    ```
+`while` 循环会在给定的条件持续为 `True` 时，反复执行代码块。
 
-- **zip()**：
-
-  - 作用：**并行打包多个序列，按位置配对**，短的序列决定最终长度（最短对齐）
-
-  - 语法：
-
-  - ```python
-    a = [1,2,3]
-    b = ["x","y","z"]
-    
-    for va, vb in zip(a,b):
-        print(va, vb)
-    """
-    1 x
-    2 y
-    3 z
-    """
-    ```
-
-需要索引时优先使用 `enumerate`，同时遍历两个序列时使用 `zip`：
+### 6.1 while 循环语法
 
 ```python
-for index, loss in enumerate(losses, start=1):
-    print(f"step={index}, loss={loss:.2f}")
-```
+# 案例：倒计时发射
+count = 5
 
-遍历字典时，直接遍历得到的是键；需要键和值时使用 `.items()`，只需要值时使用 `.values()`：
+while count > 0:
+    print(f"倒计时: {count}")
+    count -= 1  # 每次循环将计数器减 1
 
-```python
-metrics = {"accuracy": 0.91, "recall": 0.84}
-for name, value in metrics.items():
-    print(f"{name}: {value:.2f}")
-```
-
-`range(stop)` 生成从 `0` 到 `stop - 1` 的整数序列；`range(start, stop, step)` 可以指定起点和步长。`zip` 把多个序列按相同位置配对，并在最短的序列结束时停止，因此需要确认各序列长度是否应当一致。
-
-```python
-for epoch in range(1, 4):
-    print("epoch", epoch)
-
-names = ["train", "validation"]
-counts = [120, 30]
-for name, count in zip(names, counts):
-    print(f"{name}: {count} samples")
-```
-
-`zip` 不会因为长度不同自动报错，而是静默按短序列截断。需要严格一一对应时，先比较长度：
-
-```python
-names = ["train", "validation"]
-counts = [120]
-print(list(zip(names, counts)))  # [('train', 120)]
-if len(names) != len(counts):
-    raise ValueError("names 和 counts 的长度必须一致")
+print("发射！")
 ```
 
 <LoopFlowAnimation />
 
-动画把 `for` 循环拆成“初始化、条件判断、循环体、更新状态、回到条件”的闭环。滚轮可缩放画布；播放或点击下一步时，当前连线会流动。`break` 边表示直接离开循环，条件为假则自然结束。
-
-### 2.2 `while`：直到条件不再成立
-
-`while` 适合重试、读取队列或迭代未知次数的过程。循环体必须改变退出条件，并设置上限或超时，避免无限循环：
+### 6.2 死循环 (Infinite Loop) 的成因与防范
+如果在 `while` 循环体内部**忘记更新循环变量**，导致判断条件永远为 `True`，就会触发死循环，导致程序卡死：
 
 ```python
-attempt = 0
-while attempt < 3:
-    attempt += 1
-    print(f"第 {attempt} 次尝试")
+# 错误示范：忘记更新 count，会无限打印 1
+# count = 1
+# while count <= 5:
+#     print(count)
+#    （缺少 count += 1，引发死循环）
 ```
 
-处理“读到特殊值才结束”的任务时，可以使用哨兵值。下面的循环在读到 `None` 时停止，并且不会把哨兵当作数据处理：
+> **防范建议**：使用 `while` 循环时，必须确保循环体内存在能够让条件最终变为 `False` 的修改动作，或者使用 `break` 语句中断。
+
+---
+
+## 7. 循环控制：break 与 continue
+
+在循环执行过程中，有时需要提前打断循环或跳过部分步骤。
+
+### 7.1 `break`：强制终止并跳出循环
+`break` 关键字用于立刻终止当前整个循环，直接跳出循环体执行后续代码：
 
 ```python
-batch_stream = [[1, 2], [3, 4], None]
-index = 0
-while True:
-    batch = batch_stream[index]
-    index += 1
-    if batch is None:
-        break
-    print("处理批次:", batch)
+# 查找第一个能被 7 整除的数字
+for num in range(10, 50):
+    if num % 7 == 0:
+        print(f"找到了第一个能被 7 整除的数: {num}")
+        break  # 找到后立刻终止整个循环
 ```
 
-如果退出条件来自外部资源（文件、队列或网络），还要考虑异常和超时；在本地练习中至少设置最大尝试次数。
-
-更常见的重试模式是“最多尝试几次，成功就提前停止”：
+### 7.2 `continue`：跳过本次循环剩余代码
+`continue` 关键字用于跳过**本次循环**后半部分的未执行代码，直接开始下一次循环：
 
 ```python
-max_attempts = 3
-for attempt in range(1, max_attempts + 1):
-    response_ok = attempt == 2  # 模拟第 2 次成功
-    if response_ok:
-        print(f"第 {attempt} 次成功")
-        break
-else:
-    print("达到最大尝试次数，仍未成功")
+# 打印 1 到 5 之间的数字，但跳过数字 3
+for i in range(1, 6):
+    if i == 3:
+        continue  # 跳过 3，不执行后续的 print
+    print(f"数字: {i}")
+
+# 输出结果为: 1, 2, 4, 5
 ```
 
-### 2.3 `break`、`continue` 与 `else`
+| 关键字 | 核心作用 | 直观比喻 |
+|---|---|---|
+| **`break`** | **彻底终止并跳出**当前层级的整个循环 | 跑步比赛中突然受伤，**直接退赛** |
+| **`continue`** | **跳过本次**循环剩余代码，直接进入下一次 | 跑步比赛中掉落鞋子，**跳过该圈**直接跑下一圈 |
 
-`continue` 跳过当前轮，`break` 立即离开循环。循环 `else` 只在循环自然结束、没有触发 `break` 时执行：
+---
+
+## 8. 列表推导式初体验 (List Comprehension)
+
+在 Python 中，有一种非常优雅且高效的方式可以快速创建列表，这就是**列表推导式**。
+
+对比传统 `for` 循环与列表推导式：生成 0 到 4 的平方数列表。
 
 ```python
-for value in [2, 4, 7, 8]:
-    if value % 2:
-        print("找到奇数", value)
-        break
-else:
-    print("全部是偶数")
+# 方法一：传统的 for 循环写法
+squares1 = []
+for x in range(5):
+    squares1.append(x ** 2)
+
+# 方法二：一行列表推导式写法（推荐）
+squares2 = [x ** 2 for x in range(5)]
+
+print(squares2)  # 输出: [0, 1, 4, 9, 16]
 ```
 
-例如筛选训练样本时，`continue` 可以跳过缺失值，避免把无效样本加入结果：
+---
 
-```python
-scores = [0.8, None, 0.4, 0.9]
-passed = []
+## 9. 动手实战：九九乘法表与成绩自动筛选器
+
+请在下方的代码块中，点击 **“运行代码”**，体验双重 `for` 循环与条件筛选：
+
+<RunnableCodeBlock title="九九乘法表与成绩自动筛选器">
+{`# 实战 1：使用双重 for 循环打印标准九九乘法表
+print("=== 标准九九乘法表 ===")
+for i in range(1, 10):
+    for j in range(1, i + 1):
+        print(f"{j}x{i}={i*j}", end="\\t")
+    print()  # 换行
+
+# 实战 2：批量筛选优秀学生成绩
+scores = [58, 92, 75, 88, 45, 95, 60, 82]
+excellent_scores = []
+passed_count = 0
+
 for score in scores:
-    if score is None:
-        continue
-    if score >= 0.6:
-        passed.append(score)
-print(passed)  # [0.8, 0.9]
-```
+    if score >= 60:
+        passed_count += 1
+    if score >= 85:
+        excellent_scores.append(score)
 
-`break` 只结束它所在的最内层循环。多层循环需要一起退出时，优先把内层逻辑提取成函数，或使用清楚命名的标志变量。
-
-## 3. 推导式：把简单循环写成表达式
-
-列表推导式的基本结构是 `[表达式 for 变量 in 序列 if 条件]`。先写出等价的普通循环，再压缩为推导式，便于检查逻辑：
-
-```python
-data = [1.2, -0.5, 3.4, -2.1, 0.8]
-relu_output = [x if x > 0 else 0 for x in data]
-print("ReLU 模拟滤波:", relu_output)
-```
-
-字典推导式适合构造键值映射，集合推导式会自动去重：
-
-<RunnableCodeBlock title="表达式循环">
-{`
-probabilities = [0.12, 0.51, 0.93, 0.48]
-labels = {i: ("positive" if p >= 0.5 else "negative") for i, p in enumerate(probabilities)}
-unique_labels = {label for label in labels.values()}
-print(labels, unique_labels)
+print("\\n=== 成绩统计结果 ===")
+print(f"总人数: {len(scores)} 人")
+print(f"及格人数: {passed_count} 人")
+print(f"优秀分数列表 (>=85): {excellent_scores}")
 `}
 </RunnableCodeBlock>
 
-推导式也可以带筛选条件，筛选条件写在 `for` 后面；如果同时需要转换和筛选，先读成普通语言再写代码：
+---
 
-```python
-scores = [0.42, 0.81, 0.67, 0.39]
-passed = [score for score in scores if score >= 0.6]
-scaled = [round(score * 100) for score in passed]
-print(passed, scaled)  # [0.81, 0.67] [81, 67]
-```
+## 10. 常见错误排查 (Troubleshooting)
 
-不要混淆两种条件位置：`for` 后的 `if` 会**过滤**元素；表达式中的 `if ... else ...` 会**保留每个元素但转换它**：
-
-```python
-values = [-2, 0, 3]
-positive_only = [x for x in values if x > 0]
-relu_like = [x if x > 0 else 0 for x in values]
-print(positive_only)  # [3]
-print(relu_like)      # [0, 0, 3]
-```
-
-在 Python 3 中，推导式中的循环变量不会覆盖外层同名变量；普通 `for` 则会：
-
-```python
-item = "outside"
-_ = [item * 2 for item in [1, 2]]
-print(item)  # outside
-```
-
-多个 `for` 会形成嵌套循环。它适合很小的笛卡尔积，但数据量大时要警惕复杂度：
-
-```python
-colors = ["red", "blue"]
-sizes = ["S", "M"]
-variants = [(color, size) for color in colors for size in sizes]
-print(variants)
-```
-
-条件超过一层、表达式需要多行或包含副作用时，改回普通循环。可读性比少写几行代码更重要。
-
-## 4. 循环复杂度：先减少不必要的工作
-
-如果每个样本只处理一次，样本数翻倍，工作量大致也翻倍，记作 `O(n)`。两层循环都遍历同一批样本时，工作量大致变成四倍，记作 `O(n^2)`。这不是精确计时工具，而是提醒你在数据变大前检查循环结构。
-
-```python
-samples = ["a", "b", "c"]
-
-# O(n): 每个样本处理一次
-for sample in samples:
-    print(sample)
-
-# O(n^2): 每一对样本都要比较；这里只用于演示小数据
-for left in samples:
-    for right in samples:
-        print(left, right)
-```
-
-后续使用 NumPy 和 pandas 时，优先寻找向量化、聚合或连接操作，而不是在大型数组和表格上手写嵌套 Python 循环。
-
-## 小实验：批量筛选并汇总
-
-运行下面的代码，修改 `threshold`，观察通过筛选的样本和均值如何变化：
-
-<RunnableCodeBlock title="用条件和循环汇总样本">
-{`scores = [0.42, 0.81, 0.67, 0.39, 0.93]
-threshold = 0.6
-
-passed = []
-for score in scores:
-    if score >= threshold:
-        passed.append(score)
-
-average = sum(passed) / len(passed) if passed else 0.0
-print("通过数量:", len(passed))
-print("通过均值:", round(average, 3))`}
-</RunnableCodeBlock>
-
-### 实验变式
-
-1. 把 `threshold` 改成 `0.9`，观察没有样本通过时为什么仍然不会除以 0。
-2. 把 `passed` 的普通 `for` 循环改写成列表推导式，并比较哪一种更容易调试。
-3. 增加一个 `None` 分数，先用 `continue` 跳过它，再计算平均值。
-
-### 综合练习：清洗一批分数
-
-请独立完成这个流程：遍历 `raw_scores = [0.8, None, 1.2, 0.4, -0.1]`；遇到 `None` 时用 `continue` 跳过；遇到不在 `0` 到 `1` 范围内的值时打印异常值并用 `break` 停止；最后用推导式把已经处理的合法分数转换成百分制。完成后思考：提前 `break` 与“跳过所有异常值”的策略分别适用于什么任务？
-
-## AI 场景：遍历一个小批次
-
-训练循环通常会在每个 batch 上完成“读取、检查、计算、记录”四步。下面是一个不依赖第三方库的简化版本，重点是观察控制流，而不是训练模型：
-
-<RunnableCodeBlock title="模拟训练轮次与批次日志">
-{`batches = [[0.8, 0.7], [0.6, 0.5], [0.4, 0.3]]
-stop_loss = 0.35
-
-for epoch in range(1, 3):
-    losses = []
-    for batch_index, batch in enumerate(batches, start=1):
-        batch_loss = sum(batch) / len(batch)
-        losses.append(batch_loss)
-        print(f"epoch={epoch}, batch={batch_index}, loss={batch_loss:.2f}")
-
-    epoch_loss = sum(losses) / len(losses)
-    print(f"epoch={epoch}, mean_loss={epoch_loss:.2f}")
-    if epoch_loss <= stop_loss:
-        print("达到目标，提前停止")
-        break`}
-</RunnableCodeBlock>
-
-这里的外层 `for` 表示 epoch，内层 `for` 表示 batch，`break` 只会结束它所在的最内层循环。真实训练代码还会加入验证集、梯度更新和日志系统，但控制流骨架相同。
-
-## 常见错误排查
-
-| 现象 | 原因 | 处理方式 |
+| 错误现象 / 异常类型 | 常见原因 | 标准排查与处理方式 |
 |---|---|---|
-| 分支结果与预期不符 | 条件顺序错误，宽条件抢先命中 | 先写更具体的条件，再写兜底 `else` |
-| 循环永不结束 | `while` 条件依赖的变量没有更新 | 在循环体中明确更新，并设置最大轮数 |
-| `IndexError` | 直接访问可能为空的列表 | 先判断容器是否为空，或使用 `for` 遍历 |
-| `zip` 后少了数据 | 两个序列长度不同，`zip` 按短序列截断 | 需要严格对应时，先用 `len()` 比较长度 |
-| `IndentationError` | 同一代码块的缩进不一致 | 统一使用 4 个空格，并让 `elif`/`else` 与 `if` 对齐 |
-| 推导式难以阅读 | 嵌套条件或副作用过多 | 拆成普通循环和具名中间变量 |
-| 字典遍历拿不到键和值 | 只遍历了键 | 使用 `for key, value in mapping.items()` |
+| `IndentationError: expected an indented block` | 冒号 `:` 后面的一行代码**忘记写缩进** | 在冒号下一行按 Tab 或手动输入 4 个空格增加缩进 |
+| `IndentationError: unindent does not match...` | 同一个代码块内**混用了 Tab 与空格**，或缩进空格数不一致 | 统一设置编辑器将 Tab 转换为 4 个空格；确保同一作用域缩进对齐 |
+| `SyntaxError: invalid syntax` | 在 `if`、`elif`、`else`、`for` 或 `while` 行末**遗漏了冒号 `:`** | 检查控制流结构行末，补齐英文冒号 `:` |
+| 程序死锁 / 运行框一直显示运行中 | `while` 循环未更新条件变量引发了死循环 | 在代码框中断运行；检查 `while` 内部的变量更新逻辑 |
 
-## 本节检查清单
+---
 
-- [ ] 能用 `if/elif/else` 表达互斥的业务分支。
-- [ ] 能选择 `for` 或 `while`，并说明循环的退出条件。
-- [ ] 能正确使用 `break`、`continue` 和 `enumerate`。
-- [ ] 能解释多个 `if` 与 `if/elif/else` 链的执行差异。
-- [ ] 能区分推导式中的“过滤条件”和“条件表达式”。
-- [ ] 能把简单循环转换为列表或字典推导式。
-- [ ] 能运行小实验并解释阈值改变带来的结果变化。
+## 11. 本节检查清单 (Checklist)
 
-## 自测
+- [ ] 我理解 Python 依靠 4 个空格缩进区分代码块作用域的语法规则；
+- [ ] 我能熟练使用 `if-elif-else` 编写多分支条件判断程序；
+- [ ] 我理解 `range(1, 6)` 会生成数字 1 到 5（包头不包尾）；
+- [ ] 我能在 `while` 循环中正确更新循环计数器，避免死循环；
+- [ ] 我能准确区分 `break`（退赛）与 `continue`（跳过本圈）的不同作用；
+- [ ] 我掌握了一行写出 `[x * 2 for x in range(5)]` 列表推导式的极简语法。
 
-1. `if`、`elif` 和 `else` 的执行顺序是什么？
-2. 如何保证一个 `while` 循环最终会停止？
-3. `break` 与 `continue` 分别改变哪一层控制流？
-4. 把 `for x in values: if x > 0: result.append(x)` 改写成列表推导式。
-5. `[x for x in values if x > 0]` 与 `[x if x > 0 else 0 for x in values]` 的结果为何不同？
-6. 什么时候应该放弃推导式，改用普通循环？
+---
 
-## 下一步
+## 12. 课后互动自测
 
-下一章：[04.核心数据结构](/learn/foundations/python/04-py-data-structures)。你将把本节的遍历和分支应用到列表、字典、集合与嵌套数据上。
+<InteractiveQuiz
+  title="🎯 03. 控制流：条件判断与循环 课后互动自测"
+  questions={[
+    {
+      id: "q1",
+      type: "single",
+      question: "查看以下 Python 代码：for i in range(1, 5): print(i)，控制台最终打印出的数字序列是什么？",
+      options: [
+        "A. 1, 2, 3, 4, 5",
+        "B. 1, 2, 3, 4",
+        "C. 0, 1, 2, 3, 4",
+        "D. 1, 5"
+      ],
+      answer: 1,
+      explanation: "range(1, 5) 遵循包头不包尾原则，生成的整数序列为 1, 2, 3, 4。"
+    },
+    {
+      id: "q2",
+      type: "code-output",
+      question: "运行以下 Python 代码，控制台打印的结果是什么？\n\nfor i in range(1, 6):\n    if i == 3:\n        break\n    print(i, end='')",
+      codeSnippet: "for i in range(1, 6):\n    if i == 3:\n        break\n    print(i, end='')",
+      options: [
+        "A. 12345",
+        "B. 1245",
+        "C. 12",
+        "D. 123"
+      ],
+      answer: 2,
+      explanation: "当 i 等于 3 时触发 break，直接强制终止并跳出了整个循环，因此只打印了 1 和 2。"
+    },
+    {
+      id: "q3",
+      type: "single",
+      question: "在 Python 条件判断中，如果写成 if score >= 60 print(\"及格\")，引发 SyntaxError 的原因是什么？",
+      options: [
+        "A. 变量 score 不能与数字比较",
+        "B. 条件表达式行末缺少了英文冒号 :",
+        "C. print 不能放在同一行",
+        "D. 应改写为 else"
+      ],
+      answer: 1,
+      explanation: "Python 条件语句 if 条件表达式的末尾必须带有英文冒号 :，否则引发 SyntaxError。"
+    },
+    {
+      id: "q4",
+      type: "tf",
+      question: "判断题：continue 关键字的作用是彻底终止并退出整个循环，后续的循环次数都不再执行。",
+      options: [
+        "A. 正确",
+        "B. 错误"
+      ],
+      answer: 1,
+      explanation: "错误！彻底终止整个循环的是 break；continue 的作用是跳过本次循环剩余的代码，直接开始下一次循环。"
+    }
+  ]}
+/>
 
-## 参考资料
+---
 
-- [Python 官方教程：控制流工具](https://docs.python.org/3/tutorial/controlflow.html)
-- [Python 语言参考：复合语句](https://docs.python.org/3/reference/compound_stmts.html)
-- [Python 官方教程：数据结构](https://docs.python.org/3/tutorial/datastructures.html#list-comprehensions)
+## 13. 下一步
+
+恭喜你掌握了程序逻辑的核心：条件判断与循环控制！
+
+下一步我们将深入学习 [04. 组合数据类型](/learn/foundations/python/04-py-data-structures)，掌握列表 (`list`)、元组 (`tuple`)、字典 (`dict`) 与集合 (`set`) 四大容器，学会如何高效地组织和管理海量数据。
+
+---
+
+## 14. 参考资料
+
+- [Python 官方教程：深入控制流工具](https://docs.python.org/zh-cn/3/tutorial/controlflow.html) —— 官方控制流权威文档。
+- [PEP 8 -- 代码缩进与格式规范](https://peps.python.org/pep-0008/#indentation) —— 官方代码缩进指南。

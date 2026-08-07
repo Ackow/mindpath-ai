@@ -1,0 +1,392 @@
+---
+id: py-basics
+title: 02.变量、类型与表达式
+module: foundations
+submodule: python
+order: 2
+difficulty: beginner
+prerequisites: [py-environment]
+relatedNotes: [py-data-structures, py-control-flow]
+nextNotes: [py-control-flow]
+map:
+  layoutGroup: foundations-python
+estimatedMinutes: 20
+tags: [Python, 变量, 数据类型]
+summary: 强类型与动态类型机制、数值、布尔、字符串处理与运算符优先级。
+---
+
+## 本节要解决什么问题？
+
+本章把“一个值如何被程序表示、计算和传递”讲清楚。机器学习代码看起来经常只是几行公式，但每个公式都依赖 Python 对象：特征是数值，标签常常是字符串或整数，掩码是布尔数组，缺失值可能是 `None` 或 `NaN`，学习率和批大小则是超参数。
+
+完成本章后，你应能：
+
+- 创建变量并用 `type()`、`isinstance()` 检查类型。
+- 区分 `int`、`float`、`bool`、`str`、`None`，并进行安全的类型转换。
+- 使用算术、比较、逻辑、成员和身份运算符写出清晰的表达式。
+- 处理字符串切片、格式化和常见清洗操作。
+- 解释浮点数精度问题，以及为什么比较浮点数要使用容差。
+- 理解“变量名绑定对象”、不可变对象和可变对象的初步区别。
+
+<ConceptCard title="本节核心原则" type="intuition">
+变量不是贴在数值上的永久标签，而是指向对象的名字。表达式先计算出对象，再把结果绑定给名字。理解这一点，才能读懂 NumPy 数组、pandas 列和模型参数为什么会被原地修改或重新赋值。
+</ConceptCard>
+
+## 1. 变量是名字，类型属于对象
+
+Python 使用动态类型：不需要在赋值前声明类型，运行时对象自身携带类型信息。下面的变量名 `value` 先指向整数，随后又指向字符串；这不是“变量类型改变”，而是名字重新绑定了对象。
+
+<RunnableCodeBlock title="查看类型与重新绑定">
+{`value = 42
+print(value, type(value))
+
+value = "forty-two"
+print(value, type(value))
+
+print(isinstance(value, str))
+print(isinstance(42, int))`}
+</RunnableCodeBlock>
+
+`type(x)` 适合检查确切类型，`isinstance(x, SomeType)` 更适合业务代码，因为它也会识别子类。不要依靠变量名猜类型；在数据处理边界处主动检查，错误会更早暴露。
+
+### 1.1 赋值、同时赋值与常量约定
+
+```python
+learning_rate = 0.01
+batch_size = 32
+feature_name = "petal_length"
+
+width, height = 640, 480
+width, height = height, width  # Python 可直接交换两个名字
+```
+
+Python 没有强制常量语法。全大写只是团队约定，表示不应在后续代码中修改：
+
+```python
+DEFAULT_SEED = 42
+IMAGE_SIZE = (224, 224)
+```
+
+### 1.2 命名规则
+
+变量名**只能包含字母、数字和下划线**，不能以数字开头，也不能使用 `class`、`for` 等关键字。推荐使用 `snake_case`，让名字表达单位和含义：`learning_rate` 比 `lr1` 更容易检查实验配置。
+
+## 2. Python 的基本类型
+
+| 类型 | 示例 | AI 中的常见用途 |
+|---|---|---|
+| `int` | `0`, `-3`, `42` | 类别 ID、样本计数、epoch 数 |
+| `float` | `0.1`, `-2.5` | 特征值、损失、概率、学习率 |
+| `bool` | `True`, `False` | 掩码、开关、预测是否正确 |
+| `str` | `"cat"` | 标签名称、文本、文件路径 |
+| `NoneType` | `None` | 尚未计算的值、缺失配置 |
+
+### 2.1 整数与浮点数
+
+Python 整数可以表示任意精度；浮点数通常对应 IEEE 754 双精度，计算速度快但不能精确表示所有十进制小数。
+
+```python
+samples = 128
+temperature = 0.7
+print(samples // 32)   # 整除：4
+print(samples % 32)    # 余数：0
+print(2 ** 10)         # 幂：1024
+```
+
+`/` 总是产生浮点数，`//` 做向下取整。批处理时要留意最后一个不完整 batch，不能把 `//` 和 `/` 混用。
+
+### 2.2 布尔值与真值判断
+
+`bool` 只有 `True` 和 `False`，但 `if` 会把其他对象转换为真值。通常为假的对象包括：`False`、`None`、数值 `0`、空字符串 `""`、空列表 `[]`、空字典 `{}`。
+
+```python
+label = ""
+missing_value = None
+
+if not label:
+    print("标签为空")
+if missing_value is None:
+    print("尚未提供值")
+```
+
+不要写 `if value == None`，应写 `value is None`。`None` 是单例对象，身份判断能清晰表达“确实没有值”。
+
+### 2.3 字符串
+
+字符串是 Unicode 文本，不可变。索引从 0 开始，负索引从末尾开始，切片使用半开区间 `[start:stop:step]`：
+
+<RunnableCodeBlock title="字符串索引、切片与清洗">
+{`text = "  Ackow-AILearning"
+cleaned = text.strip().lower()
+
+print(cleaned[0])       # i
+print(cleaned[-1])      # a
+print(cleaned[:4])      # iris
+print(cleaned[5:])      # setosa
+print(cleaned[::-1])    # 反转
+print(cleaned.replace("-", "_"))
+print("setosa" in cleaned)`}
+</RunnableCodeBlock>
+
+常用方法：`strip()` 去除首尾空白，`split()` 分割，`join()` 拼接，`replace()` 替换，`lower()`/`upper()` 统一大小写。文本标签进入模型前，应先明确是否需要这些清洗，否则 `"Cat"` 和 `"cat"` 可能被当作两个类别。
+
+### 2.4 用 f-string 展示变量
+
+f-string 以 `f` 开头，把花括号中的表达式求值后放进字符串。它很适合打印训练配置和观察中间结果；格式说明写在冒号后面，例如 `:.2f` 表示保留两位小数。
+
+```python
+epoch = 3
+loss = 0.123456
+print(f"epoch={epoch}, loss={loss:.2f}")  # epoch=3, loss=0.12
+```
+
+## 3. 运算符与表达式
+
+### 3.1 算术运算符
+
+| 运算符 | 描述                          | 优先级 | 示例                         |
+| ------ | ----------------------------- | ------ | ---------------------------- |
+| **     | 幂 - 返回 x 的 y 次幂         | 1      | `2 ** 3 = 8`                 |
+| *      | 乘 - 两数相乘；字符串重复     | 2      | `3 * 4 = 12`                 |
+| /      | 除 - x 除以 y，永远返回浮点数 | 2      | `7 / 2 = 3.5`                |
+| %      | 取模 - 返回除法余数           | 2      | `7 % 2 = 1`                  |
+| //     | 取整除 - **向下取整**         | 2      | `7 // 2 = 3`、`-7 // 2 = -4` |
+| +      | 加 - 数字相加 / 字符串拼接    | 3      | `5 + 3 = 8`                  |
+| -      | 减 - 数字相减 / 负号          | 3      | `5 - 3 = 2`                  |
+
+括号优先级最高，建议用括号表达意图：
+
+```python
+score = 0.8 * 0.6 + 0.2 * 0.4
+normalized = (value - mean) / std
+```
+
+### 3.2 比较、逻辑和成员运算符
+
+| 运算符   | 类别 | 描述             | 优先级 | 示例                                                     |
+| -------- | ---- | ---------------- | ------ | -------------------------------------------------------- |
+| `==`     | 比较 | 等于             | 6      | `5 == 3 → False`、`"a" == "a" → True`                    |
+| `!=`     | 比较 | 不等于           | 6      | `5 != 3 → True`                                          |
+| `>`      | 比较 | 大于             | 6      | `7 > 2 → True`                                           |
+| `<`      | 比较 | 小于             | 6      | `7 < 2 → False`                                          |
+| `>=`     | 比较 | 大于等于         | 6      | `4 >= 4 → True`                                          |
+| `<=`     | 比较 | 小于等于         | 6      | `3 <= 1 → False`                                         |
+| `not`    | 逻辑 | 逻辑非           | 7      | `not True → False`、`not 0 → True`                       |
+| `and`    | 逻辑 | 逻辑与（短路）   | 8      | `3 and 5 → 5`、`0 and 9 → 0`、`True and False → False`   |
+| `or`     | 逻辑 | 逻辑或（短路）   | 9      | `3 or 5 → 3`、`0 or "hi" → "hi"`、`False or True → True` |
+| `in`     | 成员 | 判断是否包含在内 | 10     | `2 in [1,2,3] → True`、`"he" in "hello" → True`          |
+| `not in` | 成员 | 判断是否不包含   | 10     | `5 not in [1,2,3] → True`                                |
+
+比较运算符产生布尔值：`< <= == != >= >`。逻辑运算符 `and`、`or`、`not` 具有短路特性；成员运算符 `in`、`not in` 检查元素是否属于字符串或容器。
+
+```python
+probability = 0.82
+is_positive = probability >= 0.5
+is_valid = (0.0 <= probability <= 1.0) and is_positive
+
+allowed = {"train", "validation", "test"}
+split = "validation"
+print(is_valid, split in allowed)
+```
+
+Python 支持链式比较 `0.0 <= probability <= 1.0`，比写两个 `and` 更易读。不要把 `and` 当成 NumPy 数组的逐元素逻辑运算；后续学习 NumPy 时应使用 `&`、`|` 并为每个条件加括号。
+
+`==` 比较两个对象的内容，`is` 比较它们是否就是同一个对象。初学阶段最可靠的规则是：只用 `is None` 和 `is not None` 判断缺失值，不要用 `is` 比较数字或字符串。
+
+```python
+first = [1, 2]
+second = [1, 2]
+alias = first
+
+print(first == second)  # True: 内容相同
+print(first is second)  # False: 是两份不同的列表
+print(first is alias)   # True: alias 指向 first
+print(None is None)     # True: None 是单例对象
+```
+
+### 3.3 运算符优先级
+
+表达式大致按“括号 → 幂 → 正负号 → 乘除 → 加减 → 比较 → `not` → `and` → `or`”求值。实际代码中不要依赖记忆，复杂条件主动加括号：
+
+```python
+ready = (samples > 0) and (label_count >= 2)
+```
+
+## 4. 类型转换与输入验证
+
+`int()`、`float()`、`str()`、`bool()` 可将兼容值转换为目标类型，但转换可能失败或产生意外结果：
+
+```python
+epoch_text = "10"
+epoch = int(epoch_text)
+learning_rate = float("0.001")
+
+print(epoch + 1, learning_rate * 10)
+print(bool("False"))  # True：非空字符串都是真值
+```
+
+从配置或命令行读取的内容通常是字符串，不能直接拿来做数值运算。对用户输入应捕获 `ValueError` 并给出可理解的错误信息：
+
+```python
+def parse_probability(raw: str) -> float:
+    value = float(raw)
+    if not 0.0 <= value <= 1.0:
+        raise ValueError("probability 必须在 0 到 1 之间")
+    return value
+```
+
+这里的边界检查比单纯转换更重要：模型配置中的 `dropout=1.5` 虽然是合法浮点数，却不是合法概率。
+
+## 5. 浮点数精度：不要直接比较小数
+
+许多十进制小数无法用二进制浮点数精确存储：
+
+```python
+result = 0.1 + 0.2
+print(result)          # 可能显示 0.30000000000000004
+print(result == 0.3)   # False
+```
+
+比较计算结果时使用容差。标准库 `math.isclose` 提供相对和绝对容差：
+
+```python
+import math
+
+print(math.isclose(0.1 + 0.2, 0.3, rel_tol=1e-9, abs_tol=1e-12))
+```
+
+`abs_tol` 对接近 0 的值尤其重要。训练损失、概率和归一化结果都可能受舍入误差影响；不要为了让输出“好看”而在中间步骤过早 `round()`。
+
+## 6. 可变与不可变对象的初步概念
+
+整数、浮点数、布尔值和字符串是不可变对象；列表、字典和集合是可变对象。赋值不会复制对象，只会复制引用关系：
+
+```python
+features = [1.0, 2.0]
+same_features = features
+same_features.append(3.0)
+print(features)  # [1.0, 2.0, 3.0]
+```
+
+如果需要独立的浅拷贝，可以使用切片或 `list()`：
+
+```python
+features = [1.0, 2.0]
+copied = features.copy()
+copied.append(3.0)
+print(features)  # [1.0, 2.0]
+```
+
+嵌套列表还涉及深拷贝；当前阶段只需记住：传递数据给函数前，确认函数是否会原地修改它。NumPy 的数组和 pandas 的 DataFrame 也有视图/拷贝问题，后续章节会专门说明。
+
+## 小实验：把预测概率转换为标签
+
+下面示例模拟二分类预测，把概率、阈值和标签名称结合起来：
+
+<RunnableCodeBlock title="概率到标签">
+{`probabilities = [0.12, 0.51, 0.93, 0.48]	# 概率列表
+threshold = 0.5	# 二分类阈值
+labels = ["negative" if p < threshold else "positive" for p in probabilities]
+
+for probability, label in zip(probabilities, labels):
+    print(f"probability={probability:.2f} -> {label}")`}
+</RunnableCodeBlock>
+
+这里的 `:.2f` 是 f-string 格式说明符：固定显示两位小数。阈值不是永远等于 0.5；在漏检成本更高的任务中，阈值应通过验证集和业务指标选择。
+
+## 常见错误排查
+
+| 现象 | 原因 | 处理方式 |
+|---|---|---|
+| `"3" + 2` 报 `TypeError` | 字符串和整数不能直接相加 | 先明确转换：`int("3") + 2` |
+| `bool("False")` 得到 `True` | 非空字符串都是真值 | 对配置使用显式解析，而不是直接 `bool()` |
+| `0.1 + 0.2 == 0.3` 为假 | 二进制浮点表示有舍入误差 | 使用 `math.isclose` |
+| `if x == None` | 用相等比较表达缺失值 | 使用 `x is None` |
+| 修改副本却影响原列表 | 赋值只复制引用 | 使用 `.copy()`；嵌套结构按需深拷贝 |
+| 条件表达式结果不符合预期 | 优先级或短路逻辑不清 | 拆成有名字的布尔变量并加括号 |
+
+## 本节检查清单
+
+- [ ] 能用 `type()` 和 `isinstance()` 解释对象类型。
+- [ ] 能区分 `/`、`//`、`%` 和 `**`。
+- [ ] 能用 `if`、比较和逻辑运算符验证输入范围。
+- [ ] 能用切片和字符串方法清洗一个文本标签。
+- [ ] 能解释 `0.1 + 0.2` 的精度问题并使用 `math.isclose`。
+- [ ] 能说明赋值、浅拷贝和可变对象之间的关系。
+- [ ] 能运行“概率到标签”示例，并修改阈值观察结果变化。
+
+## 自测题
+
+<InteractiveQuiz
+  title="02. 变量、基本类型与表达式 课后互动自测"
+  questions={[
+    {
+      id: "q1",
+      type: "single",
+      question: "关于 Python 语言的类型系统特性，以下哪一项说法是准确的？",
+      options: [
+        "A. 动态类型意味着变量在运行时绑定类型，强类型意味着不会隐式将 \"3\" + 2 自动转换计算",
+        "B. Python 是静态类型且弱类型语言",
+        "C. 动态类型意味着类型不可更改，弱类型意味着可以隐式将字符串自动转为浮点数",
+        "D. 只要使用 type() 判断，就能完全支持面向对象继承关系的子类检查"
+      ],
+      answer: 0,
+      explanation: "Python 是动态强类型语言。动态指的是变量在运行时绑定类型，强类型指的是不支持不兼容类型的隐式自动转换（如字符串与整数相加会抛出 TypeError，需显式转换）。"
+    },
+    {
+      id: "q2",
+      type: "single",
+      question: "在 Python 中，表达式 bool(\"False\") 的运行结果是什么？为什么？",
+      options: [
+        "A. False，因为字符串内容为 \"False\"",
+        "B. True，因为 bool() 对非空字符串求值一律返回 True",
+        "C. 抛出 ValueError 异常",
+        "D. None"
+      ],
+      answer: 1,
+      explanation: "Python 中 bool(s) 是基于真值测试（Truth Value Testing）。任何非空字符串（即使内容是 \"False\" 或 \"0\"）转为布尔值结果都是 True。只有空字符串 \"\" 结果才是 False。"
+    },
+    {
+      id: "q3",
+      type: "single",
+      question: "在比较变量时，== 运算符与 is 运算符有什么本质区别？为什么判断 None 必须用 is？",
+      options: [
+        "A. == 比较内存地址，is 比较对象存储的值",
+        "B. == 比较两对象的值是否相等，is 比较两对象的内存身份 (Identity)；None 是单例对象",
+        "C. 两者完全没有任何区别，可以互换使用",
+        "D. is 运行效率比 == 慢得多"
+      ],
+      answer: 1,
+      explanation: "== 触发 __eq__ 比较值，is 比较对象的 id() 是否指向同一个内存地址。None 在 CPython 中是全局唯一的单例对象，使用 x is None 比 x == None 更安全且执行效率更高。"
+    },
+    {
+      id: "q4",
+      type: "code-output",
+      question: "查看以下列表赋值与修改代码。运行后 print(features) 打印的最终结果是什么？",
+      codeSnippet: "features = [1.0, 2.0]\nsame_features = features\nsame_features.append(3.0)\nprint(features)",
+      options: [
+        "A. [1.0, 2.0]",
+        "B. [1.0, 2.0, 3.0]",
+        "C. [3.0]",
+        "D. 抛出 AttributeError"
+      ],
+      answer: 1,
+      explanation: "列表是可变对象。same_features = features 仅仅复制了内存引用，两个变量指向同一个列表。修改 same_features 也会直接影响 features。如果需要独立副本，应使用 features.copy()。"
+    }
+  ]}
+/>
+
+
+## 下一步
+
+下一章：[03.控制流与推导式](/learn/foundations/python/03-py-control-flow)。你将使用本章的布尔表达式、字符串和数值，遍历样本并构造批处理逻辑。
+
+## 参考资料
+
+- [Python 官方教程：数字、字符串与列表](https://docs.python.org/3/tutorial/introduction.html)
+- [Python 官方文档：内置类型](https://docs.python.org/3/library/stdtypes.html)
+- [Python 官方文档：表达式与运算符优先级](https://docs.python.org/3/reference/expressions.html)
+- [Python 官方文档：`math.isclose`](https://docs.python.org/3/library/math.html#math.isclose)
+- [Python 官方教程：赋值、对象与可变性](https://docs.python.org/3/tutorial/classes.html#python-scopes-and-namespaces)
+- [CPython 官方仓库：Python 语言实现与测试](https://github.com/python/cpython)
+- [Python 官方文档仓库](https://github.com/python/cpython/tree/main/Doc)
