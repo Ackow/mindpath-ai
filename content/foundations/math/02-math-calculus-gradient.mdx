@@ -73,7 +73,7 @@ $$f'(x) = 2x$$
 在现实的 AI 模型中，损失函数往往由成百上千个参数共同决定（如 $L(w_1, w_2, b)$）。
 
 ### 4.1 偏导数 (Partial Derivative)
-**偏导数 $\frac{\partial f}{\partial w_1}$** 的直觉非常简单：当有多个变量时，假设其他变量（如 $w_2, b$）全部保持冻结不动，只观察 $w_1$ 变化时对整体误差产生的改变。
+**偏导数 $\text{d}f/\text{d}w_1$** 的直觉非常简单：当有多个变量时，假设其他变量（如 $w_2, b$）全部保持冻结不动，只观察 $w_1$ 变化时对整体误差产生的改变。
 
 ### 4.2 梯度向量 (Gradient Vector)
 将多维函数对各个自变量的偏导数打包组合成一个向量，就得到了**梯度向量 $\nabla f$**：
@@ -89,12 +89,12 @@ $$\nabla f = \left[ \frac{\partial f}{\partial w_1}, \frac{\partial f}{\partial 
 <ConceptCard title="手算演练：二元函数偏导数与梯度向量计算" type="tip">
 **已知二元函数 $f(x, y) = 3x^2 + 2xy + y^2$，计算其偏导数与在点 $(1, 2)$ 处的梯度**：
 
-1. **求对 $x$ 的偏导数 $\frac{\partial f}{\partial x}$**（将 $y$ 当作常数）：
+1. **求对 $x$ 的偏导数**（将 $y$ 当作常数）：
    $$\frac{\partial f}{\partial x} = \frac{\partial}{\partial x}(3x^2) + \frac{\partial}{\partial x}(2xy) + 0 = 6x + 2y$$
-2. **求对 $y$ 的偏导数 $\frac{\partial f}{\partial y}$**（将 $x$ 当作常数）：
+2. **求对 $y$ 的偏导数**（将 $x$ 当作常数）：
    $$\frac{\partial f}{\partial y} = 0 + \frac{\partial}{\partial y}(2xy) + \frac{\partial}{\partial y}(y^2) = 2x + 2y$$
 3. **计算在点 $(1, 2)$ 处的梯度向量 $\nabla f(1, 2)$**：
-   $$\nabla f(1, 2) = \begin{bmatrix} 6(1) + 2(2) \\ 2(1) + 2(2) \end{bmatrix} = \begin{bmatrix} 10 \\ 6 \end{bmatrix}$$
+   $$\nabla f(1, 2) = [6(1) + 2(2), 2(1) + 2(2)]^T = [10, 6]^T$$
 4. **结论与最陡下山方向**：
    - 在点 $(1, 2)$ 处，函数增长最快方向为 $\nabla f = [10, 6]^T$；
    - 最陡下山方向为反梯度 $-\nabla f = [-10, -6]^T$。

@@ -33,6 +33,9 @@ import { CentralLimitTheoremLab } from '@/components/animations/CentralLimitTheo
 import { LogisticRegressionLab } from '@/components/animations/LogisticRegressionLab';
 import { KnnDecisionBoundaryLab } from '@/components/animations/KnnDecisionBoundaryLab';
 import { NaiveBayesLab } from '@/components/animations/NaiveBayesLab';
+import { SvmMarginKernelLab } from '@/components/animations/SvmMarginKernelLab';
+import { SvmHandCalculationLab } from '@/components/animations/SvmHandCalculationLab';
+import { DecisionTreeLab } from '@/components/animations/DecisionTreeLab';
 import { PandasDataImportLab } from '@/components/animations/PandasDataImportLab';
 import { MatplotlibParamsLab } from '@/components/animations/MatplotlibParamsLab';
 import { ReactFlowDiagram } from '@/components/mdx/ReactFlowDiagram';
@@ -63,28 +66,43 @@ function normalizeAlerts(source: string) {
 }
 
 function normalizeDisplayMath(source: string) {
-  // 1. Prerender $$...$$ display math into static KaTeX HTML
-  let result = source.replace(/\$\$([\s\S]+?)\$\$/g, (_match, formula: string) => {
+  // 1. 保护大写字母开头的 JSX 组件 (如 <ReactFlowDiagram ... />, <InteractiveQuiz ... />)
+  const jsxBlocks: string[] = [];
+  let protectedSource = source.replace(/<([A-Z][a-zA-Z0-9]*)([\s\S]*?)(\/>|>[^]*?<\/\1>)/g, (match) => {
+    jsxBlocks.push(match);
+    return `___JSX_BLOCK_${jsxBlocks.length - 1}___`;
+  });
+
+  // 2. 将 $$...$$ 渲染为 KaTeX Display HTML
+  let result = protectedSource.replace(/\$\$([\s\S]+?)\$\$/g, (_match, formula: string) => {
     try {
       const html = katex.renderToString(formula.trim(), { displayMode: true, throwOnError: false });
-      return `\n\n<span className="katex-display block my-6 overflow-x-auto text-center" dangerouslySetInnerHTML={{ __html: ${JSON.stringify(html)} }} />\n\n`;
+      const jsonHtml = JSON.stringify(html);
+      return `\n\n<span className="katex-display block my-6 overflow-x-auto text-center" dangerouslySetInnerHTML={{ __html: ${jsonHtml} }} />\n\n`;
     } catch {
       return `\n\n$$${formula}$$\n\n`;
     }
   });
 
-  // 2. Prerender $...$ inline math into static KaTeX HTML (skipping JSX tags/attributes)
+  // 3. 将 $...$ 行内公式渲染为 KaTeX Inline HTML
   result = result.replace(/(<[^>]+>)|((?<!\$)\$([^\$\n]+?)\$(?!\$))/g, (match, isTag, _isMath, formula) => {
-    if (isTag) return match; // Keep JSX tags/attributes untouched
+    if (isTag) return match;
     if (formula) {
       try {
         const html = katex.renderToString(formula.trim(), { displayMode: false, throwOnError: false });
-        return `<span className="katex-inline inline-block font-mono" dangerouslySetInnerHTML={{ __html: ${JSON.stringify(html)} }} />`;
+        const jsonHtml = JSON.stringify(html);
+        return `<span className="katex-inline inline-block font-mono" dangerouslySetInnerHTML={{ __html: ${jsonHtml} }} />`;
       } catch {
         return `$${formula}$`;
       }
     }
     return match;
+  });
+
+  // 4. 安全还原 JSX 组件标签 (在 replace 替换串中 $$ 代表单个 $ 字符)
+  result = result.replace(/___JSX_BLOCK_(\d+)___/g, (_, idx) => {
+    const block = jsxBlocks[parseInt(idx, 10)] || '';
+    return block.replace(/\$/g, '$$');
   });
 
   return result;
@@ -113,13 +131,13 @@ function normalizeMarkdownTables(source: string) {
     const headers = splitCells(headerLine);
     const rows = dataLines.map(splitCells);
 
-    const thClass = 'px-4 py-3 font-extrabold text-slate-900 bg-slate-100 border-b-2 border-r border-slate-300 text-left text-xs sm:text-sm whitespace-nowrap last:border-r-0';
-    const tdClass = 'px-4 py-3 text-slate-700 leading-relaxed border-b border-r border-slate-200 text-xs sm:text-sm last:border-r-0';
+    const thClass = 'px-4 py-3 font-extrabold text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800/90 border-b-2 border-r border-slate-300 dark:border-slate-700 text-left text-xs sm:text-sm whitespace-nowrap last:border-r-0';
+    const tdClass = 'px-4 py-3 text-slate-700 dark:text-slate-200 leading-relaxed border-b border-r border-slate-200 dark:border-slate-800 text-xs sm:text-sm last:border-r-0';
 
     const headerHtml = `<thead><tr>${headers.map(h => `<th className="${thClass}">${h}</th>`).join('')}</tr></thead>`;
-    const bodyHtml = `<tbody>${rows.map((r, ri) => `<tr className="${ri % 2 === 1 ? 'bg-slate-50/80' : 'bg-white'}">${r.map((c, ci) => `<td className="${tdClass}${ri === rows.length - 1 ? ' border-b-0' : ''}">${c}</td>`).join('')}</tr>`).join('')}</tbody>`;
+    const bodyHtml = `<tbody>${rows.map((r, ri) => `<tr className="${ri % 2 === 1 ? 'bg-slate-50/80 dark:bg-slate-800/40' : 'bg-white dark:bg-slate-900/90'}">${r.map((c, ci) => `<td className="${tdClass}${ri === rows.length - 1 ? ' border-b-0' : ''}">${c}</td>`).join('')}</tr>`).join('')}</tbody>`;
 
-    const tableWrapper = `<div className="my-7 overflow-x-auto rounded-xl border-2 border-slate-300 bg-white shadow-sm"><table className="w-full border-collapse text-left text-xs sm:text-sm min-w-full">\n${headerHtml}\n${bodyHtml}\n</table></div>`;
+    const tableWrapper = `<div className="my-7 overflow-x-auto rounded-xl border-2 border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm"><table className="w-full border-collapse text-left text-xs sm:text-sm min-w-full">\n${headerHtml}\n${bodyHtml}\n</table></div>`;
 
     return `\n\n${tableWrapper}\n\n`;
   });
@@ -189,11 +207,15 @@ export const mdxComponents = {
   LogisticRegressionLab,
   KnnDecisionBoundaryLab,
   NaiveBayesLab,
+  SvmMarginKernelLab,
+  SvmHandCalculationLab,
+  DecisionTreeLab,
   PandasDataImportLab,
   MatplotlibParamsLab,
   ReactFlowDiagram,
   MermaidDiagram,
   InteractiveQuiz,
+  bmatrix: () => null,
   img: (props: any) => <ZoomableImage {...props} />,
   // 增加分割线上下充裕边距，彻底切断 margin 塌陷
   hr: (props: any) => (
@@ -295,26 +317,24 @@ export const mdxComponents = {
     );
   },
 
-  // High-Contrast Grid Table with Explicit Cell Borders
+  // High-Contrast Grid Table with Explicit Cell Borders & Dark Mode Support
   table: (props: any) => (
-    <div className="overflow-x-auto my-7 rounded-2xl border-2 border-slate-300 shadow-sm w-full" style={{ backgroundColor: '#ffffff' }}>
-      <table className="w-full text-left text-xs sm:text-sm min-w-full" style={{ borderCollapse: 'collapse' }} {...props} />
+    <div className="overflow-x-auto my-7 rounded-2xl border-2 border-slate-300 dark:border-slate-800 shadow-sm w-full bg-white dark:bg-slate-900">
+      <table className="w-full text-left text-xs sm:text-sm min-w-full border-collapse" {...props} />
     </div>
   ),
-  thead: (props: any) => <thead className="text-slate-900 font-extrabold" style={{ backgroundColor: '#F1F5F9' }} {...props} />,
-  tbody: (props: any) => <tbody style={{ backgroundColor: '#ffffff' }} {...props} />,
-  tr: (props: any) => <tr className="hover:bg-slate-50 transition-colors" {...props} />,
+  thead: (props: any) => <thead className="text-slate-900 dark:text-slate-100 font-extrabold bg-slate-100 dark:bg-slate-800/90" {...props} />,
+  tbody: (props: any) => <tbody className="bg-white dark:bg-slate-900/90" {...props} />,
+  tr: (props: any) => <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors" {...props} />,
   th: (props: any) => (
     <th
-      className="px-4 py-3 font-extrabold text-slate-900 text-xs sm:text-sm whitespace-nowrap"
-      style={{ borderBottom: '2px solid #CBD5E1', borderRight: '1px solid #CBD5E1', backgroundColor: '#F1F5F9' }}
+      className="px-4 py-3 font-extrabold text-slate-900 dark:text-slate-100 text-xs sm:text-sm whitespace-nowrap border-b-2 border-r border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800"
       {...props}
     />
   ),
   td: (props: any) => (
     <td
-      className="px-4 py-3 text-slate-800 text-xs sm:text-sm leading-relaxed font-medium break-words whitespace-normal"
-      style={{ borderBottom: '1px solid #E2E8F0', borderRight: '1px solid #E2E8F0' }}
+      className="px-4 py-3 text-slate-800 dark:text-slate-200 text-xs sm:text-sm leading-relaxed font-medium break-words whitespace-normal border-b border-r border-slate-200 dark:border-slate-800"
       {...props}
     />
   ),

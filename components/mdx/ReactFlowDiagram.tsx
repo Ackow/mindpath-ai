@@ -10,9 +10,71 @@ import {
   Edge,
   MarkerType,
   Position,
+  Handle,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Network } from 'lucide-react';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+
+// 自定义支持精准 KaTeX 数学公式渲染的 ReactFlow 节点
+const MathNode: React.FC<any> = ({ data, targetPosition, sourcePosition }) => {
+  const content = useMemo(() => {
+    let str = data.label || '';
+
+    // 1. 剥离误嵌入的静态 HTML/MathML 代码碎片
+    str = str
+      .replace(/<math[\s\S]*?<\/math>/gi, '')
+      .replace(/<annotation[\s\S]*?<\/annotation>/gi, '')
+      .replace(/<span[\s\S]*?<\/span>/gi, '')
+      .replace(/<[^>]+>/g, '')
+      .replace(/\\"/g, '"')
+      .trim();
+
+    // 2. 自动把常用公式模式 (如 w^T x + b = 0 / +1 / -1) 转为 $...$ 格式
+    str = str.replace(/(w\^T\s*x\s*\+\s*b\s*=\s*[0-9+-]+)/g, '$$$1$$');
+
+    // 3. 将 $...$ 转化为真实的 React KaTeX DOM 节点
+    const parts: (string | React.ReactNode)[] = [];
+    let lastIdx = 0;
+    const regex = /\$([^\$]+)\$/g;
+    let match;
+
+    while ((match = regex.exec(str)) !== null) {
+      if (match.index > lastIdx) {
+        parts.push(str.substring(lastIdx, match.index));
+      }
+      try {
+        const html = katex.renderToString(match[1], { displayMode: false, throwOnError: false });
+        parts.push(
+          <span
+            key={match.index}
+            className="inline-block px-0.5 font-normal"
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        );
+      } catch {
+        parts.push(match[1]);
+      }
+      lastIdx = regex.lastIndex;
+    }
+    if (lastIdx < str.length) {
+      parts.push(str.substring(lastIdx));
+    }
+
+    return parts.length > 0 ? parts : str;
+  }, [data.label]);
+
+  return (
+    <div className="w-full text-center">
+      {targetPosition && <Handle type="target" position={targetPosition} className="w-2 h-2 !bg-slate-400" />}
+      <div className="text-xs font-semibold leading-snug flex items-center justify-center flex-wrap gap-0.5">{content}</div>
+      {sourcePosition && <Handle type="source" position={sourcePosition} className="w-2 h-2 !bg-slate-400" />}
+    </div>
+  );
+};
+
+const nodeTypes = { mathNode: MathNode };
 
 interface ReactFlowDiagramProps {
   chart: string;
@@ -28,7 +90,19 @@ function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialE
   const isHorizontal = /flowchart\s+LR|graph\s+LR/i.test(chartText);
 
   const cleanLabelText = (text: string) => {
-    return text.replace(/<br\s*\/?>/gi, '\n').trim();
+    let cleaned = text.replace(/<br\s*\/?>/gi, '\n').trim();
+    // 自动剥离误嵌入的静态 HTML/MathML/JSX 代码碎片 (如 <math...>, <span...>)
+    if (cleaned.includes('<') || cleaned.includes('dangerouslySetInnerHTML')) {
+      cleaned = cleaned
+        .replace(/<math[\s\S]*?<\/math>/gi, '')
+        .replace(/<annotation[\s\S]*?<\/annotation>/gi, '')
+        .replace(/<span[\s\S]*?<\/span>/gi, '')
+        .replace(/<[^>]+>/g, '')
+        .replace(/dangerouslySetInnerHTML=\{[\s\S]*?\}/gi, '')
+        .replace(/\\"/g, '"')
+        .trim();
+    }
+    return cleaned;
   };
 
   const parseNodePart = (part: string): { id: string; label: string } | null => {
@@ -101,8 +175,8 @@ function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialE
     let rightPart = '';
     let edgeLabel: string | undefined = undefined;
 
-    // 1. 优先匹配带竖线标签的箭头: A -->|"label"| B 或 A -->|label| B
-    const pipeLabelMatch = line.match(/(.+?)\s*-->\s*\|"?([^"|]+)"?\|\s*(.+)/);
+    // 1. 优先匹配带竖线标签的箭头: A -->|"label"| B 或 A ---|"label"| B (兼容标签内容中含有 || 范数符号)
+    const pipeLabelMatch = line.match(/(.+?)\s*(?:-->|---)\s*\|"?(.*?)"?\|\s*([A-Za-z0-9_.-]+(?:\s*\[.*?\])?)$/);
     if (pipeLabelMatch) {
       leftPart = pipeLabelMatch[1].trim();
       edgeLabel = cleanLabelText(pipeLabelMatch[2]);
@@ -122,14 +196,29 @@ function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialE
       const targetObj = parseNodePart(rightPart);
 
       if (sourceObj) {
-        if (!nodesMap.has(sourceObj.id)) nodesMap.set(sourceObj.id, { label: sourceObj.label });
+        const existing = nodesMap.get(sourceObj.id);
+        if (!existing || (existing.label === sourceObj.id && sourceObj.label !== sourceObj.id)) {
+          nodesMap.set(sourceObj.id, { label: sourceObj.label });
+        }
       }
       if (targetObj) {
-        if (!nodesMap.has(targetObj.id)) nodesMap.set(targetObj.id, { label: targetObj.label });
+        const existing = nodesMap.get(targetObj.id);
+        if (!existing || (existing.label === targetObj.id && targetObj.label !== targetObj.id)) {
+          nodesMap.set(targetObj.id, { label: targetObj.label });
+        }
       }
 
       if (sourceObj && targetObj) {
         rawEdges.push({ source: sourceObj.id, target: targetObj.id, label: edgeLabel });
+      }
+    } else {
+      // 匹配独立节点定义行: Plane["分隔超平面: w^T x + b = 0"]
+      const singleObj = parseNodePart(line);
+      if (singleObj) {
+        const existing = nodesMap.get(singleObj.id);
+        if (!existing || (existing.label === singleObj.id && singleObj.label !== singleObj.id)) {
+          nodesMap.set(singleObj.id, { label: singleObj.label });
+        }
       }
     }
   }
@@ -195,8 +284,8 @@ function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialE
 
   if (isHorizontal) {
     // 横向 (LR): X 轴按 level 递增，Y 轴按同层节点索引递增
-    const LEVEL_WIDTH = 280;
-    const ROW_SPACING = 110;
+    const LEVEL_WIDTH = 380; // 调宽水平层级间距至 380px，彻底留足连线中间文字 (如 \phi(x)) 的显示宽度
+    const ROW_SPACING = 120;
 
     levelGroups.forEach((nodeIdsInLevel, level) => {
       const totalCount = nodeIdsInLevel.length;
@@ -210,6 +299,7 @@ function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialE
 
         initialNodes.push({
           id,
+          type: 'mathNode',
           data: { label: info.label },
           position: {
             x: level * LEVEL_WIDTH,
@@ -251,6 +341,7 @@ function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialE
 
         initialNodes.push({
           id,
+          type: 'mathNode',
           data: { label: info.label },
           position: {
             x: startX + index * COLUMN_SPACING - NODE_WIDTH_PX / 2,
@@ -328,7 +419,7 @@ export const ReactFlowDiagram: React.FC<ReactFlowDiagramProps> = ({ chart }) => 
           <span className="text-xs font-bold text-slate-800">React Flow 拓扑流程图</span>
         </div>
         <span className="text-[11px] font-semibold bg-teal-50 text-teal-700 border border-teal-200 px-2.5 py-0.5 rounded-full">
-          自适应框体与缩放 🔍
+          自适应框体与缩放
         </span>
       </div>
 
@@ -337,6 +428,7 @@ export const ReactFlowDiagram: React.FC<ReactFlowDiagramProps> = ({ chart }) => 
         <ReactFlow
           nodes={initialNodes}
           edges={initialEdges}
+          nodeTypes={nodeTypes}
           fitView
           fitViewOptions={{ padding: 0.2, includeHiddenNodes: true }}
           attributionPosition="bottom-right"
