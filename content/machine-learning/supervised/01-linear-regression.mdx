@@ -5,8 +5,8 @@ module: machine-learning
 submodule: supervised
 order: 1
 difficulty: beginner
-prerequisites: [ml-workflow-primer]
-relatedNotes: []
+prerequisites: [ml-workflow-primer, math-linear-algebra, math-calculus-gradient]
+relatedNotes: [py-numpy]
 nextNotes: [supervised-logistic-regression]
 map:
   layoutGroup: machine-learning
@@ -31,6 +31,12 @@ symbols:
 ---
 
 ## 1. 问题导入
+
+> [!TIP]
+> **前置知识指引**：在学习线性回归之前，建议先掌握：
+> 1. **[02. 机器学习极简五步法](/learn/machine-learning/overview/02-ml-workflow-primer)**（明白特征 $X$、标签 $y$ 与训练/测试集切分）；
+> 2. **[01. 向量与线性代数](/learn/foundations/math/01-math-linear-algebra)**（理解矩阵乘法与正规方程 $w^* = (X^T X)^{-1} X^T y$）；
+> 3. **[02. 微积分与梯度下降](/learn/foundations/math/02-math-calculus-gradient)**（求导与偏导数计算）。
 
 假设你是一名房地产数据分析师，老板希望你能构建一个数学模型，输入房屋的数据，就能自动预测出它的合理市场价格：
 
@@ -532,13 +538,13 @@ print(zero_weights)`,
 
 ---
 
-## 11. 下一步
+## 11. 下一步与相关章节
 
 完成本节学习后，你已经打通了从一元线性回归、特征缩放、正规方程与梯度下降到 L1/L2 正则化的完整闭环！
 
-接下来，请前往下个模块，探索分类问题的基石：
-
-- **下一章节**：[02. 逻辑回归与二分类模型](/learn/supervised-learning/02-logistic-regression)
+- **下一章推荐**：学习 **[02. 逻辑回归与二分类模型](/learn/machine-learning/supervised/02-logistic-regression)**，看线性模型如何通过 Sigmoid 映射完成分类任务！
+- **相关前置与扩展阅读**：
+  - **[01. NumPy 数值计算](/learn/foundations/data/01-py-numpy)**：动手实现矩阵乘法与梯度更新代码
 
 ---
 

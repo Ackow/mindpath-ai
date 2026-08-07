@@ -5,9 +5,9 @@ module: machine-learning
 submodule: supervised
 order: 2
 difficulty: beginner
-prerequisites: [supervised-linear-regression]
-relatedNotes: []
-nextNotes: []
+prerequisites: [supervised-linear-regression, math-probability-stats]
+relatedNotes: [math-calculus-gradient]
+nextNotes: [supervised-knn-naive-bayes]
 map:
   layoutGroup: machine-learning
 estimatedMinutes: 45
@@ -25,6 +25,11 @@ symbols:
 ---
 
 ## 1. 问题导入：为什么线性回归无法直接做分类？
+
+> [!TIP]
+> **前置知识指引**：逻辑回归是基于线性回归推导建立的分类模型，建议先完成：
+> 1. **[01. 线性回归与正则化](/learn/machine-learning/supervised/01-linear-regression)**（理解线性函数 $w^T x + b$ 与梯度下降）；
+> 2. **[03. 概率论与数理统计](/learn/foundations/math/03-math-probability-stats)**（理解 Odds 几率与对数极大似然估计）。
 
 在上一章中，我们学习了**线性回归 (Linear Regression)**，它能根据房屋面积 $x$ 预测出连续的房价 $y = 350$ 万元。
 
@@ -621,9 +626,13 @@ print(classification_report(y_test, y_pred_all, target_names=target_names))
 
 ---
 
-## 12. 下一步
+## 12. 下一步与相关章节
 
-掌握了线性回归与逻辑回归这两大线性模型基石后，下一节我们将探索非线性与近邻分类思想——**[03. kNN 与 朴素贝叶斯](/learn/supervised-learning/03-knn-naive-bayes)**，学习如何利用空间距离与概率贝叶斯公式完成分类！
+掌握了线性回归与逻辑回归这两大线性模型基石后：
+
+- **下一章推荐**：学习 **[03. kNN 与 朴素贝叶斯](/learn/machine-learning/supervised/03-knn-naive-bayes)**，探索空间距离近邻分类与条件独立概率建模！
+- **相关前置与扩展阅读**：
+  - **[02. 微积分与梯度下降](/learn/foundations/math/02-math-calculus-gradient)**：复习交叉熵损失 Log-Loss 求导过程
 
 ---
 

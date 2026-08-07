@@ -5,8 +5,8 @@ module: machine-learning
 submodule: supervised
 order: 3
 difficulty: beginner
-prerequisites: [supervised-logistic-regression]
-relatedNotes: []
+prerequisites: [supervised-logistic-regression, math-probability-stats]
+relatedNotes: [supervised-linear-regression]
 nextNotes: []
 map:
   layoutGroup: machine-learning
@@ -25,6 +25,11 @@ symbols:
 ---
 
 ## 1. 问题导入：近邻直觉与概率推断
+
+> [!TIP]
+> **前置知识指引**：在展开本章非参数近邻与概率分类前，建议先复习：
+> 1. **[02. 逻辑回归与二分类评估](/learn/machine-learning/supervised/02-logistic-regression)**（了解分类模型基本概念与混淆矩阵评估）；
+> 2. **[03. 概率论与数理统计](/learn/foundations/math/03-math-probability-stats)**（熟练掌握贝叶斯定理 $P(A|B) = \frac{P(B|A)P(A)}{P(B)}$）。
 
 在前两章中，我们学习了**线性回归**与**逻辑回归**。它们都是典型的**参数模型 (Parametric Models)**——通过在训练集上寻找一条全局决策直线 $w^T x + b = 0$ 来完成分类。
 
@@ -422,9 +427,13 @@ for email, pred, prob in zip(test_emails, test_preds, test_probs):
 
 ---
 
-## 10. 下一步
+## 10. 下一步与相关章节
 
-完成了近邻分类与贝叶斯概率推断的学习后，下一节我们将探索经典的**硬间隔与软间隔最大化超平面模型——[04. 支持向量机 (SVM)](/learn/supervised-learning/04-svm)**，学习软间隔 $C$ 参数、Hinge Loss 以及高斯 RBF 核函数的奥秘！
+完成了近邻分类与贝叶斯概率推断的学习后：
+
+- **下一章推荐**：即将学习 **[04. 支持向量机 (SVM)](/learn/machine-learning/supervised/04-svm)**，探索高维空间硬间隔与软间隔最大化超平面、Hinge Loss 以及高斯 RBF 核函数的奥秘！
+- **相关前置与扩展阅读**：
+  - **[01. 线性回归与正则化](/learn/machine-learning/supervised/01-linear-regression)**：复习 Z-Score 特征标准化在距离度量与梯度下降中的关键作用
 
 ---
 

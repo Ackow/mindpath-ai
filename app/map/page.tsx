@@ -26,8 +26,8 @@ export default function MindMapPage() {
 
   const [selectedNodeId, setSelectedNodeId] = useState('py-environment');
 
-  // Persistent Expanded Left Catalog Modules in LocalStorage
-  const [expandedModules, setExpandedModules] = useState<string[]>(['foundations', 'sub-python']);
+  // Persistent Expanded Left Catalog Modules in LocalStorage (Collapsed by default)
+  const [expandedModules, setExpandedModules] = useState<string[]>([]);
   const [isSidebarHydrated, setIsSidebarHydrated] = useState(false);
   const [progressRevision, setProgressRevision] = useState(0);
 
@@ -39,7 +39,7 @@ export default function MindMapPage() {
         setExpandedModules(parsed);
       }
     } catch {
-      // Keep the default expanded learning path when storage is unavailable.
+      // Keep collapsed default state when storage is unavailable.
     } finally {
       setIsSidebarHydrated(true);
     }
@@ -87,7 +87,7 @@ export default function MindMapPage() {
     .filter((node): node is NonNullable<typeof node> => Boolean(node));
 
   return (
-    <div className="animate-page-fade h-[calc(100vh-120px)] flex flex-col md:flex-row gap-4 overflow-hidden">
+    <div className="animate-page-fade h-auto md:h-[calc(100vh-120px)] flex flex-col md:flex-row gap-4 overflow-y-auto md:overflow-hidden">
       {/* Left Sidebar: Dynamic Hierarchical Module Tree with Silky Expansion Animation */}
       <div className="w-full md:w-80 bg-white rounded-2xl border border-slate-200/80 p-5 flex flex-col justify-between overflow-y-auto select-none">
         <div className="space-y-4">

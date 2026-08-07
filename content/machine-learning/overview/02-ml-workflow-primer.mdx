@@ -6,7 +6,7 @@ submodule: overview
 order: 2
 difficulty: beginner
 prerequisites: [ml-overview]
-relatedNotes: []
+relatedNotes: [py-numpy, py-pandas]
 nextNotes: [supervised-linear-regression]
 map:
   layoutGroup: machine-learning
@@ -23,6 +23,9 @@ symbols:
 ---
 
 ## 1. 问题导入：拿到数据后，第一步该干什么？
+
+> [!TIP]
+> **前置依赖**：学习本章前，请先完成 **[01. 机器学习通识与全景图](/learn/machine-learning/overview/01-ml-overview)**。
 
 很多初学者刚接触机器学习时，往往觉得算法繁多、代码复杂。但实际上，无论多么复杂的机器学习项目（从房价预测、人脸识别到大语言模型训练），它们背后的标准工作流程都遵循着极其清晰的 **5 步法则**。
 
@@ -192,10 +195,9 @@ print(f"对 120 平方米新房子的预测售价: {predicted_price[0]:.2f} 万�
   ]}
 />
 
----
+## 9. 下一步与相关章节
 
-## 9. 下一步
-
-恭喜你完成了机器学习通识模块的学习！你已经掌握了 AI 的宏观全景与极简五步法。
-
-接下来，我们将正式进入算法实战第一站 **[01. 线性回归与正则化](/learn/supervised-learning/01-linear-regression)**，深入学习如何用数学公式与 Python 手写出你第一个真正的回归模型！
+- **下一章推荐（监督学习起点）**：学习 **[01. 线性回归与正则化](/learn/machine-learning/supervised/01-linear-regression)**，深入学习如何用数学公式与 Python 手写出你第一个真正的回归模型！
+- **相关前置与扩展阅读**：
+  - **[01. NumPy 数值计算](/learn/foundations/data/01-py-numpy)**：高效处理模型数组与矩阵运算
+  - **[02. Pandas 数据分析](/learn/foundations/data/02-py-pandas)**：使用 DataFrame 进行无泄露数据切分与预处理

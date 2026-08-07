@@ -521,7 +521,10 @@
       "next": [
         "ml-workflow-primer"
       ],
-      "relatedNotes": [],
+      "relatedNotes": [
+        "math-linear-algebra",
+        "py-pandas"
+      ],
       "tags": [
         "机器学习",
         "通识",
@@ -553,7 +556,10 @@
       "next": [
         "supervised-linear-regression"
       ],
-      "relatedNotes": [],
+      "relatedNotes": [
+        "py-numpy",
+        "py-pandas"
+      ],
       "tags": [
         "机器学习",
         "极简流程",
@@ -579,12 +585,16 @@
       "difficulty": "beginner",
       "estimatedMinutes": 40,
       "prerequisites": [
-        "ml-workflow-primer"
+        "ml-workflow-primer",
+        "math-linear-algebra",
+        "math-calculus-gradient"
       ],
       "next": [
         "supervised-logistic-regression"
       ],
-      "relatedNotes": [],
+      "relatedNotes": [
+        "py-numpy"
+      ],
       "tags": [
         "机器学习",
         "监督学习",
@@ -612,10 +622,15 @@
       "difficulty": "beginner",
       "estimatedMinutes": 45,
       "prerequisites": [
-        "supervised-linear-regression"
+        "supervised-linear-regression",
+        "math-probability-stats"
       ],
-      "next": [],
-      "relatedNotes": [],
+      "next": [
+        "supervised-knn-naive-bayes"
+      ],
+      "relatedNotes": [
+        "math-calculus-gradient"
+      ],
       "tags": [
         "机器学习",
         "监督学习",
@@ -647,10 +662,13 @@
       "difficulty": "beginner",
       "estimatedMinutes": 50,
       "prerequisites": [
-        "supervised-logistic-regression"
+        "supervised-logistic-regression",
+        "math-probability-stats"
       ],
       "next": [],
-      "relatedNotes": [],
+      "relatedNotes": [
+        "supervised-linear-regression"
+      ],
       "tags": [
         "机器学习",
         "监督学习",
@@ -789,13 +807,33 @@
       "target": "supervised-linear-regression"
     },
     {
+      "id": "e-depends-math-linear-algebra-supervised-linear-regression",
+      "source": "math-linear-algebra",
+      "target": "supervised-linear-regression"
+    },
+    {
+      "id": "e-depends-math-calculus-gradient-supervised-linear-regression",
+      "source": "math-calculus-gradient",
+      "target": "supervised-linear-regression"
+    },
+    {
       "id": "e-next-supervised-linear-regression-supervised-logistic-regression",
       "source": "supervised-linear-regression",
       "target": "supervised-logistic-regression"
     },
     {
-      "id": "e-depends-supervised-logistic-regression-supervised-knn-naive-bayes",
+      "id": "e-depends-math-probability-stats-supervised-logistic-regression",
+      "source": "math-probability-stats",
+      "target": "supervised-logistic-regression"
+    },
+    {
+      "id": "e-next-supervised-logistic-regression-supervised-knn-naive-bayes",
       "source": "supervised-logistic-regression",
+      "target": "supervised-knn-naive-bayes"
+    },
+    {
+      "id": "e-depends-math-probability-stats-supervised-knn-naive-bayes",
+      "source": "math-probability-stats",
       "target": "supervised-knn-naive-bayes"
     }
   ]
