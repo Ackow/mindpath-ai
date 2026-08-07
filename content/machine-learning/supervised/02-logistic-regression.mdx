@@ -109,7 +109,7 @@ $$\ln \left( \frac{p}{1 - p} \right) = z = w^T x + b$$
    $$\hat{y} = \sigma(1.0) = \frac{1}{1 + e^{-1.0}} = \frac{1}{1 + 0.368} = \frac{1}{1.368} \approx 0.731 \quad (73.1\% \text{ 恶性肿瘤概率})$$
 3. **第三步（分类决策判定）**：
    设定默认概率阈值 $\text{Threshold} = 0.5$。因为预测概率 $\hat{y} = 0.731 \ge 0.5$，所以模型最终将该患者诊断分类为 **恶性肿瘤 ($y = 1$)**！
-</ConceptCard>
+   </ConceptCard>
 
 ---
 
@@ -183,19 +183,117 @@ $$\frac{\partial J}{\partial w} = \frac{1}{N} \sum_{i=1}^N (\hat{y}_i - y_i) x_i
 
 ---
 
-## 6. 决策边界形态与多分类拓展
+## 6. 决策边界形态与多分类拓展 (Softmax 回归)
 
 ### 6.1 非线性决策边界 (Non-linear Decision Boundary)
 如果数据在二维平面上不是线性可分的（例如呈环形分布），我们可以通过**引入高次特征（特征多项式）**，构造出圆形、椭圆或抛物线形状的非线性决策边界：
 
 $$z = w_1 x_1 + w_2 x_2 + w_3 x_1^2 + w_4 x_2^2 + b = 0 \quad (\text{圆形/椭圆决策边界})$$
 
-### 6.2 多分类拓展：One-vs-Rest (OvR) 与 Softmax 回归
-逻辑回归原生只支持二分类。当面对多分类任务（如识别 0~9 十种手写数字）时，通常有两种拓展方式：
+---
 
-1. **One-vs-Rest (OvR / 一对多)**：为 $K$ 个类别分别训练 $K$ 个独立二分类器，哪个分类器输出的概率最高就属于哪个类；
-2. **Softmax 回归 (Multinomial Logistic Regression)**：将 Sigmoid 扩展为 Softmax 函数，直接归一化输出 $K$ 个类别的概率分布：
-   $$P(y = k | x) = \frac{e^{w_k^T x + b_k}}{\sum_{j=1}^K e^{w_j^T x + b_j}}$$
+### 6.2 多分类策略一：One-vs-Rest (OvR / 一对多)
+逻辑回归原生为二分类设计。面对 $K$ 个类别的多分类任务（如识别 0~9 十种手写数字），最简单直观的解法是 **OvR 策略**：
+- 为每一个类别 $k \in \{1, 2, \dots, K\}$ 训练一个独立的二分类逻辑回归模型，将类别 $k$ 作为正例，其余所有 $K-1$ 个类别合并作为负例；
+- 预测时，将新样本同时喂入 $K$ 个模型，选取预测概率最高的那一个类别作为最终分类结果：
+  $\hat{y} = \arg\max_{k \in \{1, \dots, K\}} P_k(y=1|x)$
+
+---
+
+### 6.3 多分类核心：Softmax 回归 (Multinomial Logistic Regression)
+
+**Softmax 回归** 是逻辑回归向多分类问题（$K \ge 3$）的直接、正统扩展。它也是**所有神经网络、深度学习与大语言模型 (LLM) 输出层**的通用激活函数。
+
+#### 1. Softmax 函数定义与数学表达
+假设输入样本 $x$ 经过 $K$ 组线性权重计算，得到 $K$ 个类别的线性得分 (Logits)：$z_k = w_k^T x + b_k$。
+
+Softmax 函数将这 $K$ 个实数得分先取指数指数化（确保非负），再除以所有类别指数值之和进行归一化，输出 $K$ 个类别的严格概率分布 $\hat{y} = [\hat{y}_1, \hat{y}_2, \dots, \hat{y}_K]$：
+
+$\hat{y}_k = P(y = k | x) = \text{Softmax}(z)_k = \frac{e^{z_k}}{\sum_{j=1}^K e^{z_j}} \quad (\text{满足 } \sum_{k=1}^K \hat{y}_k = 1, \text{ 且 } \hat{y}_k \in (0, 1))$
+
+```mermaid
+flowchart LR
+    InputX["特征输入 X"] --> Logits["得分向量 z = [z₁, z₂, ..., z₉]<br/>zₖ = wₖᵀx + bₖ"]
+    Logits --> ExpStep["指数化 eᶻ = [eᶻ¹, eᶻ², ..., eᶻ⁹]"]
+    ExpStep --> DivStep["归一化 / ∑ eᶻʲ"]
+    DivStep --> ProbDist["概率分布 ŷ = [ŷ₁, ŷ₂, ..., ŷ₉]<br/>∑ ŷₖ = 1.0"]
+```
+
+#### 2. 数学定理：Softmax 在 $K=2$ 时退化等价于 Sigmoid
+当类别数 $K=2$ 时，两类得分分别为 $z_1, z_2$。正例概率为：
+
+$P(y=1|x) = \frac{e^{z_1}}{e^{z_1} + e^{z_2}} = \frac{e^{z_1} / e^{z_2}}{(e^{z_1} + e^{z_2}) / e^{z_2}} = \frac{e^{z_1 - z_2}}{e^{z_1 - z_2} + 1} = \frac{1}{1 + e^{-(z_1 - z_2)}} = \sigma(z_1 - z_2)$
+
+**结论**：二分类 Sigmoid 函数本质上就是 Softmax 作用于相对得分差 $z_1 - z_2$ 的特例！
+
+#### 3. 多分类交叉熵损失 (Categorical Cross-Entropy)
+对于单样本，假设其真实标签独热编码为 $y = [y_1, y_2, \dots, y_K]$（在正确类别 $c$ 上 $y_c=1$，其余为 0）。其损失为：
+
+$\mathcal{L}_{CCE} = -\sum_{k=1}^K y_k \ln(\hat{y}_k) = -\ln(\hat{y}_c) = -\ln \left( \frac{e^{z_c}}{\sum_{j=1}^K e^{z_j}} \right)$
+
+全样本平均损失为：
+
+$J(W) = -\frac{1}{N} \sum_{i=1}^N \sum_{k=1}^K y_{i, k} \ln(\hat{y}_{i, k})$
+
+#### 4. 工业级数值稳定性：Log-Sum-Exp 防上溢技巧 (Max Trick)
+当得分 $z_k$ 很大（例如 $z_1 = 1000$）时，计算机计算 $e^{1000}$ 会导致浮点数上溢 (Overflow)，输出 `NaN`。
+
+**解决方案**：在计算指数前，从每个得分 $z_k$ 中减去当前向量的最大值 $M = \max_j(z_j)$：
+
+$\text{Softmax}(z)_k = \frac{e^{z_k - M}}{\sum_{j=1}^K e^{z_j - M}}$
+
+数学上可以证明减去常数 $M$ 后分子分母同除以 $e^M$，最终概率完全保持相同，但最大指数项变为 $e^0 = 1.0$，彻底消除了数值上溢隐患！
+
+<ConceptCard title="手算演练：Softmax 3 分类概率分布与交叉熵 Loss 计算" type="tip">
+**假设某动物图像经过模型线性层计算后，输出 3 个类别的得分 Logits 分别为**：
+- $z_1 = 2.0$ (猫 Cat)
+- $z_2 = 1.0$ (狗 Dog)
+- $z_3 = 0.1$ (兔子 Rabbit)
+
+1. **计算指数值**：
+   - $e^{2.0} \approx 7.389$
+   - $e^{1.0} \approx 2.718$
+   - $e^{0.1} \approx 1.105$
+   - **指数总和 Sum** $= 7.389 + 2.718 + 1.105 = 11.212$
+2. **计算 Softmax 归一化预测概率 $\hat{y}$**：
+   - $\hat{y}_{\text{猫}} = \frac{7.389}{11.212} \approx 0.659 \quad (65.9\% \text{ 概率为猫})$
+   - $\hat{y}_{\text{狗}} = \frac{2.718}{11.212} \approx 0.242 \quad (24.2\% \text{ 概率为狗})$
+   - $\hat{y}_{\text{兔子}} = \frac{1.105}{11.212} \approx 0.099 \quad (9.9\% \text{ 概率为兔子})$
+   - （验证和：$0.659 + 0.242 + 0.099 = 1.000$）
+3. **计算交叉熵损失 Loss**：
+   若该图片的真实标签为**猫** ($y = [1, 0, 0]$)，则交叉熵损失为：
+   $\text{Loss} = -\ln(\hat{y}_{\text{猫}}) = -\ln(0.659) \approx 0.417$
+   </ConceptCard>
+
+#### 5. Scikit-Learn 中的 Softmax 多分类实战代码
+在 `scikit-learn` 中，只需设置 `multi_class='multinomial'`，逻辑回归模型就会自动切换为 Softmax 回归：
+
+```python
+# 使用 LogisticRegression 进行 Softmax 3 分类 (Iris 鸢尾花数据集)
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+
+# 1. 加载 3 分类 Iris 数据集 (150 样本, 3 种鸢尾花)
+iris = load_iris()
+X, y = iris.data, iris.target  # y ∈ {0: setosa, 1: versicolor, 2: virginica}
+
+# 2. 划分与标准化
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# 3. 构建 Softmax 多分类逻辑回归模型 (multi_class='multinomial')
+softmax_reg = LogisticRegression(multi_class='multinomial', solver='lbfgs', C=1.0)
+softmax_reg.fit(X_train_scaled, y_train)
+
+# 4. 获取预测类别与 3 个类别的 Softmax 概率分布
+sample_prob = softmax_reg.predict_proba(X_test_scaled[:1])
+print("单样本的 Softmax 概率分布 (Sum=1.0):", sample_prob)
+print("对应预测类别:", softmax_reg.predict(X_test_scaled[:1]))
+```
 
 ---
 
@@ -430,7 +528,7 @@ for name, coef in zip(feature_cols, model.coef_[0]):
   - `SibSp`: 旁系亲属数 (堂兄弟/配偶)
   - `Parch`: 直系亲属数 (父母/子女)
   - `Fare`: 乘客票价
-</ConceptCard>
+  </ConceptCard>
 
 ---
 
