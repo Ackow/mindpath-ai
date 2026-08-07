@@ -1,6 +1,6 @@
 ---
 id: supervised-logistic-regression
-title: 02. 逻辑回归与二分类评估
+title: 02.逻辑回归与二分类评估
 module: machine-learning
 submodule: supervised
 order: 2
@@ -146,6 +146,7 @@ $$J(w, b) = \frac{1}{N} \sum_{i=1}^{N} \ell_i(w, b) = -\frac{1}{N} \sum_{i=1}^{N
   $$\text{Loss}_B = -[1 \cdot \ln(0.01) + 0] \approx -(-4.605) = 4.605 \quad (\text{惩罚陡增 90 倍!})$$
 
 **结论**：交叉熵损失会给“极其自信但预测严重犯错”的模型施加巨大的对数惩罚，逼迫参数快速沿着正确方向更新。
+
 </ConceptCard>
 
 ### 4.3 逻辑回归的梯度下降求导公式
@@ -179,6 +180,7 @@ $$\frac{\partial J}{\partial w} = \frac{1}{N} \sum_{i=1}^N (\hat{y}_i - y_i) x_i
 1. **决策边界本质**：决策边界就是使得预测概率正好等于 $\hat{y} = 0.5$ 的超平面。由于 $\sigma(0) = 0.5$，因此决策边界方程就是线性得分归零的超平面：
    $$z = w_1 x_1 + w_2 x_2 + b = 0$$
 2. **试一试点击“自动优化参数”**：观察决策边界直线如何将蓝色负例散点（Class 0）与紫色正例散点（Class 1）精准切割在两侧，此时 Log-Loss 达到最小值，准确率高达 100%！
+
 </ConceptCard>
 
 ---
@@ -306,6 +308,7 @@ $$\text{Softmax}(z)_k = \frac{e^{z_k - M}}{\sum_{j=1}^K e^{z_j - M}}$$
 2. **精确率 Precision** = $\frac{TP}{TP + FP} = \frac{5}{5 + 1} = \frac{5}{6} \approx 83.3\%$（查得准不准）
 3. **召回率 Recall** = $\frac{TP}{TP + FN} = \frac{5}{5 + 1} = \frac{5}{6} \approx 83.3\%$（漏诊多不多）
 4. **F1-Score** = $2 \times \frac{83.3\% \times 83.3\%}{83.3\% + 83.3\%} \approx 83.3\%$
+
 </ConceptCard>
 
 ---
@@ -326,6 +329,7 @@ flowchart TD
 <ConceptCard title="ROC-AUC vs PR-AUC 适用场景对比" type="tip">
 - **ROC-AUC (受试者工作特征曲线下面积)**：反映模型的排序能力。其最大优势在于**当正负样本比例发生剧烈改变时，ROC 曲线形状保持基本不变**；
 - **PR-AUC (精确率-召回率曲线下面积)**：当数据存在**严重正负样本极度不平衡**（如正例仅占 0.1%）时，PR 曲线对误诊 FP 更为敏感，能够真实反映模型在稀有正例上的表现。
+
 </ConceptCard>
 
 ---
@@ -341,7 +345,7 @@ flowchart TD
 - **特征量纲差异**：`mean area` 范围为 $140 \sim 2500$，而 `smoothness` 范围仅为 $0.05 \sim 0.15$。若不进行 **Z-Score 标准化**，梯度下降会在大尺度特征方向剧烈震荡；
 - **医疗业务痛点**：把恶性肿瘤误诊为良性（**漏诊 FN**）会导致患者延误治疗，代价极其昂贵。因此，模型评估时需重点关注 **Recall (召回率)**。
 
-请点击下方代码块中的 **“运行代码”**，体验完整的二分类逻辑回归训练、混淆矩阵输出与全套评估：
+请点击下方代码块中的 “**运行代码**”，体验完整的二分类逻辑回归训练、混淆矩阵输出与全套评估：
 
 <RunnableCodeBlock title="二分类必做实验一：威斯康星乳腺癌诊断 (Breast Cancer Lab)">
 {`import numpy as np
@@ -404,6 +408,7 @@ print(f"PR-AUC  得分: {pr_auc:.4f}")
 <ConceptCard title="乳腺癌诊断实验评估深度解读" type="tip">
 - **高得分原因**：由于细胞核图像特征与肿瘤良恶性高度线性可分，经过 Z-Score 标准化后，逻辑回归的 ROC-AUC 得分高达 0.99 以上；
 - **混淆矩阵分析**：观察控制台日志中的 FN 数量。若要追求 0 漏诊（FN=0），可在业务中将概率判定阈值从 `0.5` 进一步下调至 `0.3`。
+
 </ConceptCard>
 
 ---
@@ -416,7 +421,7 @@ print(f"PR-AUC  得分: {pr_auc:.4f}")
 **2. 核心考量点与 Softmax 输出**：
 - 设置 `LogisticRegression(multi_class='multinomial', solver='lbfgs')`，模型将自动构建 Softmax 回归层，为每一个样本输出 3 个类别的严格概率分布向量 $[hat{y}_1, hat{y}_2, hat{y}_3]$（三者概率之和为 1.0）。
 
-请点击下方代码块中的 **“运行代码”**，体验 Softmax 3 分类模型拟合与概率向量输出：
+请点击下方代码块中的 “**运行代码**”，体验 Softmax 3 分类模型拟合与概率向量输出：
 
 <RunnableCodeBlock title="多分类必做实验二：Iris 鸢尾花三分类 (Iris Softmax Lab)">
 {`import numpy as np
@@ -466,6 +471,7 @@ print(classification_report(y_test, y_pred_all, target_names=target_names))
 <ConceptCard title="Iris 鸢尾花实验评估解读" type="tip">
 - **Softmax 概率直觉**：观察控制台日志中输出的概率分布向量，每一行 3 个概率之和精确等于 1.0，哪个类别的概率最高，模型就决策判定属于该类；
 - **多分类混淆矩阵**：对于 $K=3$ 场景，混淆矩阵维度为 $3 \times 3$，对角线上的数值代表各类别预测正确的样本数量。
+
 </ConceptCard>
 
 ---
@@ -483,6 +489,7 @@ print(classification_report(y_test, y_pred_all, target_names=target_names))
 <ConceptCard title="Kaggle 信用卡欺诈检测核心策略卡片" type="tip">
 - **核心诉求**：宁可错杀一百（误触发风控人工审核 FP），不可放过一个（漏诊欺诈 FN 带来巨额赔付损失）！因此必须优先提高 **Recall (召回率)**；
 - **阈值调优**：将分类概率阈值从默认的 `0.5` 降低至 `0.2` 或 `0.1`，强行把更多高风险交易拉入安全审计池中。
+
 </ConceptCard>
 
 ---
@@ -500,6 +507,7 @@ print(classification_report(y_test, y_pred_all, target_names=target_names))
 1. **`Sex_Code` 权重显著为正 ($w > 0$)**：性别映射中 `female=1`，正权重表明女性乘客的对数几率 $\ln(\frac{p}{1-p})$ 显著提升，大幅增加了 Sigmoid 预测幸存的概率，验证了“妇女优先”救援规则；
 2. **`Pclass` 权重显著为负 ($w < 0$)**：舱位等级中 1 等舱数值最小 (1)，3 等舱数值最大 (3)。负权重表明舱位等级数值越高（舱位越差），幸存几率越低；
 3. **数据预处理启示**：文本/类别特征（如性别）必须显式编码为数值；连续缺失值（如年龄）必须在传入模型前用中位数或均值进行缺失填充。
+
 </ConceptCard>
 
 <ConceptCard title="课后必做练习资源：数据集与 Python 脚本一键下载" type="tip">
@@ -513,6 +521,7 @@ print(classification_report(y_test, y_pred_all, target_names=target_names))
   - `SibSp`: 旁系亲属数 (堂兄弟/配偶)
   - `Parch`: 直系亲属数 (父母/子女)
   - `Fare`: 乘客票价
+
 </ConceptCard>
 
 ---
@@ -527,6 +536,7 @@ print(classification_report(y_test, y_pred_all, target_names=target_names))
 1. **64 维像素表达**：每个 $8 \times 8$ 手写数字微小图像被展平为长 64 的一维连续数值向量，像素取值范围为 $0 \sim 16$；
 2. **Softmax 10 分类**：模型构建了 10 组独立的权重向量 $w_0, w_1, \dots, w_9$，分别对应数字 0 到数字 9 的对数得分 Logits；
 3. **高准确率**：简单的 Softmax 逻辑回归在展平的 64 维数字数据上即能达到 96% 以上的高准确率，是进入图像分类领域的基石桥梁。
+
 </ConceptCard>
 
 <ConceptCard title="课后必做练习资源：数据集与 Python 脚本一键下载" type="tip">
@@ -535,6 +545,7 @@ print(classification_report(y_test, y_pred_all, target_names=target_names))
 - **字段 Schema 说明**：
   - `pixel_0_0` ~ `pixel_7_7`: $8 \times 8$ 图像的 64 维像素灰度值 ($0 \sim 16$)
   - `target`: 手写数字真实类别 ($0 \sim 9$ 10 个数字分类)
+
 </ConceptCard>
 
 ---

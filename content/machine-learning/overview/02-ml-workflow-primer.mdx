@@ -84,6 +84,7 @@ flowchart TD
 - **特征 $X$ (Feature)**：已知信息的**输入条件**。例如预测房价时，房屋面积是特征 $X$；
 - **标签 $y$ (Label)**：想要预测的**真实目标**。例如房屋的真实售价是标签 $y$；
 - **权重 $w$ 与偏置 $b$ (Weight & Bias)**：模型在训练过程中**自动学到的重要程度与规律**。例如 $w = 3.0$ 表示“面积每增加 1 平方米，房价上涨 3 万元”。
+
 </ConceptCard>
 
 ---
@@ -97,6 +98,7 @@ flowchart TD
 <ConceptCard title="训练集 vs 测试集（防止死记硬背）" type="tip">
 - **训练集 (Training Set, 80% 数据)**：相当于平时做练习题，模型通过阅读练习题和参考答案来学习规律；
 - **测试集 (Testing Set, 20% 数据)**：相当于期末考试卷（模型在训练时**绝对不能提前偷看**），用来检验模型面对从未见过的“新题”时是否真正具备泛化能力。
+
 </ConceptCard>
 
 如果模型在训练集上表现很好，但在测试集上表现极其糟糕，就说明模型产生了**死记硬背（过拟合 Overfitting）**！
@@ -105,7 +107,7 @@ flowchart TD
 
 ## 6. 动手实战：10 行 Python 代码跑通第一个模型
 
-请在下方的代码框中，点击 **“运行代码”**，体验如何使用 Python 最著名的机器学习库 `scikit-learn` 完成房屋面积到房价预测的极简闭环：
+请在下方的代码框中，点击 “**运行代码**”，体验如何使用 Python 最著名的机器学习库 `scikit-learn` 完成房屋面积到房价预测的极简闭环：
 
 <RunnableCodeBlock title="Scikit-Learn 线性回归极简五步实战">
 {`from sklearn.linear_model import LinearRegression

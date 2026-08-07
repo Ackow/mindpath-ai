@@ -50,7 +50,7 @@
       "module": "machine-learning",
       "route": "/map/machine-learning",
       "difficulty": "beginner",
-      "estimatedMinutes": 125,
+      "estimatedMinutes": 175,
       "prerequisites": [
         "root"
       ],
@@ -572,7 +572,7 @@
     },
     {
       "id": "supervised-linear-regression",
-      "title": "01. 线性回归与正则化",
+      "title": "01.线性回归与正则化",
       "module": "machine-learning",
       "submodule": "supervised",
       "route": "/learn/machine-learning/supervised/01-linear-regression",
@@ -605,7 +605,7 @@
     },
     {
       "id": "supervised-logistic-regression",
-      "title": "02. 逻辑回归与二分类评估",
+      "title": "02.逻辑回归与二分类评估",
       "module": "machine-learning",
       "submodule": "supervised",
       "route": "/learn/machine-learning/supervised/02-logistic-regression",
@@ -634,6 +634,39 @@
       "summary": "掌握逻辑回归模型原理与二分类/多分类评估闭环，理解 Sigmoid 概率映射、Softmax 多分类拓展、交叉熵 Log-Loss 损失推导与决策边界；通过威斯康星乳腺癌诊断必做实验、Iris 鸢尾花三分类必做实验、Kaggle 信用卡欺诈检测案例，以及 Kaggle 泰坦尼克号与 Scikit-Learn 手写数字识别课后练习，全面掌握混淆矩阵 (TP/FP/TN/FN)、Precision/Recall/F1、ROC-AUC 与 PR-AUC 的应用与代码实战。",
       "position": {
         "x": 920,
+        "y": 260
+      },
+      "layoutGroup": "machine-learning"
+    },
+    {
+      "id": "supervised-knn-naive-bayes",
+      "title": "03.kNN 与 朴素贝叶斯",
+      "module": "machine-learning",
+      "submodule": "supervised",
+      "route": "/learn/machine-learning/supervised/03-knn-naive-bayes",
+      "difficulty": "beginner",
+      "estimatedMinutes": 50,
+      "prerequisites": [
+        "supervised-logistic-regression"
+      ],
+      "next": [],
+      "relatedNotes": [],
+      "tags": [
+        "机器学习",
+        "监督学习",
+        "kNN",
+        "k近邻",
+        "距离度量",
+        "维度灾难",
+        "朴素贝叶斯",
+        "贝叶斯定理",
+        "条件独立假设",
+        "拉普拉斯平滑",
+        "垃圾邮件分类"
+      ],
+      "summary": "掌握非参数近邻分类模型 kNN 与生成式概率模型朴素贝叶斯 (Naive Bayes)。深入拆解欧氏/曼哈顿距离、k 值选择与特征缩放机制；掌握贝叶斯定理、条件独立性假设、拉普拉斯平滑以及高斯/多项式朴素贝叶斯在文本与垃圾邮件分类中的实战。",
+      "position": {
+        "x": 1120,
         "y": 260
       },
       "layoutGroup": "machine-learning"
@@ -759,6 +792,11 @@
       "id": "e-next-supervised-linear-regression-supervised-logistic-regression",
       "source": "supervised-linear-regression",
       "target": "supervised-logistic-regression"
+    },
+    {
+      "id": "e-depends-supervised-logistic-regression-supervised-knn-naive-bayes",
+      "source": "supervised-logistic-regression",
+      "target": "supervised-knn-naive-bayes"
     }
   ]
 }

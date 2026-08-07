@@ -1,6 +1,6 @@
 ---
 id: supervised-linear-regression
-title: 01. 线性回归与正则化
+title: 01.线性回归与正则化
 module: machine-learning
 submodule: supervised
 order: 1
@@ -104,6 +104,7 @@ $$L(w, b) = \text{MSE} = \frac{1}{N} \sum_{i=1}^{N} (y_i - \hat{y}_i)^2 = \frac{
    - $w_{\text{new}} = 1.5 - 0.01 \times (-8.64) = 1.5864$
    - $b_{\text{new}} = 0.5 - 0.01 \times (-2.20) = 0.5220$
 - 展开上图实验室底部的“实时手算逐项明细表”，或拖动滑块至 $w=1.59, b=0.52$，可以看到 MSE 从 $1.7900$ 迅速下降至 $1.15$！
+
 </ConceptCard>
 
 ---
@@ -152,6 +153,7 @@ $$X = \begin{bmatrix} 1.0 & 1.0 \\ 2.0 & 1.0 \\ 2.0 & 2.0 \end{bmatrix}, \quad Y
    - $\frac{\partial L}{\partial w_1} = 0.4 \times (2.3 \times 1 + 2.4 \times 2 + 2.2 \times 2 + 2.5 \times 3 + 2.6 \times 4) = 0.4 \times 29.4 = \mathbf{11.7600}$
    - $\frac{\partial L}{\partial w_2} = 0.4 \times (2.3 \times 1 + 2.4 \times 1 + 2.2 \times 2 + 2.5 \times 2 + 2.6 \times 3) = 0.4 \times 21.9 = \mathbf{8.7600}$
 - 展开上图 3D 实验室底部的“实时多元矩阵与梯度向量明细表”，可实时核对各个样本的矩阵积与导数项！
+
 </ConceptCard>
 
 ---
@@ -166,6 +168,7 @@ $$w^* = (X^T X)^{-1} X^T Y$$
 - **优点**：一步直接求得理论全局最优解，无需设置学习率或进行循环迭代；
 - **局限性 1（时间复杂度高）**：包含矩阵求逆 $(X^T X)^{-1}$，计算复杂度为 $O(D^3)$。当特征数 $D > 10,000$ 时（如高维文本或图像），求逆运算速度极慢且易内存溢出；
 - **局限性 2（奇异矩阵风险）**：若特征之间存在严重的多重共线性或样本量小于特征数 ($N < D$)，$X^T X$ 矩阵不可逆。
+
 </ConceptCard>
 
 ---
@@ -194,6 +197,7 @@ $$w_{new} = w_{old} - \alpha \cdot \nabla_w L = w_{old} - \alpha \cdot \frac{2}{
 2. **根据设计矩阵 $X = \begin{bmatrix} 50 & 2 \\ 100 & 3 \end{bmatrix}$ 计算梯度 $X^T E$**：
    $$X^T E = \begin{bmatrix} 50 & 100 \\ 2 & 3 \end{bmatrix} \begin{bmatrix} 5.0 \\ -5.0 \end{bmatrix} = \begin{bmatrix} 50 \times 5 + 100 \times (-5) \\ 2 \times 5 + 3 \times (-5) \end{bmatrix} = \begin{bmatrix} -250 \\ -5 \end{bmatrix}$$
 3. **乘上系数 $\frac{2}{N} = \frac{2}{2} = 1$**，得到梯度向量 $\nabla_w L = \begin{bmatrix} -250 \\ -5 \end{bmatrix}$。
+
 </ConceptCard>
 
 ---
@@ -256,6 +260,7 @@ $$x_{\text{scaled}} = \frac{x - x_{\min}}{x_{\max} - x_{\min}}$$
    - $x_3 = \frac{150 - 50}{150 - 50} = \frac{100}{100} = 1.0000$；
    - 转换后精确归一化为 $[0.0000, 0.5000, 1.0000]$。
 - **动态交互尝试**：在上图实验室中拖动滑块增加第 3 个样本的数值（如滑动至 500），观察下方表格中的实时算式与数轴点阵，直观体验 Min-Max 如何被离群值压缩，而 Z-Score 如何保持分布鲁棒！
+
 </ConceptCard>
 
 ---
@@ -289,6 +294,7 @@ flowchart LR
 - **欠拟合 (Underfitting)**：就像学生复习时只看了目录，啥都没学会，平时做题和考试大面积做错；
 - **恰当拟合 (Good Fitting / Just Right)**：学生掌握了解题思路与底层逻辑，遇到新题也能举一反三；
 - **过拟合 (Overfitting)**：学生把练习题上的印刷错误和标点符号都死记硬背了下来，平时测试 100 分，遇到新题完全崩溃。
+
 </ConceptCard>
 
 ### 6.2 为什么需要正则化 (Regularization)？
@@ -307,6 +313,7 @@ flowchart TD
 - **问题根源（死记硬背）**：如果模型的特征太多，或者数据里有噪音，模型可能会给某些无关特征赋上极大的权重（例如把“房间窗户数量”的权重设为 10000 来凑齐某几个富豪的房价）。这种模型在平时做过的题（训练集）上得分极高，一旦遇到新题（测试集）就会彻底崩溃——这就是**过拟合**。
 - **解决方案（套上锁链）**：**正则化 (Regularization)** 就是在损失函数里加上一条惩罚规则：“**不许把权重 $w$ 设得太大！**”。
 - **惩罚机制**：模型在拟合数据的同时，必须尽量让权重 $w$ 保持轻量。调节系数 $\lambda$ 越大，对权重的限制就越严厉。
+
 </ConceptCard>
 
 ---
@@ -340,6 +347,7 @@ $$J_{Lasso}(w) = \text{MSE} + \lambda \|w\|_1 = \text{MSE} + \lambda \sum_{j=1}^
 2. **彩色封闭图形（参数预算边界）**：
    - **L2 (Ridge) 的边界是光滑的圆**：椭圆等高线与圆相切时，切点通常在圆弧上，因此 $w_1$ 和 $w_2$ 都变小了但都不为 0；
    - **L1 (Lasso) 的边界是尖锐的菱形**：菱形的 4 个尖角正好位于坐标轴上（如 $w_1=0$）！随着等高线向内收缩，**极易先碰撞在菱形的尖角上**。一旦撞击在角上，对应的权重 $w_1$ 就瞬间变成了**绝对的 0**！
+
 </ConceptCard>
 
 <RegularizationGeometryLab />
@@ -353,6 +361,7 @@ $$J_{Lasso}(w) = \text{MSE} + \lambda \|w\|_1 = \text{MSE} + \lambda \sum_{j=1}^
 <ConceptCard title="经典 Benchmark 数据集解密：波士顿房价 (Boston Housing) vs 加州房价 (California Housing)" type="tip">
 - **波士顿房价数据集 (Boston Housing)**：统计学与机器学习历史最经典的房价回归数据集，包含 506 个街区样本与 13 维特征（如 `RM` 平均房间数、`CRIM` 犯罪率、`PTRATIO` 师生比、`LSTAT` 低收入人群比例），预测目标 `MEDV` 为自住房价中位数；
 - **加州房价数据集 (California Housing)**：在 Scikit-Learn 1.2+ 中，官方推荐使用加州房价 (`fetch_california_housing`) 作为波士顿数据集的更新替代品。它包含 20,640 个街区样本，涵盖 `MedInc` (中位数收入)、`HouseAge` (房龄)、`AveRooms` (平均房间数) 等 8 维现代特征，是衡量回归模型拟合能力的标准基准。
+
 </ConceptCard>
 
 下方的代码展示了如何加载经典房价 Benchmark 数据集，完成数据切分、Z-Score 特征标准化、线性回归模型拟合（OLS），并对比 Ridge (L2) 与 Lasso (L1) 正则化模型的效果：
@@ -431,6 +440,7 @@ print(f"\n特征选择验证: Lasso 成功将 {zero_weights} 个次要特征的�
   - `hum`: 归一化湿度 (Humidity / 100)
   - `windspeed`: 归一化风速 (Windspeed / 67)
   - `cnt`: 目标预测变量 (共享单车日总租赁量 count)
+
 </ConceptCard>
 
 ---

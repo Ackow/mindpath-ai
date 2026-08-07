@@ -31,6 +31,8 @@ import { FeatureScalingLab } from '@/components/animations/FeatureScalingLab';
 import { RegularizationGeometryLab } from '@/components/animations/RegularizationGeometryLab';
 import { CentralLimitTheoremLab } from '@/components/animations/CentralLimitTheoremLab';
 import { LogisticRegressionLab } from '@/components/animations/LogisticRegressionLab';
+import { KnnDecisionBoundaryLab } from '@/components/animations/KnnDecisionBoundaryLab';
+import { NaiveBayesLab } from '@/components/animations/NaiveBayesLab';
 import { PandasDataImportLab } from '@/components/animations/PandasDataImportLab';
 import { MatplotlibParamsLab } from '@/components/animations/MatplotlibParamsLab';
 import { ReactFlowDiagram } from '@/components/mdx/ReactFlowDiagram';
@@ -185,6 +187,8 @@ export const mdxComponents = {
   RegularizationGeometryLab,
   CentralLimitTheoremLab,
   LogisticRegressionLab,
+  KnnDecisionBoundaryLab,
+  NaiveBayesLab,
   PandasDataImportLab,
   MatplotlibParamsLab,
   ReactFlowDiagram,

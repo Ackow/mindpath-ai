@@ -1,0 +1,436 @@
+---
+id: supervised-knn-naive-bayes
+title: 03.kNN 与 朴素贝叶斯
+module: machine-learning
+submodule: supervised
+order: 3
+difficulty: beginner
+prerequisites: [supervised-logistic-regression]
+relatedNotes: []
+nextNotes: []
+map:
+  layoutGroup: machine-learning
+estimatedMinutes: 50
+tags: [机器学习, 监督学习, kNN, k近邻, 距离度量, 维度灾难, 朴素贝叶斯, 贝叶斯定理, 条件独立假设, 拉普拉斯平滑, 垃圾邮件分类]
+summary: 掌握非参数近邻分类模型 kNN 与生成式概率模型朴素贝叶斯 (Naive Bayes)。深入拆解欧氏/曼哈顿距离、k 值选择与特征缩放机制；掌握贝叶斯定理、条件独立性假设、拉普拉斯平滑以及高斯/多项式朴素贝叶斯在文本与垃圾邮件分类中的实战。
+symbols:
+  - symbol: 'd(x, y) = \\sqrt{\\sum (x_i - y_i)^2}'
+    mean: "欧氏距离 (Euclidean Distance)"
+  - symbol: 'P(A|B) = \\frac{P(B|A)P(A)}{P(B)}'
+    mean: "贝叶斯定理 (Bayes Theorem)"
+  - symbol: 'P(x_1, \\dots, x_D | y) = \\prod_{j=1}^D P(x_j | y)'
+    mean: "朴素贝叶斯条件独立假设"
+  - symbol: '\\hat{P}(x_j|y) = \\frac{N_{y, x_j} + \\alpha}{N_y + \\alpha D}'
+    mean: "拉普拉斯平滑 (Laplace Smoothing)"
+---
+
+## 1. 问题导入：近邻直觉与概率推断
+
+在前两章中，我们学习了**线性回归**与**逻辑回归**。它们都是典型的**参数模型 (Parametric Models)**——通过在训练集上寻找一条全局决策直线 $w^T x + b = 0$ 来完成分类。
+
+然而在现实世界中，我们常常遇到两种截然不同的分类直觉：
+
+1. “**近朱者赤，近墨者黑** (近邻直觉)**：
+   如果你想知道一个新用户的职业，看看他在特征空间中距离最近的 5 个朋友是什么职业即可。这就是 **kNN (k-Nearest Neighbors / k-近邻算法)** 的核心思想。
+2. “**基于已知先验进行概率推断** (贝叶斯直觉)**：
+   如果一封邮件中频繁出现“免费”、“中奖”、“特惠”等词汇，它属于垃圾邮件的概率是多少？我们可以利用已有的历史统计先验，通过概率公式反推后验概率。这就是 **朴素贝叶斯 (Naive Bayes)** 的核心思想。
+
+本章我们将深入拆解这两种经典分类算法的数学原理、几何直觉与工业实战。
+
+---
+
+## 2. 学习目标
+
+完成本章学习后，你将能够：
+
+- 熟练计算 **欧氏距离 (Euclidean)**、**曼哈顿距离 (Manhattan)** 与 **闵可夫斯基距离 (Minkowski)**；
+- 理解 **$k$ 值选择** 对模型偏差-方差 (Bias-Variance) 的影响，并解释为什么 kNN 极度依赖 **特征缩放 (Feature Scaling)**；
+- 解释 kNN 的 **维度灾难 (Curse of Dimensionality)** 以及 **KD-Tree** 数据结构提速机制；
+- 推导 **贝叶斯定理**，明确解释朴素贝叶斯的 “**条件独立性假设**” 为何被称为“朴素”；
+- 掌握 **拉普拉斯平滑 (Laplace Smoothing)** 如何解决零概率硬伤 (Zero Probability Problem)；
+- 区分 **高斯朴素贝叶斯 (GaussianNB)** 与 **多项式朴素贝叶斯 (MultinomialNB)** 的适用场景；
+- 在网页中独立运行 **kNN 手写数字分类实验** 与 **朴素贝叶斯垃圾邮件文本分类实验**。
+
+---
+
+## 3. k-近邻算法 (kNN) 原理
+
+kNN 是一种**非参数 (Non-parametric)**、**懒惰学习 (Lazy Learning)** 算法。它没有显式的模型训练过程（不需要求解权重 $w$），而是将全量训练样本保存在内存中，当新样本到达时，直接计算其与所有训练样本的距离。
+
+```mermaid
+flowchart LR
+    NewX["新样本 X"] --> CalcDist["计算与内存中所有样本的距离 d(X, Xᵢ)"]
+    CalcDist --> FindK["筛选距离最近的 k 个邻居"]
+    FindK --> Vote["k 个邻居投票 (少数服从多数)"]
+    Vote --> PredictY["输出预测类别 ŷ"]
+```
+
+### 3.1 距离度量机制 (Distance Metrics)
+
+假设特征空间中有两个 $D$ 维向量 $x = [x_1, \dots, x_D]$ 与 $y = [y_1, \dots, y_D]$：
+
+1. **欧氏距离 (Euclidean Distance / $L_2$ 范数)**：最常用的直线距离
+   $$d_{Euclidean}(x, y) = \sqrt{\sum_{j=1}^D (x_j - y_j)^2}$$
+2. **曼哈顿距离 (Manhattan Distance / $L_1$ 范数)**：城市网格块距离
+   $$d_{Manhattan}(x, y) = \sum_{j=1}^D |x_j - y_j|$$
+3. **闵可夫斯基距离 (Minkowski Distance)**：前两者的通用推广形式
+   $$d_{Minkowski}(x, y) = \left( \sum_{j=1}^D |x_j - y_j|^p \right)^{\frac{1}{p}} \quad (p=1 \text{ 为曼哈顿}, p=2 \text{ 为欧氏})$$
+
+### 3.2 $k$ 值选择与超参数调优
+
+$k$ 值决定了决策时参考的邻居个数，它直接控制模型的复杂度：
+
+- **当 $k=1$ 时（极端过拟合 / 高方差）**：模型对离群噪声点极度敏感。决策边界会变得极其陡峭扭曲；
+- **当 $k$ 很大（如 $k=N$，极端欠拟合 / 高偏差）**：模型直接盲目预测样本量最多的那个全局类别；
+- **最佳实践**：通常选择 $k$ 为**奇数**（避免平票），并通过 **网格搜索交叉验证 (GridSearchCV)** 寻找最优 $k$。
+
+<ConceptCard title="为什么 kNN 必须进行 Z-Score 特征标准化？" type="tip">
+假设我们根据“年龄”（范围 $20 \sim 60$）和“年收入”（范围 $50,000 \sim 500,000$ 元）计算距离：
+- 在未标准化的欧氏距离计算中，收入差值的平方（如 $(10000)^2 = 10^8$）会完全掩盖年龄差值的平方（如 $(5)^2 = 25$）。
+- 此时“年龄”特征在距离计算中实际贡献为 0！因此，使用 kNN 算法前，**必须先使用 StandardScaler 将所有特征缩放到相同数量级**。
+
+</ConceptCard>
+
+### 3.3 交互演练：kNN 决策边界与 k 值交互实验室
+
+请在下方交互实验室中拖动调节 **$k$ 值 (1 ~ 15)**、切换 **欧氏距离 vs 曼哈顿距离** 以及 **Z-Score 特征标准化开关**，并在画布中自由拖拽琥珀黄测试点，观察近邻连线、投票比与决策边界的动态变化：
+
+<KnnDecisionBoundaryLab />
+
+### 3.4 维度灾难与 KD-Tree 搜索提速
+
+1. **维度灾难 (Curse of Dimensionality)**：
+   当特征维度 $D$ 极高（如 $D > 100$）时，高维空间变得极其稀疏，所有样本点之间的距离都趋近于相等，kNN 的距离度量全面失效。
+2. **KD-Tree (k-Dimensional Tree)**：
+   若每次查询都暴力扫描 $N$ 个样本，时间复杂度为 $O(N \cdot D)$。**KD-Tree** 结构通过按维度交替二分空间构建二叉树，将近邻检索时间复杂度降至 $O(D \log N)$（适用于 $D < 20$ 场景）。
+
+---
+
+## 4. 朴素贝叶斯算法 (Naive Bayes) 原理
+
+朴素贝叶斯是基于 **贝叶斯定理** 的概率生成模型。它根据先验概率 $P(y)$ 和特征条件概率 $P(x|y)$，计算样本属于每个类别的后验概率 $P(y|x)$。
+
+### 4.1 贝叶斯定理推导
+
+对于分类问题，给定特征向量 $x = [x_1, x_2, \dots, x_D]$，后验概率计算公式为：
+
+$$P(y=k | x) = \frac{P(x | y=k) P(y=k)}{P(x)} = \frac{P(x_1, x_2, \dots, x_D | y=k) P(y=k)}{P(x)}$$
+
+- $P(y=k)$：**先验概率 (Prior)**（历史上类别 $k$ 出现的概率）；
+- $P(x | y=k)$：**似然概率 (Likelihood)**（类别 $k$ 产生特征 $x$ 的概率）；
+- $P(x)$：**边际概率 (Evidence)**（归一化常数，对所有类别相同）。
+
+<ConceptCard title="大白话直觉：100 封邮件摸排贝叶斯定理" type="tip">
+**假设你的邮箱里共有 100 封历史邮件**：
+- 其中 **30 封是垃圾邮件 (Spam)**，**70 封是正常邮件 (Ham)**（先验概率 $P(\text{Spam}) = 30\%$）；
+- 统计发现：在 30 封垃圾邮件里，有 **24 封出现了“免费”** 这个词（似然概率 $P(\text{免费} \mid \text{Spam}) = 80\%$）；
+- 在 70 封正常邮件里，有 **7 封出现了“免费”** 这个词（似然概率 $P(\text{免费} \mid \text{Ham}) = 10\%$）；
+
+**现在来了一封带有“免费”关键词的新邮件，它是垃圾邮件的概率是多少？**
+1. 包含“免费”的垃圾邮件数量 $= 30 \times 80\% = 24$ 封；
+2. 包含“免费”的正常邮件数量 $= 70 \times 10\% = 7$ 封；
+3. 带有“免费”词汇的邮件总数 $= 24 + 7 = 31$ 封；
+4. **后验概率**：该新邮件是垃圾邮件的最终概率 $= \frac{24}{31} \approx 77.4\%$！
+
+**结论**：贝叶斯公式本质上就是**分子看特定类别的匹配样本数，分母看所有可能类别的总匹配样本数**！
+
+</ConceptCard>
+
+### 4.2 交互演练：贝叶斯概率推理直觉实验室
+
+请在下方交互实验室中拖动调节 **垃圾邮件先验 $P(\text{Spam})$**、**关键字“免费”与“中奖”的似然概率**，实时观察贝叶斯 3 步推导过程与最终后验概率分值：
+
+<NaiveBayesLab />
+
+### 4.3 核心前提：“朴素”条件独立假设
+
+在实际中，高维联合概率 $P(x_1, x_2, \dots, x_D | y)$ 的样本估计极其困难。
+
+朴素贝叶斯作出了一个极其强烈的“**朴素假设 (Naive Assumption)**”：假设在给定类别 $y$ 的条件下，所有特征 $x_1, x_2, \dots, x_D$ 之间相互条件独立！
+
+根据条件独立性，联合似然概率可以直接拆解为各个特征条件概率的乘积：
+
+$$P(x_1, x_2, \dots, x_D | y=k) = \prod_{j=1}^D P(x_j | y=k)$$
+
+代入贝叶斯公式，分类决策规则简化为：
+
+$$\hat{y} = \arg\max_{k} P(y=k) \prod_{j=1}^D P(x_j | y=k)$$
+
+<ConceptCard title="大白话直觉：为什么叫“朴素”？条件独立假设拆解" type="tip">
+**假设一封邮件里包含了 3 个词：“免费”、“中奖”、“领取”**：
+1. **现实真相（词与词并不独立）**：在现实语言中，这三个词往往绑定出现。要统计它们真实现象的联合概率，需要统计“3 个词同时出现在同一封邮件”的频率。当词库有 10,000 个词时，各种词语组合高达 $2^{10000}$ 种，计算机根本算不过来！
+2. **朴素贝叶斯的“天真/简化”假设**：朴素贝叶斯选择“装作不知道词与词之间有联系”，假装这 3 个词的出现互不影响；
+3. **极速降维计算**：把复杂的组合概率降维成简单连乘：
+   $$P(\text{免费, 中奖, 领取} \mid \text{Spam}) = P(\text{免费} \mid \text{Spam}) \times P(\text{中奖} \mid \text{Spam}) \times P(\text{领取} \mid \text{Spam})$$
+
+**结论**：因为现实中词与词不可能互相独立，这个假设很“天真/简化 (Naive)”，但它极大地降低了计算复杂度，且在实际垃圾邮件识别中效果出奇地好！
+</ConceptCard>
+
+### 4.4 零概率硬伤与拉普拉斯平滑 (Laplace Smoothing)
+
+如果在测试集中出现了一个在训练集中**从未在类别 $k$ 中出现过的新特征词**（即某 $P(x_{new} | y=k) = 0$），连乘效应会导致整个类别的后验概率被瞬间归零！
+
+**解决方案：拉普拉斯平滑 (Laplace Smoothing)**：
+在分子上加 $\alpha$（通常取 $\alpha=1$），在分母上加 $\alpha \cdot D$（$D$ 为词汇表特征总数）：
+
+$$\hat{P}(x_j | y=k) = \frac{N_{k, x_j} + \alpha}{N_k + \alpha \cdot D}$$
+
+这样保证了未出现的词汇也有微小非零概率，彻底避免了零概率崩塌。
+
+<ConceptCard title="手算演练：未见词“量子”引发的零概率一票否决与平滑救场" type="tip">
+**假设你的模型分析过 1,000 封历史垃圾邮件。现在发来一封新邮件，包含“免费” + “中奖” + “量子”**：
+1. **未平滑前的零概率一票否决灾难**：
+   - 历史垃圾邮件里：“免费”出现了 800 次 ($P=0.8$)，“中奖”出现了 600 次 ($P=0.6$)；
+   - 但“量子”在历史垃圾邮件里一次也没出现过 ($P(\text{量子} \mid \text{Spam}) = 0$)；
+   - **连乘计算**：$\text{垃圾得分} = P(\text{Spam}) \times 0.8 \times 0.6 \times \mathbf{0} = \mathbf{0}$！
+   - 哪怕前面有 100 个极其危险的垃圾词，只要出现了一个没见过的词“量子”，乘法里的 0 就会把整个乘积一票否决，导致模型误判定它不是垃圾邮件！
+2. **拉普拉斯平滑保底救援 ($\alpha=1$)**：
+   - 分子加 1（假装没见过的词至少见过 1 次），分母加总词汇量 $D$：
+     $$\hat{P}(\text{量子} \mid \text{Spam}) = \frac{0 + 1}{1000 + D} \approx 0.0001$$
+3. **修正后的连乘结果**：
+   - $\text{垃圾得分} = P(\text{Spam}) \times 0.8 \times 0.6 \times 0.0001 = 0.000048 \neq 0$；
+   - 乘积不再被清零，前面危险词的证据成功保留！
+</ConceptCard>
+
+### 4.5 3 种常见朴素贝叶斯变体对比
+
+| 朴素贝叶斯变体 | 特征假设分布 | 适用特征类型 | 典型应用场景 |
+|---|---|---|---|
+| **GaussianNB (高斯朴素贝叶斯)** | 假设连续特征服从高斯正态分布 $N(\mu, \sigma^2)$ | 连续数值特征（如身高、血压） | 医疗连续指标诊断 |
+| **MultinomialNB (多项式朴素贝叶斯)** | 假设离散特征服从多项式分布 | 离散计数特征（如词频 TF/TF-IDF） | **垃圾邮件分类 / 文本分类** |
+| **BernoulliNB (伯努利朴素贝叶斯)** | 假设特征服从 0/1 伯努利分布 | 二值化特征（词出现为 1，未出现为 0） | 简易文本布尔匹配 |
+
+---
+
+## 5. 算法全方位横向对比
+
+| 维度对比 | k-近邻 (kNN) | 朴素贝叶斯 (Naive Bayes) | 逻辑回归 (Logistic Regression) |
+|---|---|---|---|
+| **模型类型** | 非参数 / 判别式 / 懒惰学习 | 参数化 / 生成式 / 概率模型 | 参数化 / 判别式 / 线性模型 |
+| **训练时间复杂度** | $O(1)$ (无需显式训练) | $O(N \cdot D)$ (扫描计算概率表) | $O(N \cdot D \cdot \text{iter})$ (梯度下降) |
+| **预测时间复杂度** | $O(N \cdot D)$ (全量扫描较慢) | $O(K \cdot D)$ (查表乘法极快) | $O(D)$ (内积计算极快) |
+| **高维稀疏特征表现** | 较差 (易受维度灾难困扰) | **极佳 (文本分类首选)** | 良好 (需适当正则化) |
+| **特征缩放敏感度** | **极度敏感 (必须做 Scaling)** | 不敏感 | 敏感 (影响梯度收敛速度) |
+
+---
+
+## 6. 二分类与多分类必做实验与经典数据集实战
+
+### 6.1 必做实验一：kNN 手写数字分类与 $k$ 值交叉验证
+
+**1. 实验目标与特征预处理**：
+使用 `scikit-learn` 中的 `load_digits` 手写数字数据集（1,797 样本，64 维像素），探究 **Z-Score 标准化** 对 kNN 距离计算的影响，并使用 `GridSearchCV` 寻找最优 $k$ 值：
+
+请点击下方代码块中的 “**运行代码**”，体验完整的 kNN 标准化、网格搜索与混淆矩阵评估：
+
+<RunnableCodeBlock title="必做实验一：kNN 手写数字分类与 k 值网格搜索 (kNN Digits Lab)">
+{`import numpy as np
+from sklearn.datasets import load_digits
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import classification_report, confusion_matrix
+
+# 1. 加载手写数字数据集 (64 维像素特征)
+digits = load_digits()
+X, y = digits.data, digits.target
+
+# 2. 划分训练集与测试集
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+# 3. 特征 Z-Score 标准化
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# 4. 使用 GridSearchCV 寻找最优 k 值 (探究 k = 1, 3, 5, 7, 9)
+param_grid = {'n_neighbors': [1, 3, 5, 7, 9], 'weights': ['uniform', 'distance']}
+knn = KNeighborsClassifier()
+grid_search = GridSearchCV(knn, param_grid, cv=5, scoring='accuracy')
+grid_search.fit(X_train_scaled, y_train)
+
+print("== 必做实验一: kNN 手写数字分类与 k 值调优 ==")
+print(f"网格搜索寻找的最优参数: {grid_search.best_params_}")
+print(f"5 折交叉验证最佳准确率: {grid_search.best_score_ * 100:.2f}%")
+
+# 5. 在测试集上评估最佳模型
+best_knn = grid_search.best_estimator_
+y_pred = best_knn.predict(X_test_scaled)
+
+print("\n[测试集分类报告 Classification Report]")
+print(classification_report(y_test, y_pred))
+print("\n[10x10 混淆矩阵 Confusion Matrix]")
+print(confusion_matrix(y_test, y_pred))
+`}
+</RunnableCodeBlock>
+
+<ConceptCard title="kNN 手写数字实验评估解读" type="tip">
+- **标准化与距离对齐**：由于像素点经过 Z-Score 归一化，各维度权重平等，kNN 在 64 维图像像素上取得了 97% 以上的极高准确率；
+- **$k$ 值权衡**：通常当 `weights='distance'` 时，距离越近的邻居获得更高的投票权重，能进一步提升分类泛化性能。
+
+</ConceptCard>
+
+---
+
+### 6.2 必做实验二：朴素贝叶斯文本与垃圾邮件分类 (MultinomialNB Spam Lab)
+
+**1. 业务背景与词频向量化**：
+在垃圾邮件分类中，文本需要先通过词频向量化（`CountVectorizer`）转化为文本词频矩阵，然后传入 **多项式朴素贝叶斯 (MultinomialNB)** 计算概率：
+
+请点击下方代码块中的 “**运行代码**”，体验基于朴素贝叶斯的垃圾邮件文本分类与拉普拉斯平滑：
+
+<RunnableCodeBlock title="必做实验二：多项式朴素贝叶斯垃圾邮件分类 (MultinomialNB Spam Lab)">
+{`import numpy as np
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.metrics import classification_report, confusion_matrix
+
+# 1. 构造简易垃圾邮件文本数据集 (Spam vs Ham 正常邮件)
+emails = [
+    "Free loan available now, click link to claim cash",
+    "Meeting schedule for project review tomorrow morning",
+    "Win a free iPhone, congratulations winner",
+    "Please send the Q3 financial report by end of day",
+    "Special discount on luxury watches, buy now free shipping",
+    "Hey friend, are we still meeting for lunch today?",
+    "Claim your free bonus points immediately",
+    "Important safety update regarding your account security"
+]
+labels = [1, 0, 1, 0, 1, 0, 1, 0]  # 1 为垃圾邮件 (Spam), 0 为正常邮件 (Ham)
+
+# 2. 文本词频向量化 (Bag of Words)
+vectorizer = CountVectorizer(stop_words='english')
+X_vec = vectorizer.fit_transform(emails)
+
+# 3. 构建多项式朴素贝叶斯模型 (设置 alpha=1.0 启用拉普拉斯平滑)
+nb_model = MultinomialNB(alpha=1.0)
+nb_model.fit(X_vec, labels)
+
+# 4. 对新发来的测试邮件进行分类预测
+test_emails = [
+    "Get your free cash discount today",
+    "Project report update meeting next week"
+]
+test_vec = vectorizer.transform(test_emails)
+test_preds = nb_model.predict(test_vec)
+test_probs = nb_model.predict_proba(test_vec)
+
+print("== 必做实验二: 朴素贝叶斯垃圾邮件分类 (MultinomialNB) ==")
+print(f"词汇表总词数 (Vocabulary Size): {len(vectorizer.get_feature_names_out())}")
+print("\n新邮件测试集预测概率分布:")
+for email, pred, prob in zip(test_emails, test_preds, test_probs):
+    tag = "Spam (垃圾邮件)" if pred == 1 else "Ham (正常邮件)"
+    print(f"  邮件文本: '{email}'")
+    print(f"  预测类别: {tag} | 垃圾邮件概率: {prob[1]*100:.2f}%\n")
+`}
+</RunnableCodeBlock>
+
+<ConceptCard title="朴素贝叶斯文本分类评估解读" type="tip">
+- **条件独立假设收益**：文本分类的特征维度往往高达几万（词汇表大小），朴素贝叶斯借由条件独立性假设，将复杂度降低到极其快速的加法与乘法查表；
+- **拉普拉斯平滑保底**：设置 `alpha=1.0` 使得测试邮件中未出现的词不会导致概率直接崩塌归零。
+
+</ConceptCard>
+
+---
+
+### 6.3 课后必做练习：Kaggle 20 新闻组文本分类 (20 Newsgroups Classification)
+
+**Kaggle 经典 20 新闻组文本数据集 (20 Newsgroups)** 包含约 20,000 篇涵盖科技、政治、宗教、体育等 20 个领域的长文本新闻，是检验多分类朴素贝叶斯模型性能的标准工业级数据集。
+
+请下载下方的数据集与完整 Python 实验脚本，在本地环境中体验基于 `TfidfVectorizer` + `MultinomialNB` 的文本分类全流程：
+
+<ConceptCard title="课后必做练习资源：数据集与 Python 脚本一键下载" type="tip">
+- **数据集 CSV 下载**：[点击下载 20 新闻组文本样例数据集 CSV 文件 (newsgroups_sample.csv)](/assets/datasets/newsgroups_sample.csv)
+- **Python 代码脚本下载**：[点击下载 完整实验代码 Python 脚本 (newsgroups_lab.py)](/assets/datasets/newsgroups_lab.py)
+- **字段 Schema 说明**：
+  - `text`: 新闻长文本原始字符串
+  - `target`: 新闻所属主题分类类别编号 ($0 \sim 19$ 共 20 个主题)
+
+</ConceptCard>
+
+---
+
+## 7. 常见错误排查 (Troubleshooting)
+
+| 错误现象 / 异常类型 | 常见原因 | 标准排查与处理方式 |
+|---|---|---|
+| kNN 分类准确率极低，某个大数量级特征完全主导了结果 | 传入模型前未进行 Z-Score 特征标准化 | 先使用 `StandardScaler` 将所有连续特征缩放到统一数量级 |
+| kNN 在测试集上推理极其缓慢，发生明显延迟卡顿 | 训练集中样本量 $N$ 或特征维度 $D$ 过大 | 在构造 `KNeighborsClassifier` 时设置 `algorithm='kd_tree'` 或先使用 PCA 进行特征降维 |
+| 朴素贝叶斯预测概率全是 0.0 或 1.0 极端值 | 测试集包含了训练集中未出现的词汇，导致零概率相乘崩塌 | 在 `MultinomialNB` 中确认设置了 `alpha=1.0` 开启拉普拉斯平滑 |
+| 高斯朴素贝叶斯 GaussianNB 在文本分类上表现极差 | 文本特征属于离散词频/TF-IDF，不符合高斯连续正态分布假设 | 文本分类任务切勿使用 `GaussianNB`，应更换为 `MultinomialNB` |
+
+---
+
+## 8. 本节检查清单 (Checklist)
+
+- [ ] 我能写出欧氏距离与曼哈顿距离公式，并解释为什么 kNN 极度依赖特征标准化；
+- [ ] 我理解 $k$ 值过小易过拟合、$k$ 值过大易欠拟合的 Bias-Variance 权衡；
+- [ ] 我能写出贝叶斯公式，并明确解释朴素贝叶斯的“条件独立性假设”含义；
+- [ ] 我理解零概率硬伤，并能写出拉普拉斯平滑的修正公式；
+- [ ] 我能区分高斯朴素贝叶斯 (GaussianNB) 与多项式朴素贝叶斯 (MultinomialNB) 的适用场景；
+- [ ] 我能在网页中独立运行 kNN 数字分类与朴素贝叶斯垃圾邮件分类代码，并能下载运行新闻组文本分类脚本。
+
+---
+
+## 9. 课后互动自测
+
+<InteractiveQuiz
+  id="supervised-knn-naive-bayes-quiz"
+  title="03. kNN 与 朴素贝叶斯 课后互动自测"
+  questions={[
+    {
+      id: "q1",
+      type: "single",
+      question: "在 kNN 算法中，如果选择 k = 1，模型的泛化表现与决策边界通常会呈现什么特点？",
+      options: [
+        "A. 极端过拟合 (High Variance)，决策边界极其陡峭复杂，对噪声点敏感",
+        "B. 极端欠拟合 (High Bias)，决策边界非常平滑",
+        "C. 表现最佳，不会发生过拟合",
+        "D. 无法完成预测"
+      ],
+      answer: "A. 极端过拟合 (High Variance)，决策边界极其陡峭复杂，对噪声点敏感",
+      explanation: "当 k = 1 时，模型只参考最近的 1 个邻居，导致离群噪声点会强行在周围形成孤立预测区域，属于典型的过拟合/高方差。"
+    },
+    {
+      id: "q2",
+      type: "single",
+      question: "朴素贝叶斯算法之所以被称为‘朴素 (Naive)’，是因为它做出了哪项强烈假设？",
+      options: [
+        "A. 假设所有特征在给定类别条件下相互独立 (Conditional Independence)",
+        "B. 假设所有特征都服从正态分布",
+        "C. 假设样本点可以被线性超平面切割",
+        "D. 假设训练集不包含任何噪声"
+      ],
+      answer: "A. 假设所有特征在给定类别条件下相互独立 (Conditional Independence)",
+      explanation: "‘朴素’二字正是源于‘条件独立性假设’——假设各个特征词之间互相没有关联，虽然在现实中往往不成立，但该假设极大地简化了概率乘积计算。"
+    },
+    {
+      id: "q3",
+      type: "tf",
+      question: "在利用多项式朴素贝叶斯进行文本垃圾邮件分类时，拉普拉斯平滑 (Laplace Smoothing) 的主要作用是防止未在训练集中出现的新词导致最终乘积结果为零。",
+      options: [
+        "正确",
+        "错误"
+      ],
+      answer: "正确",
+      explanation: "正确！拉普拉斯平滑在概率计算分子上加 alpha(1)，分母加 alpha*D，保证未见词的概率微小而非绝对的 0。"
+    }
+  ]}
+/>
+
+---
+
+## 10. 下一步
+
+完成了近邻分类与贝叶斯概率推断的学习后，下一节我们将探索经典的**硬间隔与软间隔最大化超平面模型——[04. 支持向量机 (SVM)](/learn/supervised-learning/04-svm)**，学习软间隔 $C$ 参数、Hinge Loss 以及高斯 RBF 核函数的奥秘！
+
+---
+
+## 11. 参考资料
+
+- [scikit-learn Nearest Neighbors Docs](https://scikit-learn.org/stable/modules/neighbors.html)
+- [scikit-learn Naive Bayes Docs](https://scikit-learn.org/stable/modules/naive_bayes.html)
+- [Stanford CS229: Generative Learning Algorithms Notes](https://cs229.stanford.edu/notes2022fall/main_notes2.pdf)
+- [Kaggle 20 Newsgroups Dataset](https://www.kaggle.com/c/20-newsgroups)
