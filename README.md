@@ -1,11 +1,11 @@
-# MindPath AI — 交互式 AI 学习知识图谱与路线库
+# MindPath AI — 交互式 AI 知识图谱与学习路线通用框架
 
 <p align="center">
   <img src="public/assets/machine-learning/ai-data-visualization.png" alt="MindPath AI Cover" width="800" style="border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);" />
 </p>
 
 <p align="center">
-  <strong>基于 Next.js 15 + WASM (Pyodide) 构建的现代 AI 交互式学习平台与知识拓扑图谱</strong>
+  <strong>一个通用的、开箱即用的现代化 AI / 技术知识拓扑图谱与交互式学习路线图框架</strong>
 </p>
 
 <p align="center">
@@ -18,111 +18,40 @@
 
 ---
 
-## 📖 简介 (Overview)
+## 📖 框架简介 (Framework Overview)
 
-**MindPath AI** 是一个面向现代化 AI / 机器学习学习者的交互式知识库与学习图谱平台。
+**MindPath AI** 不仅仅是一个具体的 AI 课程库，更是一个**通用、高度可定制的现代化技术知识图谱与互动学习路线图框架**。
 
-项目旨在打通从**数学基础 $\rightarrow$ Python 编程与工程 $\rightarrow$ 机器学习通识 $\rightarrow$ 深度学习**的整条知识链路。通过 MDX 维护带有精准前置依赖元数据的结构化课程，配合**浏览器端 WASM 零后端 Python 执行环境**、**可视化算法实验室**与**自测答题系统**，帮助学习者实现从“被动阅读”到“主动沉浸式验证”的跨越。
-
-- 👤 **作者**：IceColaaa.（[GitHub @Ackow](https://github.com/Ackow)）
-- 🔗 **开源仓库**：[Ackow/mindpath-ai](https://github.com/Ackow/mindpath-ai)
+任何作者或开发者只需通过撰写标准的 **MDX Markdown 文档** 并声明前置依赖关系，框架即可**自动编译生成动态拓扑依赖图谱**，并提供**浏览器端零后端代码运行器 (WASM)**、**可视化交互实验室**与**自测答题系统**。
 
 ---
 
-## ✨ 核心特性 (Key Features)
+## 🗺️ 仓库内容与大致学习路线 (Curriculum Roadmap)
 
-### 1. 🗺️ 拓扑知识图谱 (Interactive Knowledge Map)
-- **DAG 拓扑节点依赖**：自动提取每篇 MDX 文档的 `prerequisites` 前置依赖，实时编译为可视化依赖网格；
-- **自适应搜索与定位**：点击图谱节点无缝跳转笔记，从笔记返回时自动聚焦当前知识节点。
+本仓库内置了一套开箱即用的 AI 学习体系，分为以下 3 个核心阶段：
 
-### 2. ⚡ 浏览器端 WASM Python 执行引擎 (`RunnableCodeBlock`)
-- **零后端快速运行**：集成 **Pyodide (WebAssembly)**，在浏览器沙盒内直接解析与运行 Python 代码；
-- **科学计算库支持**：原生支持 `numpy`、`pandas` 矩阵计算与数据处理；
-- **Matplotlib 图像实时渲染**：交互式代码块可捕获并内嵌展示 `plt.show()` 生成的数据图表。
-
-### 3. 🎨 可视化算法实验室 (Interactive Visual Labs)
-内置丰富的高性能 React / SVG / Canvas 算法微实验室：
-- **`MatplotlibParamsLab`**：交互式调节 Matplotlib 标记样式、线条宽度、网格与图例显示；
-- **`PandasDataImportLab`**：动态演示从 CSV 文件流到 DataFrame 内存结构及数据切片的生命周期；
-- **`NeuronLab`**：动态调节神经元输入、权重与偏置，实时计算加权和与激活输出；
-- **`GradientDescentLab` / `SvdRankLab`**：三维梯度下降轨迹动画与矩阵 SVD 奇异值低秩逼近。
-
-### 4. 🎯 沉浸式互动自测答题系统 (`InteractiveQuiz`)
-- **多题型支持**：包含单选题、多选题与**代码输出预测题 (Code-Output)**；
-- **即时反馈与考点解析**：点击提交即时提供正误高亮与答错震动提醒，并自动展开深度考点精讲；
-- **总结面板与重考**：答题结束后生成结业成绩卡片，得分自动接入个人学习进度。
-
-### 5. 📊 个人学习仪表盘 (`/profile`)
-- **学习热力图与熟练度**：记录每日阅读时长、已完成节点数与打卡进度；
-- **数据隐私与离线备份**：学习进度默认存储于浏览器 `localStorage`，支持一键 **JSON 导入/导出备份**。
-
----
-
-## 🗺️ 课程大纲结构 (Curriculum Structure)
-
-```text
-content/
-├── foundations/                     # 阶段 0：准备知识 (Foundations)
-│   ├── math/                        # 01. 数学基础 (15 章)
-│   │   ├── 01-vector-matrix.mdx     # 向量与矩阵
-│   │   ├── 02-linear-transform.mdx  # 线性变换与基变换
-│   │   ├── 04-eigen-decomposition.mdx # 特征值分解与 SVD
-│   │   ├── 06-calculus-gradient.mdx # 多元微积分与梯度
-│   │   ├── 11-probability-bayes.mdx # 概率论与贝叶斯推断
-│   │   └── ...
-│   └── python/                      # 02. Python 专项 (9 章)
-│       ├── 01-py-environment.mdx    # 环境与 Notebook 规范
-│       ├── 02-py-basics.mdx         # 基础语法与数据类型
-│       ├── 08-py-numpy.mdx          # NumPy 矩阵计算
-│       └── 09-py-pandas.mdx         # Pandas 数据分析
-│
-├── machine-learning/                # 阶段 1：机器学习 (Machine Learning)
-│   ├── 01-ml-problem-map.mdx        # 01. 机器学习问题地图 (Cutoff Time 防数据泄露)
-│   ├── 10-py-visualization.mdx      # 02. Matplotlib 与 Seaborn 可视化
-│   ├── 11-py-ml-workflow.mdx        # 03. AI 数据与实验工作流规范
-│   └── 12-py-iris-project.mdx       # 04. 综合实战：鸢尾花分类小项目
-│
-└── deep-learning/                   # 阶段 2：深度学习 (Deep Learning)
-    └── neuron.mdx                   # 单个人工神经元与前向传播
+```mermaid
+graph LR
+    Stage0["阶段 0：准备知识<br/>(数学基础 & Python 专项)"] --> Stage1["阶段 1：机器学习<br/>(问题地图 / 工作流 / 可视化 / 实战)"]
+    Stage1 --> Stage2["阶段 2：深度学习 & 现代 AI<br/>(神经元 / 神经网络 / 大模型)"]
 ```
 
----
-
-## 📂 项目目录结构 (Directory Layout)
-
-```text
-ai-learning-map/
-├── app/                             # Next.js App Router 页面路由
-│   ├── learn/[...slug]/             # 动态 MDX 课程阅读器页面
-│   ├── map/                         # 全局与模块知识地图页面
-│   ├── profile/                     # 个人学习进度与 JSON 备份页面
-│   └── playground/                  # WASM Python 在线实验室
-├── components/
-│   ├── animations/                  # 交互式算法实验室 (MatplotlibLab, PandasLab 等)
-│   ├── mdx/                         # MDX 自定义组件 (RunnableCodeBlock, InteractiveQuiz 等)
-│   └── mindmap/                     # React Flow 拓扑图谱绘制组件
-├── content/                         # Markdown / MDX 课程源文件
-├── maps/                            # 自动化脚本生成的拓扑图谱与内容索引
-│   ├── global.json                  # 全局 38+ 节点拓扑图谱
-│   └── content-store.json           # MDX 文章编译离线存储库
-├── lib/                             # MDX 渲染管道 (KaTeX, Alert, Table 处理)
-└── scripts/                         # 依赖自动化校验与拓扑图生成脚本
-    ├── generate-graph.mjs           # 生成 global.json 与 content-store.json
-    └── validate-content.mjs         # 校验前置依赖合法性与 ID 唯一性
-```
+1. **阶段 0：准备知识 (Foundations)**
+   - **数学基础**：线性代数、特征值与 SVD、多元微积分与梯度、概率论与贝叶斯推断、假设检验；
+   - **Python 专项**：语言基础、面向对象、NumPy 高性能计算、Pandas 数据分析；
+2. **阶段 1：机器学习 (Machine Learning)**
+   - 机器学习问题定义、防数据泄露规范 (Cutoff Time)、Matplotlib/Seaborn 可视化、实验工作流 Pipeline；
+3. **阶段 2：深度学习与现代 AI (Deep Learning)**
+   - 单个人工神经元、前向传播、反向传播与深度神经网络。
 
 ---
 
-## 🛠️ 本地开发与使用指南 (Local Development)
+## 🚀 快速开始与运行 (Getting Started)
 
-### 1. 环境要求
-- **Node.js**: `v18.17.0` 或更高版本
-- **包管理器**: `npm` / `pnpm`
-
-### 2. 克隆与安装依赖
+### 1. 安装依赖
 
 ```bash
-# 克隆仓库
+# 克隆项目仓库
 git clone https://github.com/Ackow/mindpath-ai.git
 cd mindpath-ai
 
@@ -130,61 +59,148 @@ cd mindpath-ai
 npm install --legacy-peer-deps
 ```
 
-### 3. 内容校验与地图生成
+### 2. 校验内容与生成图谱
 
-在启动开发服务器前，运行内容校验与拓扑编译脚本：
+在启动或构建前，运行内容校验与拓扑编译脚本：
 
 ```bash
-# 校验所有 MDX 文档的依赖关系与元数据
+# 1. 校验全站 MDX 的 Frontmatter 依赖与元数据合法性
 npm run validate:content
 
-# 生成全站地图 JSON (global.json & content-store.json)
+# 2. 自动提取 MDX 依赖并生成全局图谱 JSON
 node scripts/generate-graph.mjs
 ```
 
-### 4. 启动本地开发服务器
+### 3. 启动开发服务器
 
 ```bash
 npm run dev
 ```
 
-在浏览器中打开 `http://localhost:3000` 即可开始学习。
+打开浏览器访问 `http://localhost:3000` 预览学习图谱与课程。
 
 ---
 
-## 🚀 打包与 Cloudflare Pages 部署 (Deployment)
+## 📝 如何创建新文档 (How to Create Docs)
 
-本项目采用了生产级 **静态导出 (`output: 'export'`)** 架构，可无缝部署至 Cloudflare Pages、Vercel 或 GitHub Pages。
+在 `content/` 目录下创建新的 `.mdx` 文件（例如 `content/machine-learning/05-decision-tree.mdx`）。每篇文档必须包含标准的 Frontmatter 元数据：
 
-### 1. 本地生产环境构建与验证
+```mdx
+---
+id: ml-decision-tree                   # 唯一知识点 ID (必填，用于图谱节点关联)
+title: 05. 决策树算法与信息熵            # 文章标题 (必填)
+module: machine-learning               # 所属顶层模块 (如 foundations / machine-learning / deep-learning)
+submodule: supervised                  # 所属子阶段/分组 ID (可选)
+order: 5                               # 在子模块中的排序序号
+difficulty: intermediate               # 难度: beginner | intermediate | advanced
+prerequisites: [ml-problem-map]        # 前置知识依赖 ID 列表 (框架将据此自动连线生成拓扑图谱)
+relatedNotes: [py-pandas]              # 关联参考笔记 ID 列表
+nextNotes: [ml-random-forest]          # 推荐下一章笔记 ID 列表
+map:
+  layoutGroup: machine-learning        # 图谱布局分组
+estimatedMinutes: 30                   # 预计阅读分钟数
+tags: [决策树, 信息熵, 机器学习]         # 检索标签
+summary: 理解信息增益、Gini 拆分与决策树构建原理。  # 简短摘要
+---
+
+# 05. 决策树算法与信息熵
+
+正文 Markdown 内容...
+```
+
+> 💡 **提示**：创建/修改文档后，只需运行 `node scripts/generate-graph.mjs`，框架会自动将新文档编译进图谱并在网页端生成路由。
+
+---
+
+## 🧩 MDX 内置交互组件及使用说明 (Built-in MDX Components)
+
+框架内置了丰富的 MDX 自定义组件，可直接在文章中像 HTML 标签一样嵌入使用：
+
+### 1. 概念强调卡片 (`<ConceptCard>`)
+用于突出显示核心结论、直觉或物理含义。
+
+```mdx
+<ConceptCard title="💡 核心直觉">
+神经元先计算输入特征的加权和 $z = \sum w_i x_i + b$，再通过非线性激活函数产生输出。
+</ConceptCard>
+```
+
+### 2. GitHub 风格提示框 (`<CalloutAlert>`)
+支持 `NOTE`、`TIP`、`IMPORTANT`、`WARNING`、`CAUTION` 5 种级别。也可直接使用 GitHub Markdown 原生语法 `> [!NOTE]`。
+
+```mdx
+<CalloutAlert type="warning">
+⚠️ 严禁在划分训练集与测试集之前执行特征缩放 (StandardScaler)，否则会导致严重的数据泄露！
+</CalloutAlert>
+```
+
+### 3. WASM 交互代码块 (`<RunnableCodeBlock>`)
+在浏览器沙盒内直接执行 Python 代码，支持变量打印与图形绘制。
+
+```mdx
+<RunnableCodeBlock title="用 Python 计算加权和">
+{`import numpy as np
+
+x = np.array([0.8, -0.4])
+w = np.array([1.2, 0.7])
+b = 0.3
+
+z = np.dot(x, w) + b
+print(f"z = {z:.2f}")`}
+</RunnableCodeBlock>
+```
+
+### 4. 课后互动自测答题卡 (`<InteractiveQuiz>`)
+支持单选、多选与代码预测题，包含即时正误高亮、抖动反馈与考点精讲展开。
+
+```mdx
+<InteractiveQuiz
+  title="🎯 课后概念自测"
+  questions={[
+    {
+      id: "q1",
+      type: "single",
+      question: "在对特征进行标准化时，Fit 步骤应该作用于？",
+      options: [
+        "A. 作用于全量数据集 (Train + Test)",
+        "B. 仅作用于训练集 (Train)"
+      ],
+      answer: 1,
+      explanation: "标定参数 fit 必须仅基于训练集计算，防范数据泄露。"
+    }
+  ]}
+/>
+```
+
+### 5. 交互式算法实验室 (Custom Labs)
+框架支持插入自定义的高性能动画实验室组件，如：
+- `<MatplotlibParamsLab />`: 可视化调节 Matplotlib 绘图参数
+- `<PandasDataImportLab />`: 演示 Pandas 数据流切片
+- `<NeuronLab initialInputs={[0.8, -0.4]} />`: 神经元参数调优实验室
+
+---
+
+## 🚀 部署指南 (Deployment Guide)
+
+框架采用生产级 **静态导出 (`output: 'export'`)** 架构，可发布至 Cloudflare Pages、Vercel 或 GitHub Pages。
+
+### 1. 本地构建测试
 
 ```bash
 npm run build
 ```
 
-构建成功后，全站 38+ 静态 HTML 页面将导出至 `./out` 目录。
+构建成功后，静态产物将生成在 `./out` 目录中。
 
-### 2. Cloudflare Pages 部署配置
+### 2. Cloudflare Pages 自动部署
 
-在 Cloudflare Pages 仪表盘中绑定 GitHub 仓库，并设置如下参数：
-
-- **Framework preset**: `Next.js (Static Export)`
-- **Build command**: `npm run build`
-- **Build output directory**: `out`
-- **Node.js Version**: `20.x`
-
-只要向 GitHub `master` 分支执行 `git push`，Cloudflare Pages 将在云端**自动触发全量构建并秒级上线**！
-
----
-
-## 🤝 贡献与反馈 (Contributing)
-
-欢迎任何关于课程内容修补、新增 MDX 文档或交互动画组件的贡献！
-
-1. Fork 本仓库并创建您的特性分支 (`git checkout -b feat/new-topic`)；
-2. 提交您的修改 (`git commit -m 'feat: add new MDX note'`)；
-3. 运行 `npm run validate:content` 确保依赖校验通过；
-4. 推送到分支 (`git push origin feat/new-topic`) 并提交 Pull Request。
+1. 在 Cloudflare Dashboard 中创建应用 $\rightarrow$ 选择 **Pages** $\rightarrow$ **Connect to Git**；
+2. 绑定 GitHub 仓库，配置参数如下：
+   - **Framework preset**: `Next.js (Static Export)`
+   - **Build command**: `npm run build`
+   - **Build output directory**: `out`
+   - **Node.js Version**: `20.x`
+3. 保存后，每次向 `master` / `main` 分支 `git push`，Cloudflare 都会在云端自动构建并秒级发布上线！
 
 ---
 
