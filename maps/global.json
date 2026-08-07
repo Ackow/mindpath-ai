@@ -621,14 +621,17 @@
         "监督学习",
         "逻辑回归",
         "Sigmoid",
+        "Softmax",
         "交叉熵损失",
         "决策边界",
         "混淆矩阵",
         "乳腺癌实验",
+        "鸢尾花实验",
         "信用卡欺诈",
-        "泰坦尼克号"
+        "泰坦尼克号",
+        "手写数字识别"
       ],
-      "summary": "掌握逻辑回归模型原理与二分类评估闭环，理解 Sigmoid 概率映射、交叉熵 Log-Loss 损失推导与决策边界；通过威斯康星乳腺癌诊断必做实验、Kaggle 信用卡欺诈检测案例，以及 Kaggle 泰坦尼克号生存预测课后练习（支持 Python 脚本与 CSV 数据集下载），全面掌握混淆矩阵 (TP/FP/TN/FN)、Precision/Recall/F1、ROC-AUC 与 PR-AUC 的应用与代码实战。",
+      "summary": "掌握逻辑回归模型原理与二分类/多分类评估闭环，理解 Sigmoid 概率映射、Softmax 多分类拓展、交叉熵 Log-Loss 损失推导与决策边界；通过威斯康星乳腺癌诊断必做实验、Iris 鸢尾花三分类必做实验、Kaggle 信用卡欺诈检测案例，以及 Kaggle 泰坦尼克号与 Scikit-Learn 手写数字识别课后练习，全面掌握混淆矩阵 (TP/FP/TN/FN)、Precision/Recall/F1、ROC-AUC 与 PR-AUC 的应用与代码实战。",
       "position": {
         "x": 920,
         "y": 260

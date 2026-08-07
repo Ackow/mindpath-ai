@@ -235,6 +235,28 @@ export const mdxComponents = {
     );
   },
 
+  // H4 Heading with teal accent dot and clear hierarchy
+  h4: (props: any) => {
+    const titleText = typeof props.children === 'string' ? props.children.trim() : '';
+    return (
+      <h4
+        id={titleText ? `heading-${titleText}` : undefined}
+        className="text-base font-bold text-slate-800 mt-8 mb-3.5 scroll-mt-24 clear-both flex items-center gap-2"
+        {...props}
+      />
+    );
+  },
+
+  // H5 Heading
+  h5: (props: any) => (
+    <h5 className="text-sm font-bold text-slate-700 mt-6 mb-2.5 scroll-mt-24" {...props} />
+  ),
+
+  // H6 Heading
+  h6: (props: any) => (
+    <h6 className="text-xs font-bold text-slate-600 uppercase tracking-wider mt-4 mb-2 scroll-mt-24" {...props} />
+  ),
+
   p: (props: any) => <p className="text-slate-700 leading-relaxed my-4 text-base" {...props} />,
 
   // Unordered & Ordered Lists with Explicit Bullet & Number Styling

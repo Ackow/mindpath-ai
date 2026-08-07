@@ -19,10 +19,13 @@ interface ReactFlowDiagramProps {
 }
 
 // 提取并解析 Mermaid / Diagram 为 DAG 拓扑层级的 React Flow 节点与边
-function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialEdges: Edge[]; maxLevels: number } {
+function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialEdges: Edge[]; maxLevels: number; isHorizontal: boolean } {
   const lines = chartText.split('\n').map((l) => l.trim()).filter(Boolean);
   const nodesMap = new Map<string, { label: string }>();
   const rawEdges: { source: string; target: string; label?: string }[] = [];
+
+  // 1. 自动识别图表方向: LR (横向左右) vs TD/TB (纵向上下)
+  const isHorizontal = /flowchart\s+LR|graph\s+LR/i.test(chartText);
 
   const cleanLabelText = (text: string) => {
     return text.replace(/<br\s*\/?>/gi, '\n').trim();
@@ -185,63 +188,96 @@ function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialE
     levelGroups.get(level)!.push(id);
   });
 
-  // 智能自适应节点大小与水平间距
   const initialNodes: Node[] = [];
-  const LEVEL_HEIGHT = 140; // 紧凑垂直层高
 
-  // 统计文本平均长度，自适应计算 NODE_SPACING
-  let maxLabelLen = 0;
-  nodesMap.forEach(({ label }) => {
-    if (label.length > maxLabelLen) maxLabelLen = label.length;
-  });
+  // 统一固定节点宽度，确保 Source/Target Handle 中心完全水平/垂直对齐，彻底消除锯齿弯折连线
+  const NODE_WIDTH_PX = 220;
 
-  // 动态间距：文本越短间距越紧凑 (220px ~ 320px)
-  const NODE_SPACING = Math.min(320, Math.max(220, maxLabelLen * 10 + 120));
+  if (isHorizontal) {
+    // 横向 (LR): X 轴按 level 递增，Y 轴按同层节点索引递增
+    const LEVEL_WIDTH = 280;
+    const ROW_SPACING = 110;
 
-  levelGroups.forEach((nodeIdsInLevel, level) => {
-    const totalCount = nodeIdsInLevel.length;
-    const startX = -((totalCount - 1) * NODE_SPACING) / 2;
+    levelGroups.forEach((nodeIdsInLevel, level) => {
+      const totalCount = nodeIdsInLevel.length;
+      const startY = -((totalCount - 1) * ROW_SPACING) / 2;
 
-    nodeIdsInLevel.forEach((id, index) => {
-      const info = nodesMap.get(id)!;
-      const isError = id.toLowerCase().includes('error') || info.label.includes('异常') || info.label.includes('抛出');
-      const isSuccess = info.label.includes('成功') || info.label.includes('加载') || info.label.includes('直接加载');
-      const isDecision = info.label.includes('?') || info.label.includes('是否');
+      nodeIdsInLevel.forEach((id, index) => {
+        const info = nodesMap.get(id)!;
+        const isError = id.toLowerCase().includes('error') || info.label.includes('异常') || info.label.includes('抛出');
+        const isSuccess = info.label.includes('成功') || info.label.includes('加载') || info.label.includes('直接加载');
+        const isDecision = info.label.includes('?') || info.label.includes('是否');
 
-      // 短文本使用极简紧凑自适应宽度 (minWidth: 90px)，长文本自适应 (maxWidth: 240px)
-      const textLength = info.label.length;
-      const calcMinWidth = textLength < 6 ? '90px' : textLength < 15 ? '130px' : '170px';
-
-      initialNodes.push({
-        id,
-        data: { label: info.label },
-        position: {
-          x: startX + index * NODE_SPACING,
-          y: level * LEVEL_HEIGHT,
-        },
-        targetPosition: Position.Top,   // 上进
-        sourcePosition: Position.Bottom, // 下出
-        style: {
-          background: isError ? '#FEF2F2' : isSuccess ? '#ECFDF5' : isDecision ? '#F8FAFC' : '#FFFFFF',
-          color: isError ? '#991B1B' : isSuccess ? '#065F46' : isDecision ? '#0F172A' : '#1E293B',
-          border: `2px solid ${isError ? '#FCA5A5' : isSuccess ? '#34D399' : isDecision ? '#94A3B8' : '#CBD5E1'}`,
-          borderRadius: isDecision ? '14px' : '10px',
-          padding: '8px 14px',
-          fontSize: '12px',
-          fontWeight: '600',
-          textAlign: 'center',
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-word',
-          boxShadow: '0 2px 4px -1px rgba(0, 0, 0, 0.05)',
-          minWidth: calcMinWidth,
-          maxWidth: '240px',
-          width: 'fit-content',
-        },
+        initialNodes.push({
+          id,
+          data: { label: info.label },
+          position: {
+            x: level * LEVEL_WIDTH,
+            y: startY + index * ROW_SPACING,
+          },
+          targetPosition: Position.Left,  // 左进
+          sourcePosition: Position.Right, // 右出
+          style: {
+            background: isError ? '#FEF2F2' : isSuccess ? '#ECFDF5' : isDecision ? '#F8FAFC' : '#FFFFFF',
+            color: isError ? '#991B1B' : isSuccess ? '#065F46' : isDecision ? '#0F172A' : '#1E293B',
+            border: `2px solid ${isError ? '#FCA5A5' : isSuccess ? '#34D399' : isDecision ? '#94A3B8' : '#CBD5E1'}`,
+            borderRadius: isDecision ? '14px' : '10px',
+            padding: '10px 14px',
+            fontSize: '12px',
+            fontWeight: '600',
+            textAlign: 'center',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+            boxShadow: '0 2px 4px -1px rgba(0, 0, 0, 0.05)',
+            width: `${NODE_WIDTH_PX}px`,
+          },
+        });
       });
     });
-  });
+  } else {
+    // 纵向 (TD/TB): Y 轴按 level 递增，X 轴按同层节点索引递增
+    const LEVEL_HEIGHT = 140;
+    const COLUMN_SPACING = 260;
 
-  // 构造边 (平滑折线 smoothstep)
+    levelGroups.forEach((nodeIdsInLevel, level) => {
+      const totalCount = nodeIdsInLevel.length;
+      const startX = -((totalCount - 1) * COLUMN_SPACING) / 2;
+
+      nodeIdsInLevel.forEach((id, index) => {
+        const info = nodesMap.get(id)!;
+        const isError = id.toLowerCase().includes('error') || info.label.includes('异常') || info.label.includes('抛出');
+        const isSuccess = info.label.includes('成功') || info.label.includes('加载') || info.label.includes('直接加载');
+        const isDecision = info.label.includes('?') || info.label.includes('是否');
+
+        initialNodes.push({
+          id,
+          data: { label: info.label },
+          position: {
+            x: startX + index * COLUMN_SPACING - NODE_WIDTH_PX / 2,
+            y: level * LEVEL_HEIGHT,
+          },
+          targetPosition: Position.Top,   // 上进
+          sourcePosition: Position.Bottom, // 下出
+          style: {
+            background: isError ? '#FEF2F2' : isSuccess ? '#ECFDF5' : isDecision ? '#F8FAFC' : '#FFFFFF',
+            color: isError ? '#991B1B' : isSuccess ? '#065F46' : isDecision ? '#0F172A' : '#1E293B',
+            border: `2px solid ${isError ? '#FCA5A5' : isSuccess ? '#34D399' : isDecision ? '#94A3B8' : '#CBD5E1'}`,
+            borderRadius: isDecision ? '14px' : '10px',
+            padding: '10px 14px',
+            fontSize: '12px',
+            fontWeight: '600',
+            textAlign: 'center',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+            boxShadow: '0 2px 4px -1px rgba(0, 0, 0, 0.05)',
+            width: `${NODE_WIDTH_PX}px`,
+          },
+        });
+      });
+    });
+  }
+
+  // 构造边 (使用 smoothstep + 优雅圆角，保证 100% 物理直线箭头)
   const initialEdges: Edge[] = rawEdges.map((edge, idx) => {
     let formattedLabel = edge.label;
     if (formattedLabel && formattedLabel.length > 10 && formattedLabel.includes(' / ')) {
@@ -256,6 +292,7 @@ function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialE
       target: edge.target,
       label: formattedLabel,
       type: 'smoothstep',
+      pathOptions: { borderRadius: 12 },
       animated: true,
       labelStyle: { fill: '#0D9488', fontWeight: 700, fontSize: 10, textAlign: 'center', whiteSpace: 'pre-wrap' },
       labelBgStyle: { fill: '#F0FDFA', rx: 6, ry: 6, stroke: '#99F6E4', strokeWidth: 1 },
@@ -268,18 +305,19 @@ function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialE
     };
   });
 
-  return { initialNodes, initialEdges, maxLevels: levelGroups.size };
+  return { initialNodes, initialEdges, maxLevels: levelGroups.size, isHorizontal };
 }
 
 export const ReactFlowDiagram: React.FC<ReactFlowDiagramProps> = ({ chart }) => {
-  const { initialNodes, initialEdges, maxLevels } = useMemo(() => parseMermaidToFlow(chart), [chart]);
+  const { initialNodes, initialEdges, maxLevels, isHorizontal } = useMemo(() => parseMermaidToFlow(chart), [chart]);
 
-  // 根据层级数量自适应动态高度：简单 1-2 层图表高度压缩至 240px/320px，复杂图表高度为 450px
+  // 根据层级数量与布局方向自适应动态容器高度
   const containerHeightClass = useMemo(() => {
+    if (isHorizontal) return 'h-[280px] min-h-[240px]';
     if (maxLevels <= 1) return 'h-[240px]';
     if (maxLevels <= 2) return 'h-[320px]';
     return 'min-h-[420px] h-[50vh] max-h-[600px]';
-  }, [maxLevels]);
+  }, [maxLevels, isHorizontal]);
 
   return (
     <div className="my-7 rounded-2xl overflow-hidden border border-slate-200 shadow-card bg-white font-sans">
@@ -300,10 +338,10 @@ export const ReactFlowDiagram: React.FC<ReactFlowDiagramProps> = ({ chart }) => 
           nodes={initialNodes}
           edges={initialEdges}
           fitView
-          fitViewOptions={{ padding: 0.2 }}
+          fitViewOptions={{ padding: 0.2, includeHiddenNodes: true }}
           attributionPosition="bottom-right"
+          proOptions={{ hideAttribution: true }}
         >
-          <Controls className="bg-white border border-slate-200 shadow-sm rounded-lg text-slate-700" />
           <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#CBD5E1" />
         </ReactFlow>
       </div>
