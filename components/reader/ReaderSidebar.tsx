@@ -73,21 +73,19 @@ export const ReaderSidebar: React.FC = () => {
             <Layers className="h-4 w-4 text-teal-600" />
             <span>快速切换模块</span>
           </div>
-          <div className="grid grid-cols-2 gap-1.5">
+          <select
+            value={currentNode.module}
+            onChange={(event) => {
+              const selectedModule = moduleTree.find((module) => module.id === event.target.value);
+              if (selectedModule) window.location.assign(moduleEntryRoute(selectedModule));
+            }}
+            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none transition-colors focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+            aria-label="选择学习模块"
+          >
             {moduleTree.map((module) => (
-              <Link
-                key={module.id}
-                href={moduleEntryRoute(module)}
-                className={`truncate rounded-lg border px-2 py-1.5 text-left text-[11px] font-semibold transition-colors ${
-                  module.id === currentNode.module
-                    ? 'border-teal-200 bg-teal-50 text-teal-700'
-                    : 'border-slate-200 text-slate-600 hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700'
-                }`}
-              >
-                {module.title}
-              </Link>
+              <option key={module.id} value={module.id}>{module.title}</option>
             ))}
-          </div>
+          </select>
         </div>
         {/* Mobile Toggle Button */}
         <div
