@@ -107,8 +107,8 @@ $$L(w, b) = \text{MSE} = \frac{1}{N} \sum_{i=1}^{N} (y_i - \hat{y}_i)^2 = \frac{
    - $\text{d}L/\text{d}w = \frac{2}{5} [(-0.2) \times 1 + (-0.3) \times 2 + (-1.1) \times 3 + (-2.0) \times 4 + (-1.9) \times 5] = 0.4 \times (-21.6) = -8.64$
    - $\text{d}L/\text{d}b = \frac{2}{5} [-0.2 - 0.3 - 1.1 - 2.0 - 1.9] = 0.4 \times (-5.5) = -2.20$
 4. **进行一次梯度更新（迈出下山一步）**：
-   - $w_{\text{new}} = 1.5 - 0.01 \times (-8.64) = 1.5864$
-   - $b_{\text{new}} = 0.5 - 0.01 \times (-2.20) = 0.5220$
+   - $w_{next} = 1.5 - 0.01 \times (-8.64) = 1.5864$
+   - $b_{next} = 0.5 - 0.01 \times (-2.20) = 0.5220$
 - 展开上图实验室底部的“实时手算逐项明细表”，或拖动滑块至 $w=1.59, b=0.52$，可以看到 MSE 从 $1.7900$ 迅速下降至 $1.15$！
 
 </ConceptCard>
@@ -193,7 +193,7 @@ $$w^* = (X^T X)^{-1} X^T Y$$
 
 由此推出多元矩阵参数更新公式为：
 
-$$w_{new} = w_{old} - \alpha \cdot \nabla_w L = w_{old} - \alpha \cdot \frac{2}{N} X^T (\hat{Y} - Y)$$
+$$w_{\text{next}} = w_{\text{prev}} - \alpha \cdot \nabla_w L = w_{\text{prev}} - \alpha \cdot \frac{2}{N} X^T (\hat{Y} - Y)$$
 
 <ConceptCard title="手算演练：多元残差向量与矩阵梯度计算" type="tip">
 **已知 2 个样本的真实标签 $Y = \begin{bmatrix} 30.0 \\ 60.0 \end{bmatrix}$，模型预测值 $\hat{Y} = \begin{bmatrix} 35.0 \\ 55.0 \end{bmatrix}$**：

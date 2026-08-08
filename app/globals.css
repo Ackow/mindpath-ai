@@ -127,6 +127,14 @@ html.dark .border-slate-200\/80 {
 }
 
 /* MDX Content Generous Spacing */
+.mdx-content {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.mdx-content > * {
+  max-width: 100%;
+}
 .mdx-content h2 {
   margin-top: 4.5rem;
   margin-bottom: 2rem;
@@ -238,6 +246,35 @@ h2 + h3 {
 
 .mdx-content tr:last-child td {
   border-bottom: 0;
+}
+
+@media (max-width: 639px) {
+  .mdx-content pre {
+    max-width: 100%;
+    padding: 1rem;
+  }
+
+  .mdx-content table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mdx-content img,
+  .mdx-content video,
+  .mdx-content iframe,
+  .mdx-content svg,
+  .mdx-content canvas {
+    max-width: 100%;
+  }
+
+  .mdx-content img,
+  .mdx-content video,
+  .mdx-content svg,
+  .mdx-content canvas {
+    height: auto;
+  }
 }
 /* MDX math may render a standalone formula as an inline KaTeX node in a paragraph. */
 .katex {

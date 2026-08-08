@@ -67,59 +67,6 @@ function normalizeAlerts(source: string) {
   });
 }
 
-function transformMath(source: string) {
-  // 1. 保护自闭合 JSX 组件 (如 <DecisionTreeLab />, <ReactFlowDiagram chart="..." />, <SvmMarginKernelLab />)
-  const jsxBlocks: string[] = [];
-  let protectedSource = source.replace(/<([A-Z][a-zA-Z0-9]*)([\s\S]*?)\/>/g, (match) => {
-    jsxBlocks.push(match);
-    return `___JSX_BLOCK_${jsxBlocks.length - 1}___`;
-  });
-
-  // 2. 将 $$...$$ 渲染为 KaTeX Display HTML
-  let result = protectedSource.replace(/\$\$([\s\S]+?)\$\$/g, (_match, formula: string) => {
-    try {
-      const html = katex.renderToString(formula.trim(), { displayMode: true, throwOnError: false });
-      const jsonHtml = JSON.stringify(html);
-      return `\n\n<span className="katex-display block my-6 overflow-x-auto text-center" dangerouslySetInnerHTML={{ __html: ${jsonHtml} }} />\n\n`;
-    } catch {
-      return `\n\n$$${formula}$$\n\n`;
-    }
-  });
-
-  // 3. 将 $...$ 行内公式渲染为 KaTeX Inline HTML
-  result = result.replace(/(<[^>]+>)|((?<!\$)\$([^\$\n]+?)\$(?!\$))/g, (match, isTag, _isMath, formula) => {
-    if (isTag) return match;
-    if (formula) {
-      try {
-        const html = katex.renderToString(formula.trim(), { displayMode: false, throwOnError: false });
-        const jsonHtml = JSON.stringify(html);
-        return `<span className="katex-inline inline-block font-mono" dangerouslySetInnerHTML={{ __html: ${jsonHtml} }} />`;
-      } catch {
-        return `$${formula}$`;
-      }
-    }
-    return match;
-  });
-
-  // 4. 安全还原自闭合 JSX 组件标签
-  result = result.replace(/___JSX_BLOCK_(\d+)___/g, (_, idx) => {
-    const block = jsxBlocks[parseInt(idx, 10)] || '';
-    return block.replace(/\$/g, '$$');
-  });
-
-  return result;
-}
-
-function normalizeDisplayMath(source: string) {
-  // 如果包含 YAML Frontmatter (--- ... ---)，只对正文内容做 KaTeX 转换，保留 YAML 不被破坏
-  const fmMatch = source.match(/^(---\r?\n[\s\S]*?\r?\n---\r?\n)([\s\S]*)$/);
-  if (fmMatch) {
-    const [, frontmatter, body] = fmMatch;
-    return frontmatter + transformMath(body);
-  }
-  return transformMath(source);
-}
-
 function normalizeMarkdownTables(source: string) {
   const tableBlockRegex = /(?:^[ \t]*\|.+?\|[ \t]*(?:\r?\n|$))+/gm;
 
@@ -407,6 +354,8 @@ export interface MdxNoteData {
     prerequisites?: string[];
     estimatedMinutes?: number;
     tags?: string[];
+    elective?: boolean;
+    studyNote?: string;
     summary?: string;
     symbols?: { symbol: string; mean: string }[];
   };
@@ -442,12 +391,12 @@ export async function getMdxNoteBySlug(slugArray: string[]): Promise<MdxNoteData
       let contentNode: React.ReactNode = null;
       try {
         const compiled = await compileMDX({
-          source: normalizeAlerts(normalizeDisplayMath(normalizeMarkdownTables(fileContent))),
+          source: normalizeAlerts(normalizeMarkdownTables(fileContent)),
           options: {
             parseFrontmatter: true,
             mdxOptions: {
-              remarkPlugins: [],
-              rehypePlugins: [rehypeHighlight as any],
+              remarkPlugins: [remarkMath],
+              rehypePlugins: [[rehypeKatex, { throwOnError: false }], rehypeHighlight as any],
             },
           },
           components: mdxComponents,

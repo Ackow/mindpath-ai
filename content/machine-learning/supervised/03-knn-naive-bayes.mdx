@@ -7,7 +7,7 @@ order: 3
 difficulty: beginner
 prerequisites: [supervised-logistic-regression, math-probability-stats]
 relatedNotes: [supervised-linear-regression]
-nextNotes: [supervised-svm]
+nextNotes: [supervised-decision-tree-random-forest]
 map:
   layoutGroup: machine-learning
 estimatedMinutes: 50
@@ -173,7 +173,7 @@ $$\hat{y} = \arg\max_{k} P(y=k) \prod_{j=1}^D P(x_j | y=k)$$
 
 ### 4.4 零概率硬伤与拉普拉斯平滑 (Laplace Smoothing)
 
-如果在测试集中出现了一个在训练集中**从未在类别 $k$ 中出现过的新特征词**（即某 $P(x_{new} | y=k) = 0$），连乘效应会导致整个类别的后验概率被瞬间归零！
+如果在测试集中出现了一个在训练集中**从未在类别 $k$ 中出现过的新特征词**（即某 $P(x_i | y=k) = 0$），连乘效应会导致整个类别的后验概率被瞬间归零！
 
 **解决方案：拉普拉斯平滑 (Laplace Smoothing)**：
 在分子上加 $\alpha$（通常取 $\alpha=1$），在分母上加 $\alpha \cdot D$（$D$ 为词汇表特征总数）：
@@ -431,7 +431,7 @@ for email, pred, prob in zip(test_emails, test_preds, test_probs):
 
 完成了近邻分类与贝叶斯概率推断的学习后：
 
-- **下一章推荐**：即将学习 **[04. 支持向量机 (SVM)](/learn/machine-learning/supervised/04-svm)**，探索高维空间硬间隔与软间隔最大化超平面、Hinge Loss 以及高斯 RBF 核函数的奥秘！
+- **下一章推荐**：即将学习 **[04. 决策树算法](/learn/machine-learning/supervised/05-decision-tree-random-forest)**，探索高维空间硬间隔与软间隔最大化超平面、Hinge Loss 以及高斯 RBF 核函数的奥秘！
 - **相关前置与扩展阅读**：
   - **[01. 线性回归与正则化](/learn/machine-learning/supervised/01-linear-regression)**：复习 Z-Score 特征标准化在距离度量与梯度下降中的关键作用
 

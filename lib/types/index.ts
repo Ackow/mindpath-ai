@@ -22,12 +22,15 @@ export interface MindMapNodeData {
   module: string;
   submodule?: string;
   route: string;
+  order?: number;
   difficulty: NodeDifficulty;
   estimatedMinutes: number;
   prerequisites: string[];
   next: string[];
   relatedNotes?: string[];
   tags: string[];
+  elective?: boolean;
+  studyNote?: string;
   status?: NodeStatus;
   summary?: string;
   progressPercent?: number;
@@ -45,6 +48,8 @@ export interface MDXFrontmatter {
   prerequisites: string[];
   estimatedMinutes: number;
   tags: string[];
+  elective?: boolean;
+  studyNote?: string;
   summary?: string;
 }
 

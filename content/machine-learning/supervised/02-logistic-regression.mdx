@@ -12,7 +12,7 @@ map:
   layoutGroup: machine-learning
 estimatedMinutes: 45
 tags: [机器学习, 监督学习, 逻辑回归, Sigmoid, Softmax, 交叉熵损失, 决策边界, 混淆矩阵, 乳腺癌实验, 鸢尾花实验, 信用卡欺诈, 泰坦尼克号, 手写数字识别]
-summary: 掌握逻辑回归模型原理与二分类/多分类评估闭环，理解 Sigmoid 概率映射、Softmax 多分类拓展、交叉熵 Log-Loss 损失推导与决策边界；通过威斯康星乳腺癌诊断必做实验、Iris 鸢尾花三分类必做实验、Kaggle 信用卡欺诈检测案例，以及 Kaggle 泰坦尼克号与 Scikit-Learn 手写数字识别课后练习，全面掌握混淆矩阵 (TP/FP/TN/FN)、Precision/Recall/F1、ROC-AUC 与 PR-AUC 的应用与代码实战。
+summary: 掌握逻辑回归模型原理与二分类/多分类评估闭环，理解 Sigmoid 概率映射、Softmax 多分类拓展、交叉熵 Log-Loss 损失推导与决策边界；通过威斯康星乳腺癌诊断必做实验、Iris 鸢尾花三分类必做实验、Kaggle 信用卡欺诈检测案例，以及 Kaggle 泰坦尼克号与 Scikit-Learn 手写数字识别课后练习，在具体分类实验中应用混淆矩阵、Precision/Recall/F1、ROC-AUC 与 PR-AUC。
 symbols:
   - symbol: "z = w^T x + b"
     mean: "线性方程输出得分 (Logits)"
@@ -111,7 +111,7 @@ $$\ln \left( \frac{p}{1 - p} \right) = z = w^T x + b$$
    $$z = w_1 x_1 + w_2 x_2 + b = 1.5 \times 2.0 + 1.0 \times 3.0 - 5.0 = 3.0 + 3.0 - 5.0 = +1.0$$
 2. **第二步（计算 Sigmoid 概率 $\hat{y}$）**：
    已知 $e^{-1.0} \approx 0.368$，代入得：
-   $$\hat{y} = \sigma(1.0) = \frac{1}{1 + e^{-1.0}} = \frac{1}{1 + 0.368} = \frac{1}{1.368} \approx 0.731 \quad (73.1\% \text{ 恶性肿瘤概率})$$
+   $$\hat{y} = \sigma(1.0) = \frac{1}{1 + e^{-1.0}} = \frac{1}{1 + 0.368} = \frac{1}{1.368} \approx 0.731 \quad (73.1\%)$$
 3. **第三步（分类决策判定）**：
    设定默认概率阈值 $\text{Threshold} = 0.5$。因为预测概率 $\hat{y} = 0.731 \ge 0.5$，所以模型最终将该患者诊断分类为 **恶性肿瘤 ($y = 1$)**！
 </ConceptCard>
@@ -146,9 +146,9 @@ $$J(w, b) = \frac{1}{N} \sum_{i=1}^{N} \ell_i(w, b) = -\frac{1}{N} \sum_{i=1}^{N
 <ConceptCard title="手算演练：交叉熵损失 Log-Loss 惩罚推演" type="tip">
 **假设某个样本的真实标签为正例 $y = 1$**：
 - **情况 A (模型预测准确)**：模型预测该样本属于正例的概率 $\hat{y} = 0.95$；
-  $$\text{Loss}_A = -[1 \cdot \ln(0.95) + 0] \approx -(-0.051) = 0.051 \quad (\text{惩罚极小})$$
+  $$\text{Loss}_A = -[1 \cdot \ln(0.95) + 0] \approx -(-0.051) = 0.051$$
 - **情况 B (模型犯严重错误)**：模型预测该样本属于正例的概率 $\hat{y} = 0.01$；
-  $$\text{Loss}_B = -[1 \cdot \ln(0.01) + 0] \approx -(-4.605) = 4.605 \quad (\text{惩罚陡增 90 倍!})$$
+  $$\text{Loss}_B = -[1 \cdot \ln(0.01) + 0] \approx -(-4.605) = 4.605$$
 
 **结论**：交叉熵损失会给“极其自信但预测严重犯错”的模型施加巨大的对数惩罚，逼迫参数快速沿着正确方向更新。
 
@@ -263,81 +263,33 @@ $$\text{Softmax}(z)_k = \frac{e^{z_k - M}}{\sum_{j=1}^K e^{z_j - M}}$$
    - $e^{0.1} \approx 1.105$
    - **指数总和 Sum** $= 7.389 + 2.718 + 1.105 = 11.212$
 2. **计算 Softmax 归一化预测概率 $\hat{y}$**：
-   - $\hat{y}_{\text{猫}} = \frac{7.389}{11.212} \approx 0.659 \quad (65.9\% \text{ 概率为猫})$
-   - $\hat{y}_{\text{狗}} = \frac{2.718}{11.212} \approx 0.242 \quad (24.2\% \text{ 概率为狗})$
-   - $\hat{y}_{\text{兔子}} = \frac{1.105}{11.212} \approx 0.099 \quad (9.9\% \text{ 概率为兔子})$
+   - $\hat{y}_1 = \frac{7.389}{11.212} \approx 0.659$ (65.9% 概率为猫)
+   - $\hat{y}_2 = \frac{2.718}{11.212} \approx 0.242$ (24.2% 概率为狗)
+   - $\hat{y}_3 = \frac{1.105}{11.212} \approx 0.099$ (9.9% 概率为兔子)
    - （验证和：$0.659 + 0.242 + 0.099 = 1.000$）
 3. **计算交叉熵损失 Loss**：
    若该图片的真实标签为**猫** ($y = [1, 0, 0]$)，则交叉熵损失为：
-   $$\text{Loss} = -\ln(\hat{y}_{\text{猫}}) = -\ln(0.659) \approx 0.417$$
+   $$\text{Loss} = -\ln(\hat{y}_1) = -\ln(0.659) \approx 0.417$$
 </ConceptCard>
 
 ---
 
-## 7. 二分类模型评估体系全景
+## 7. 分类评估的最小应用
 
-在分类任务中，**不能仅仅依赖单一的“准确率 (Accuracy)”**！例如在癌症筛查数据集中，健康人占 99%，患病者占 1%。如果模型盲目将所有人全预测为健康，准确率高达 99%，但模型实际上是个没有任何价值的“废柴”。
+逻辑回归输出的是类别概率，因此实际使用时需要把概率转换为类别，并根据业务目标选择评估指标。这里先保留最小闭环：
 
-为了全面诊断分类模型，我们建立完整的评估体系：
+1. 用混淆矩阵确认 TP、TN、FP、FN 的数量；
+2. 根据业务代价决定更关注 Precision 还是 Recall；
+3. 在验证集上选择分类阈值；
+4. 使用 F1、ROC-AUC 或 PR-AUC 对候选模型进行统一比较。
 
-### 7.1 混淆矩阵 (Confusion Matrix)
+本章后面的实验会展示这些指标在乳腺癌诊断、欺诈检测和多分类任务中的实际用法。指标的完整定义、公式、类别不平衡处理和阈值策略统一放在：
 
-将预测结果与真实标签组合，划分为 4 种基础状态：
+> [01. 模型评估基础与交叉验证](/learn/machine-learning/evaluation/01-model-evaluation-cross-validation) 以及 [02. 分类模型评估指标](/learn/machine-learning/evaluation/02-classification-metrics)
 
-<ConceptCard title="混淆矩阵 4 基础状态定义卡片" type="intuition">
-| 真实 \ 预测 | 预测为 Positive (正例 1) | 预测为 Negative (负例 0) |
-|---|---|---|
-| **真实为 Positive (正例 1)** | **TP (True Positive 真正例)**<br/>抓对了癌症患者 | **FN (False Negative 假负例)**<br/>漏诊了癌症患者 (危险!) |
-| **真实为 Negative (负例 0)** | **FP (False Positive 假正例)**<br/>误诊健康人为癌症 (虚惊) | **TN (True Negative 真负例)**<br/>正确排除健康人 |
+<ConceptCard title="本章只记住一个判断原则" type="intuition">
+不要问“哪个指标最好”，而要问“哪一种错误的业务代价更高”。漏报成本高时优先关注 Recall，误报成本高时优先关注 Precision，需要兼顾两者时再考虑 F1。
 </ConceptCard>
-
-### 7.2 4 大基础评估指标
-
-1. **准确率 (Accuracy)**：所有预测正确的样本比例
-   $$\text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN}$$
-2. **精确率 (Precision / 查准率)**：在所有**模型预测为正例**的样本中，真正为正例的比例
-   $$\text{Precision} = \frac{TP}{TP + FP}$$
-3. **召回率 (Recall / 查全率)**：在所有**真实为正例**的样本中，被模型成功抓出来的比例
-   $$\text{Recall} = \frac{TP}{TP + FN}$$
-4. **F1-Score (调和平均数)**：综合考量精确率与召回率的平衡指标
-   $$\text{F1} = 2 \times \frac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}} = \frac{2TP}{2TP + FP + FN}$$
-
-<ConceptCard title="手算演练：10 份诊断样本的混淆矩阵与 4 大指标计算" type="tip">
-**假设对 10 份体检报告进行二分类诊断（真实 6 份癌症 $y=1$，4 份健康 $y=0$），模型的诊断结果为**：
-- **TP (真正例)** = 5（正确查出 5 名癌症患者）
-- **FP (假正例)** = 1（误诊 1 名健康人为癌症）
-- **FN (假负例)** = 1（漏诊 1 名癌症患者）
-- **TN (真负例)** = 3（正确排除 3 名健康人）
-
-1. **准确率 Accuracy** = $\frac{TP + TN}{\text{Total}} = \frac{5 + 3}{10} = \frac{8}{10} = 80.0\%$
-2. **精确率 Precision** = $\frac{TP}{TP + FP} = \frac{5}{5 + 1} = \frac{5}{6} \approx 83.3\%$（查得准不准）
-3. **召回率 Recall** = $\frac{TP}{TP + FN} = \frac{5}{5 + 1} = \frac{5}{6} \approx 83.3\%$（漏诊多不多）
-4. **F1-Score** = $2 \times \frac{83.3\% \times 83.3\%}{83.3\% + 83.3\%} \approx 83.3\%$
-
-</ConceptCard>
-
----
-
-### 7.3 进阶曲线：ROC-AUC vs PR-AUC
-
-可以通过滑动调整决策概率阈值 Threshold（如从 0.1 到 0.9），绘制出动态评估曲线：
-
-```mermaid
-flowchart TD
-    CurveComp["二分类评估曲线对比"] --> ROC["ROC 曲线 (TPR vs FPR)"]
-    CurveComp --> PR["PR 曲线 (Precision vs Recall)"]
-
-    ROC --> ROCDesc["横轴: 假正例率 FPR<br/>纵轴: 真正例率 TPR (Recall)<br/>AUC 越接近 1.0 模型越优秀<br/>对样本分布不敏感"]
-    PR --> PRDesc["横轴: 召回率 Recall<br/>纵轴: 精确率 Precision<br/>适合极度样本不平衡场景<br/>(如风控欺诈检测、癌症筛查)"]
-```
-
-<ConceptCard title="ROC-AUC vs PR-AUC 适用场景对比" type="tip">
-- **ROC-AUC (受试者工作特征曲线下面积)**：反映模型的排序能力。其最大优势在于**当正负样本比例发生剧烈改变时，ROC 曲线形状保持基本不变**；
-- **PR-AUC (精确率-召回率曲线下面积)**：当数据存在**严重正负样本极度不平衡**（如正例仅占 0.1%）时，PR 曲线对误诊 FP 更为敏感，能够真实反映模型在稀有正例上的表现。
-
-</ConceptCard>
-
----
 
 ## 8. 二分类与多分类必做实验与经典数据集实战
 

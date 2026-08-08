@@ -59,11 +59,15 @@ export function getHierarchicalModuleTree(): ModuleTreeNode[] {
         submodules: mod.submodules.map((sub: any) => ({
           id: `sub-${sub.id}`,
           title: sub.title,
-          children: allNodes.filter((n) => n.module === mod.id && n.submodule === sub.id),
+          children: allNodes
+            .filter((n) => n.module === mod.id && n.submodule === sub.id)
+            .sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER) || a.route.localeCompare(b.route)),
         })),
       };
     } else {
-      const children = allNodes.filter((n) => n.module === mod.id);
+      const children = allNodes
+        .filter((n) => n.module === mod.id)
+        .sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER) || a.route.localeCompare(b.route));
       return {
         id: mod.id,
         title: mod.title,

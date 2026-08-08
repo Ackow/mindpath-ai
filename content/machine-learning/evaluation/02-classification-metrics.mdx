@@ -1,0 +1,221 @@
+---
+id: ml-evaluation-classification
+title: 02.分类模型评估指标
+module: machine-learning
+submodule: evaluation
+order: 2
+difficulty: beginner
+elective: false
+prerequisites: [ml-evaluation-overview, supervised-logistic-regression]
+relatedNotes: [supervised-svm, supervised-gbdt-xgboost]
+nextNotes: [ml-evaluation-regression-diagnosis]
+map:
+  layoutGroup: machine-learning
+estimatedMinutes: 40
+tags: [机器学习, 模型评估, 分类指标, 混淆矩阵, Precision, Recall, F1, ROC-AUC, PR-AUC]
+summary: 掌握分类模型的混淆矩阵、Accuracy、Precision、Recall、F1、ROC-AUC 与 PR-AUC，理解类别不平衡和阈值选择下不同指标的取舍。
+---
+
+## 1. 为什么准确率不够用？
+
+假设一万个账户中只有十个是欺诈账户。一个永远预测“正常”的模型，准确率可以达到 99.9%，但它一个欺诈账户都没有识别出来。
+
+所以分类模型评估不能只问“预测对了多少”，还要问：
+
+- 预测为正类的样本中，有多少是真的？
+- 所有真正的正类中，有多少被找出来？
+- 错误漏报和错误误报，哪一种代价更高？
+
+## 2. 混淆矩阵：分类指标的共同基础
+
+对于二分类任务，预测结果可以分成四种：
+
+| 结果 | 含义 | 例子 |
+|---|---|---|
+| TP | 真实为正，预测为正 | 真正识别出欺诈交易 |
+| TN | 真实为负，预测为负 | 正常邮件被判为正常 |
+| FP | 真实为负，预测为正 | 正常用户被误报为风险用户 |
+| FN | 真实为正，预测为负 | 欺诈交易被漏掉 |
+
+```text
+                 真实正类       真实负类
+预测正类          TP             FP
+预测负类          FN             TN
+```
+
+所有常见分类指标，都是从这四个数字计算出来的。
+
+## 3. 五个基础指标
+
+### 3.1 Accuracy：整体预测正确率
+
+$$
+Accuracy = \frac{TP + TN}{TP + TN + FP + FN}
+$$
+
+Accuracy 适合类别比较均衡、不同错误代价相近的场景。类别严重不平衡时，不应单独依赖它。
+
+### 3.2 Precision：预测为正的样本有多准
+
+$$
+Precision = \frac{TP}{TP + FP}
+$$
+
+Precision 高意味着误报少。比如垃圾邮件过滤中，如果误把正常邮件送进垃圾箱，用户体验代价很高，就要关注 Precision。
+
+### 3.3 Recall：真正的正类找回多少
+
+$$
+Recall = \frac{TP}{TP + FN}
+$$
+
+Recall 高意味着漏报少。医疗筛查、欺诈检测和安全告警通常更关注 Recall。
+
+### 3.4 F1：Precision 与 Recall 的平衡
+
+$$
+F1 = 2 \times \frac{Precision \times Recall}{Precision + Recall}
+$$
+
+F1 是调和平均数，只有 Precision 和 Recall 都不低时才会较高。
+
+### 3.5 Specificity：负类识别能力
+
+$$
+Specificity = \frac{TN}{TN + FP}
+$$
+
+Specificity 也叫真负率，常用于医疗筛查和需要控制误报的场景。
+
+## 4. 指标如何选择？
+
+| 业务重点 | 优先关注 |
+|---|---|
+| 类别均衡、错误代价接近 | Accuracy |
+| 误报成本高 | Precision、Specificity |
+| 漏报成本高 | Recall |
+| 需要兼顾误报与漏报 | F1 |
+| 类别极不平衡 | Recall、Precision、F1、PR-AUC |
+| 需要比较整体排序能力 | ROC-AUC |
+| 正类很稀少且关注正类识别 | PR-AUC |
+
+指标没有绝对的“最好”，必须结合业务错误成本选择。
+
+## 5. ROC-AUC 与 PR-AUC
+
+### 5.1 ROC 曲线
+
+ROC 曲线以 False Positive Rate 为横轴、True Positive Rate 为纵轴，展示分类阈值变化时的整体表现。
+
+$$
+FPR = \frac{FP}{FP + TN}
+$$
+
+ROC-AUC 越接近 1，说明模型把正类排在负类前面的能力越强；AUC 约为 0.5 时，模型接近随机猜测。
+
+### 5.2 PR 曲线
+
+PR 曲线以 Recall 为横轴、Precision 为纵轴。正类非常稀少时，PR-AUC 往往比 ROC-AUC 更能反映模型对正类的实际识别能力。
+
+> [!TIP]
+> ROC-AUC 更像“整体排序能力”的评价；PR-AUC 更关注正类稀少场景下 Precision 与 Recall 的取舍。
+
+## 6. 阈值不是永远等于 0.5
+
+许多分类模型输出的是概率，而不是最终类别。默认规则通常是：概率大于等于 0.5 判为正类。
+
+但如果漏报代价更高，可以降低阈值来提高 Recall；如果误报代价更高，可以提高阈值来提高 Precision。
+
+```python
+from sklearn.metrics import precision_recall_curve
+
+prob = model.predict_proba(X_valid)[:, 1]
+precision, recall, thresholds = precision_recall_curve(y_valid, prob)
+
+# 示例：选择满足 Recall >= 0.90 的最小阈值
+valid = thresholds[recall[:-1] >= 0.90]
+selected_threshold = valid[-1] if len(valid) else 0.5
+```
+
+阈值应该在验证集上选择，不能为了得到满意的结果而反复修改测试集阈值。
+
+## 7. Python 实战：输出完整分类报告
+
+<RunnableCodeBlock title="分类模型的多指标评估" language="python">
+{`from sklearn.datasets import load_breast_cancer
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import (
+    accuracy_score, precision_score, recall_score,
+    f1_score, confusion_matrix, classification_report
+)
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+
+X, y = load_breast_cancer(return_X_y=True)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+model = make_pipeline(
+    StandardScaler(),
+    LogisticRegression(max_iter=2000, random_state=42)
+)
+model.fit(X_train, y_train)
+pred = model.predict(X_test)
+
+print("混淆矩阵:")
+print(confusion_matrix(y_test, pred))
+print(f"Accuracy : {accuracy_score(y_test, pred):.3f}")
+print(f"Precision: {precision_score(y_test, pred):.3f}")
+print(f"Recall   : {recall_score(y_test, pred):.3f}")
+print(f"F1       : {f1_score(y_test, pred):.3f}")
+print(classification_report(y_test, pred))
+`}
+</RunnableCodeBlock>
+
+## 8. 常见错误
+
+- 只报告 Accuracy，不说明类别分布；
+- 把 Precision 高误解为 Recall 也高；
+- 在测试集上反复寻找最优阈值；
+- 用 ROC-AUC 掩盖正类极度稀少时的 PR 表现；
+- 没有说明正类到底是哪一类；
+- 比较模型时使用了不同的数据划分或不同指标。
+
+## 9. 本节检查清单
+
+- [ ] 我能从混淆矩阵解释 TP、TN、FP、FN；
+- [ ] 我能区分 Precision 与 Recall；
+- [ ] 我知道 F1 适合平衡 Precision 与 Recall；
+- [ ] 我理解类别不平衡时 Accuracy 可能产生误导；
+- [ ] 我能解释 ROC-AUC 和 PR-AUC 的适用场景；
+- [ ] 我知道如何根据业务代价调整分类阈值。
+
+## 10. 课后互动自测
+
+<InteractiveQuiz
+  title="02. 分类模型评估指标课后自测"
+  questions={[
+    {
+      id: "q1",
+      type: "single",
+      question: "在欺诈检测中，如果最担心漏掉真正的欺诈交易，应优先关注哪个指标？",
+      options: ["Recall", "Precision", "Accuracy", "Specificity"],
+      answer: 0,
+      explanation: "Recall 衡量真正的正类中有多少被找出来，漏报成本高时通常优先提高 Recall。"
+    },
+    {
+      id: "q2",
+      type: "single",
+      question: "正类样本极少时，哪个指标通常比 ROC-AUC 更能体现正类识别效果？",
+      options: ["PR-AUC", "训练集 Accuracy", "R²", "MAE"],
+      answer: 0,
+      explanation: "PR-AUC 直接关注 Precision 与 Recall，在正类稀少场景中通常更有解释力。"
+    }
+  ]}
+/>
+
+## 11. 下一步
+
+下一章将进入回归指标与模型诊断，学习 MAE、MSE、RMSE、R²，以及如何通过学习曲线和误差分析定位模型问题。

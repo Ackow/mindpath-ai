@@ -1,0 +1,293 @@
+---
+id: supervised-gbdt-xgboost
+title: 07.梯度提升树与 XGBoost / LightGBM
+module: machine-learning
+submodule: supervised
+order: 7
+difficulty: advanced
+elective: true
+studyNote: 进阶选学：建议完成线性模型、决策树、随机森林和模型评估后再学习；初学者可先掌握 Boosting 的直觉与调用方式，数学推导和工程优化随后学习。
+prerequisites: [supervised-ensemble-learning-random-forest]
+relatedNotes: [supervised-decision-tree-random-forest, supervised-svm]
+nextNotes: [ml-evaluation-overview]
+map:
+  layoutGroup: machine-learning
+estimatedMinutes: 45
+tags: [机器学习, 监督学习, 集成学习, Boosting, GBDT, XGBoost, LightGBM]
+summary: 理解 Boosting 通过串行迭代纠正前轮误差的核心思想，掌握 GBDT 的残差拟合、XGBoost 的正则化与二阶近似，以及 LightGBM 的高效建树思路。
+---
+
+## 1. 问题导入：为什么还需要 Boosting？
+
+随机森林通过“训练许多棵彼此独立的树，再投票或平均”来降低方差；Boosting 则采用另一种策略：**后一棵树专门修正前面模型犯下的错误**。
+
+想象一位老师带学生刷题：第一轮先做一套题，老师统计错题；第二轮重点练习这些错题；接着再针对仍然薄弱的知识点训练。最终成绩不是来自某一次完美的练习，而是来自多轮有目标的纠错。
+
+> [!TIP]
+> **初学者学习建议**：本章属于进阶选学。先理解“弱树串行纠错、逐步累加”的直觉，并能使用现成模型完成训练即可；损失函数的二阶展开、叶子权重推导和工程优化可以随后学习。
+
+## 2. 学习目标
+
+完成本章后，你将能够：
+
+- 区分 Bagging 与 Boosting 的训练方式和主要作用；
+- 解释 GBDT 如何用新树拟合当前模型的残差或负梯度；
+- 理解学习率、树数量、树深度和早停之间的关系；
+- 说清 XGBoost 相比传统 GBDT 增加的正则化、二阶梯度和工程优化；
+- 了解 LightGBM 的直方图算法与叶子优先生长策略；
+- 使用 Scikit-Learn 训练一个梯度提升分类器，并识别过拟合风险。
+
+## 3. Boosting 的核心直觉：一轮一轮纠错
+
+### 3.1 Bagging 与 Boosting 的区别
+
+| 对比维度 | Bagging / 随机森林 | Boosting / GBDT |
+|---|---|---|
+| 训练关系 | 多个模型相互独立、可以并行 | 后一个模型依赖前一个模型，串行训练 |
+| 主要目标 | 降低方差，让结果更稳定 | 降低偏差，逐步提升拟合能力 |
+| 基学习器 | 通常是较深的高方差决策树 | 通常是较浅的弱决策树 |
+| 数据关注方式 | Bootstrap 重采样，样本相对平权 | 持续关注当前模型预测不好的部分 |
+| 代表算法 | Random Forest | AdaBoost、GBDT、XGBoost、LightGBM |
+
+Boosting 的训练流程可以概括为：
+
+1. 先建立一个初始模型；
+2. 计算当前模型的预测错误；
+3. 训练一棵新树，专门修正这些错误；
+4. 按学习率把新树加入整体模型；
+5. 重复训练，直到达到设定轮数或触发早停。
+
+### 3.2 加法模型
+
+Boosting 最终得到的是许多棵树的加法组合：
+
+$$
+F_M(x) = F_0(x) + \eta h_1(x) + \eta h_2(x) + \cdots + \eta h_M(x)
+$$
+
+其中：
+
+- $F_0(x)$ 是初始预测；
+- $h_m(x)$ 是第 $m$ 轮新训练的弱决策树；
+- $M$ 是树的数量；
+- $\eta$ 是学习率，控制每棵新树对最终结果的影响。
+
+学习率越小，每一步走得越谨慎，通常需要更多棵树；学习率越大，训练更快，但更容易过拟合。
+
+<ConceptCard title="一句话理解 Boosting" type="intuition">
+每一轮都不重新推倒重来，而是在当前模型上增加一棵专门修正现有错误的小树。
+</ConceptCard>
+
+## 4. 从残差到梯度：GBDT 如何训练下一棵树？
+
+### 4.1 回归任务中的残差
+
+假设真实房价为 $y$，当前模型预测为 $F_{m-1}(x)$，那么当前残差就是：
+
+$$
+ r_{im} = y_i - F_{m-1}(x_i)
+$$
+
+第 $m$ 棵树不再直接预测房价，而是学习这些残差。新的模型为：
+
+$$
+F_m(x) = F_{m-1}(x) + \eta h_m(x)
+$$
+
+如果某套房子的预测低估了 20 万，新树就会倾向于给它所在的叶子增加一个正的修正值；如果预测高估了 10 万，修正值则倾向于为负。
+
+### 4.2 从残差推广到负梯度
+
+残差只适用于平方误差。为了支持分类和其他损失函数，GBDT 使用当前损失函数对预测值的负梯度：
+
+$$
+ r_{im} = -\left[\frac{\partial L(y_i, F(x_i))}{\partial F(x_i)}\right]_{F=F_{m-1}}
+$$
+
+因此，“拟合残差”是更容易理解的入门说法，而“拟合损失函数的负梯度”是更一般的数学表述。
+
+### 4.3 分类任务的直觉
+
+二分类时，模型先输出一个分数，再通过 Sigmoid 转换为概率。对于那些真实标签为 1 但预测概率很低的样本，负梯度会推动后续树增加分数；对于预测过于自信的错误样本，后续树会施加反向修正。
+
+## 5. AdaBoost、GBDT 与 XGBoost 的关系
+
+### 5.1 AdaBoost：提高错分样本的权重
+
+AdaBoost 每轮训练一个弱分类器，然后提高上一轮错分样本的权重，让下一轮更加关注它们。最终模型是多个弱分类器的加权投票。
+
+它的优点是思想清晰、可以使用非常简单的树桩；缺点是对异常值和噪声样本较敏感。
+
+### 5.2 GBDT：拟合损失函数的负梯度
+
+GBDT 以损失函数为中心，每一轮训练新树去拟合当前的负梯度方向。它不仅能处理分类，也能处理回归，并且可以通过不同损失函数适配不同任务。
+
+### 5.3 XGBoost：更强的正则化与工程实现
+
+XGBoost 可以看作 GBDT 的高性能实现与系统化改进，主要包括：
+
+- 使用一阶梯度和二阶 Hessian 信息，更精确地选择分裂与叶子权重；
+- 在目标函数中加入叶子数量和叶子权重的正则化，抑制复杂树结构；
+- 支持行采样、列采样、缺失值默认方向和并行计算；
+- 提供较完善的早停、特征重要性和工程参数。
+
+其目标函数可以抽象表示为：
+
+$$
+\text{Obj} = \sum_i L(y_i, \hat y_i) + \sum_{k=1}^{K} \Omega(f_k)
+$$
+
+其中前半部分衡量预测误差，后半部分惩罚树的复杂度。
+
+## 6. LightGBM：为什么训练速度很快？
+
+LightGBM 同样属于梯度提升树家族，但更强调大规模数据下的训练效率：
+
+- **直方图算法**：把连续特征值离散到有限个桶中，减少寻找切分点的计算量；
+- **叶子优先生长**：优先分裂能带来最大损失下降的叶子，通常比按层生长更快；
+- **特征和数据的高效采样**：在大规模、高维数据上减少不必要的计算；
+- **原生支持类别特征等工程能力**：适合表格数据和生产环境。
+
+叶子优先生长也带来一个风险：当树深和叶子数不受控制时，模型可能快速记住训练集。因此 LightGBM 尤其需要关注 `num_leaves`、`max_depth`、`min_child_samples` 和早停。
+
+## 7. 关键超参数：速度、精度与过拟合的平衡
+
+| 超参数 | 作用 | 初学者理解 |
+|---|---|---|
+| `n_estimators` | 弱树数量 | 轮数越多，模型容量越大 |
+| `learning_rate` | 每棵树的贡献权重 | 越小越稳，但需要更多树 |
+| `max_depth` | 单棵树最大深度 | 越大越容易学习复杂关系，也越易过拟合 |
+| `min_samples_leaf` | 叶子最少样本数 | 增大后模型更保守 |
+| `subsample` | 每轮使用的样本比例 | 小于 1 可以增加随机性、缓解过拟合 |
+| `max_features` | 每次分裂考虑的特征比例 | 降低树之间的相关性 |
+
+一个常用的调参方向是：先降低 `learning_rate`，再增加 `n_estimators`，同时用验证集或交叉验证寻找合适的停止位置。
+
+> [!WARNING]
+> 不要只追求训练集准确率。Boosting 的表达能力很强，树数过多、树过深或学习率过大，都可能让训练集分数继续上升而测试集分数下降。
+
+## 8. Python 实战：梯度提升分类器
+
+下面使用 Scikit-Learn 内置的乳腺癌数据集，训练一个 `HistGradientBoostingClassifier`。它使用直方图方法，适合作为理解 GBDT 工程实现的入门模型。
+
+<RunnableCodeBlock title="HistGradientBoostingClassifier 基础实战" language="python">
+{`from sklearn.datasets import load_breast_cancer
+from sklearn.ensemble import HistGradientBoostingClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, classification_report
+
+# 1. 准备数据
+data = load_breast_cancer()
+X, y = data.data, data.target
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+# 2. 训练梯度提升模型
+model = HistGradientBoostingClassifier(
+    learning_rate=0.08,
+    max_iter=200,
+    max_leaf_nodes=15,
+    l2_regularization=1.0,
+    random_state=42
+)
+model.fit(X_train, y_train)
+
+# 3. 评估模型
+train_pred = model.predict(X_train)
+test_pred = model.predict(X_test)
+print(f"训练集准确率: {accuracy_score(y_train, train_pred):.3f}")
+print(f"测试集准确率: {accuracy_score(y_test, test_pred):.3f}")
+print(classification_report(y_test, test_pred, target_names=data.target_names))
+`}
+</RunnableCodeBlock>
+
+观察训练集与测试集的差距，是判断模型是否开始过拟合的第一步。实际项目中还应结合交叉验证、F1、ROC-AUC 和业务成本进行判断。
+
+### 8.1 XGBoost 与 LightGBM 的使用位置
+
+在生产项目中，你可能会使用第三方库：
+
+```python
+# 常见的第三方模型名称
+from xgboost import XGBClassifier
+from lightgbm import LGBMClassifier
+```
+
+它们通常适用于结构化表格数据，但需要额外安装依赖，并且超参数更多。学习顺序建议是：
+
+1. 先用 Scikit-Learn 理解 GBDT 的训练流程；
+2. 再用 XGBoost 理解正则化、早停和特征重要性；
+3. 最后根据数据规模和工程需求选择 LightGBM 或其他实现。
+
+## 9. 常见错误排查
+
+| 现象 | 可能原因 | 建议 |
+|---|---|---|
+| 训练准确率很高，测试准确率下降 | 树太深、树太多或学习率太大 | 降低 `max_depth`，增加正则化，使用早停 |
+| 模型训练很慢 | `n_estimators` 太大或树结构过复杂 | 减小树深，使用直方图模型，先调小数据验证流程 |
+| 训练集和测试集分数都不高 | 模型容量不足、特征质量差或学习率太小 | 适当增加树数，检查特征和标签质量 |
+| 把测试集用于调参 | 数据泄漏 | 单独划分验证集，最终测试集只使用一次 |
+| 只看 Accuracy | 类别不平衡导致指标失真 | 同时查看 Precision、Recall、F1、ROC-AUC 或 PR-AUC |
+| 认为特征重要性就是因果关系 | 树模型重要性是预测贡献，不是因果证明 | 结合置换重要性、SHAP 和业务分析解释 |
+
+## 10. 本节检查清单
+
+- [ ] 我能说出 Bagging 与 Boosting 的训练关系差异；
+- [ ] 我理解后续树是在修正当前模型的残差或负梯度；
+- [ ] 我知道学习率与树数量通常需要配合调整；
+- [ ] 我能解释 XGBoost 中正则化和二阶信息的大致作用；
+- [ ] 我知道 LightGBM 的叶子优先生长可能带来过拟合风险；
+- [ ] 我会同时比较训练集、验证集和测试集表现；
+- [ ] 我不会把特征重要性直接解释为因果关系。
+
+## 11. 课后互动自测
+
+<InteractiveQuiz
+  title="07. 梯度提升树与 XGBoost / LightGBM 课后自测"
+  questions={[
+    {
+      id: "q1",
+      type: "single",
+      question: "Boosting 与随机森林最核心的区别是什么？",
+      options: [
+        "Boosting 后一轮会根据前一轮的错误继续训练",
+        "Boosting 不能使用决策树",
+        "随机森林只能用于回归",
+        "随机森林不需要训练数据"
+      ],
+      answer: 0,
+      explanation: "Boosting 是串行纠错，后一个基学习器会针对前一个模型的错误继续学习。"
+    },
+    {
+      id: "q2",
+      type: "single",
+      question: "降低 learning_rate 后通常应该怎么做？",
+      options: [
+        "增加树的数量，并配合验证集或早停",
+        "删除测试集",
+        "把树深度无限增加",
+        "停止训练第一棵树"
+      ],
+      answer: 0,
+      explanation: "学习率变小后每棵树的修正幅度变小，通常需要更多棵树完成累积修正。"
+    }
+  ]}
+/>
+
+## 12. 下一步与相关章节
+
+本章完成后，建议进入模型评估与诊断，重点学习交叉验证、指标选择、类别不平衡、数据泄漏和学习曲线。之后再进入无监督学习中的聚类与降维。
+
+相关章节：
+
+- [04. 决策树算法](/learn/machine-learning/supervised/05-decision-tree-random-forest)：理解 Boosting 所使用的基学习器；
+- [06. 集成学习与随机森林](/learn/machine-learning/supervised/06-ensemble-learning-random-forest)：对比 Bagging 与 Boosting；
+- [02. 逻辑回归与二分类评估](/learn/machine-learning/supervised/02-logistic-regression)：复习分类指标和概率输出。
+
+## 13. 参考资料
+
+- [Scikit-Learn Gradient Boosting 官方文档](https://scikit-learn.org/stable/modules/ensemble.html#gradient-boosting)
+- [XGBoost 官方文档](https://xgboost.readthedocs.io/en/stable/)
+- [LightGBM 官方文档](https://lightgbm.readthedocs.io/en/latest/)

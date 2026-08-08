@@ -135,6 +135,19 @@ export const InteractiveMindMap: React.FC<InteractiveMindMapProps> = ({ nodes, s
   }, []);
 
   const documentNodes = nodes.filter((node) => node.route.startsWith('/learn/') && !node.hidden);
+
+  // Keep the selected chapter visible when it was picked from the map sidebar.
+  useEffect(() => {
+    const selectedNode = nodes.find((node) => node.id === selectedNodeId);
+    if (!selectedNode?.route.startsWith('/learn/')) return;
+
+    const groupId = `sub-${selectedNode.submodule || selectedNode.module}`;
+    setCollapsedNodes((current) => {
+      const next = current.filter((id) => id !== selectedNode.module && id !== groupId);
+      return next.length === current.length ? current : next;
+    });
+  }, [nodes, selectedNodeId]);
+
   const modules = curriculumModules.map((module) => ({
     ...module,
     nodes: documentNodes.filter((node) => node.module === module.id),
@@ -278,9 +291,9 @@ export const InteractiveMindMap: React.FC<InteractiveMindMapProps> = ({ nodes, s
                   initial={false}
                   animate={{
                     d: module.isCollapsed
-                      ? `M 240 ${module.centerY} C 360 ${module.centerY}, 360 ${module.centerY}, 510 ${module.centerY}`
+                      ? `M 440 ${module.centerY} C 475 ${module.centerY}, 475 ${module.centerY}, 510 ${module.centerY}`
                       : `M 440 ${module.centerY} C 475 ${module.centerY}, 475 ${group.centerY}, 510 ${group.centerY}`,
-                    opacity: module.isCollapsed ? 0.3 : 1,
+                    opacity: module.isCollapsed ? 0 : 1,
                   }}
                   transition={LAYOUT_TRANSITION}
                   fill="none"
@@ -301,7 +314,7 @@ export const InteractiveMindMap: React.FC<InteractiveMindMapProps> = ({ nodes, s
                       initial={false}
                       animate={{
                         d: isHidden
-                          ? `M 510 ${group.centerY} C 650 ${group.centerY}, 650 ${group.centerY}, 800 ${group.centerY}`
+                          ? `M 740 ${group.centerY} C 770 ${group.centerY}, 770 ${group.centerY}, 800 ${group.centerY}`
                           : `M 740 ${group.centerY} C 770 ${group.centerY}, 770 ${targetY}, 800 ${targetY}`,
                         opacity: isHidden ? 0 : 1,
                       }}

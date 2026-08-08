@@ -15,6 +15,8 @@ export type ContentFrontmatter = {
   prerequisites: string[];
   estimatedMinutes: number;
   tags: string[];
+  elective?: boolean;
+  studyNote?: string;
   summary: string;
 };
 
@@ -64,6 +66,8 @@ export async function getContentIndex(): Promise<ContentIndexEntry[]> {
       prerequisites: node.prerequisites || [],
       estimatedMinutes: node.estimatedMinutes || 20,
       tags: node.tags || [],
+      elective: Boolean(node.elective),
+      studyNote: node.studyNote || '',
       summary: node.summary || '',
       slug: node.route.replace('/learn/', '').split('/'),
       route: node.route,

@@ -72,6 +72,13 @@ export const NoteReaderClient: React.FC<NoteReaderClientProps> = ({
 
   const title = frontmatter?.title || currentNode.title;
   const summary = frontmatter?.summary || currentNode.summary;
+  const difficultyMeta = {
+    beginner: { label: '入门', requirement: '可直接学习', className: 'bg-teal-50 text-teal-700 border-teal-200' },
+    intermediate: { label: '中等', requirement: '建议先完成基础章节', className: 'bg-amber-50 text-amber-700 border-amber-200' },
+    advanced: { label: '进阶', requirement: '建议完成相关前置后学习', className: 'bg-rose-50 text-rose-700 border-rose-200' },
+  }[currentNode.difficulty] || { label: '入门', requirement: '可直接学习', className: 'bg-teal-50 text-teal-700 border-teal-200' };
+  const isElective = Boolean(frontmatter?.elective ?? currentNode.elective);
+  const studyNote = frontmatter?.studyNote || currentNode.studyNote;
 
   // 1. Dynamic Hierarchical Table of Contents (TOC) with H2/H3 levels
   const parsedToc = rawContent
@@ -366,9 +373,13 @@ export const NoteReaderClient: React.FC<NoteReaderClientProps> = ({
 
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
               <div className="flex items-center gap-2 text-xs">
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-extrabold border border-emerald-200">
-                  难度: {currentNode.difficulty === 'beginner' ? '入门' : '中等'}
+                                <span className={`px-2.5 py-0.5 rounded-full font-extrabold border ${difficultyMeta.className}`}>
+                  难度: {difficultyMeta.label}
                 </span>
+
+                {isElective && (
+                  <span className="px-2.5 py-0.5 rounded-full bg-violet-50 text-violet-700 font-extrabold border border-violet-200">选学</span>
+                )}
                 <span className="flex items-center gap-1 text-slate-500 px-2.5 py-0.5 bg-slate-100 rounded-full font-medium">
                   <Clock className="w-3.5 h-3.5" /> 预计阅读 {currentNode.estimatedMinutes || 25} 分钟
                 </span>

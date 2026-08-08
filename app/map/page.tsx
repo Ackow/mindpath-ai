@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { DifficultyBadge } from '@/components/ui/Badge';
 import { getGlobalGraphNodes, getNodeById, getHierarchicalModuleTree } from '@/lib/graph';
 import { InteractiveMindMap } from '@/components/mindmap/InteractiveMindMap';
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react';
 
 export default function MindMapPage() {
+  const router = useRouter();
   const allNodes = getGlobalGraphNodes();
   const moduleTree = getHierarchicalModuleTree();
   const documentNodes = allNodes.filter((node) => node.route.startsWith('/learn/'));
@@ -172,6 +174,8 @@ export default function MindMapPage() {
                                       <button
                                         key={child.id}
                                         onClick={() => setSelectedNodeId(child.id)}
+                                        onDoubleClick={() => router.push(child.route)}
+                                        title={'\u5355\u51fb\u5b9a\u4f4d\u5e76\u5c55\u5f00\u5bfc\u56fe\uff0c\u53cc\u51fb\u6253\u5f00\u7b14\u8bb0\u3002'}
                                         className={`w-full flex items-center gap-2 py-1.5 px-2 rounded-xl text-left text-xs transition-all ${
                                           isSelected
                                             ? 'bg-amber-50 text-amber-900 font-extrabold border border-amber-300 shadow-2xs'

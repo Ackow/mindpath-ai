@@ -1,13 +1,13 @@
 ---
 id: supervised-decision-tree-random-forest
-title: 05. 决策树算法 (Decision Tree)
+title: 04.决策树算法
 module: machine-learning
 submodule: supervised
-order: 5
+order: 4
 difficulty: beginner
-prerequisites: [supervised-svm, math-probability-stats]
+prerequisites: [supervised-logistic-regression, math-probability-stats]
 relatedNotes: [supervised-logistic-regression, supervised-knn-naive-bayes]
-nextNotes: []
+nextNotes: [supervised-svm]
 map:
   layoutGroup: machine-learning
 estimatedMinutes: 45
@@ -27,7 +27,7 @@ symbols:
 > [!TIP]
 > **前置知识指引**：在学习决策树算法之前，建议先完成：
 > 1. **[03. 概率论与数理统计](/learn/foundations/math/03-math-probability-stats)**（理解概率分布与期望值）；
-> 2. **[04. 支持向量机 (SVM)](/learn/machine-learning/supervised/04-svm)**（对比线性/非线性决策边界形态）。
+> 2. **[05. 支持向量机 (SVM)](/learn/machine-learning/supervised/04-svm)**（对比线性/非线性决策边界形态）。
 
 假设你是一家商业银行的风险控制专家。当一位新客户提交贷款申请时，你会怎么决定是否批准？
 
@@ -246,8 +246,8 @@ $$
 | **叶节点 C** | 信用记录 = 良好 且 年龄 = 中年 | 客户 6, 8, 10 (3人) | 批准贷款 (y=1) | **0.0000** | 30% |
 
 **全树不纯度计算**：
-- 全树加权基尼指数：$$\text{Gini}_{\text{全树}} = \frac{4}{10}(0) + \frac{3}{10}(0) + \frac{3}{10}(0) = \mathbf{0.0000}$$
-- 全树总基尼降幅：$$\Delta \text{Gini}_{\text{Total}} = \text{Gini}_{\text{初始}}(0.4200) - \text{Gini}_{\text{全树}}(0.0000) = \mathbf{0.4200}$$
+- 全树加权基尼指数：$\text{Gini}_{\text{全树}} = \frac{4}{10}(0) + \frac{3}{10}(0) + \frac{3}{10}(0) = \mathbf{0.0000}$
+- 全树总基尼降幅：$\Delta \text{Gini}_{\text{Total}} = \text{Gini}_{\text{初始}}(0.4200) - \text{Gini}_{\text{全树}}(0.0000) = \mathbf{0.4200}$
 
 全树所有叶节点不纯度降至 0.0000，递归建树完满成功！彻底解开了决策树如何多层生长、深层递归的数学全貌。
 
@@ -407,9 +407,9 @@ for rank, idx in enumerate(top_indices, 1):
 
 ## 11. 下一步与相关章节
 
-- **下一章推荐**：学习 **[06. 随机森林与集成学习 (Random Forest & Bagging)](/learn/machine-learning/supervised/06-random-forest)**，探索如何通过多棵决策树组建森林！
+- **下一章推荐**：学习 **[06. 随机森林与集成学习 (Random Forest & Bagging)](/learn/machine-learning/supervised/06-ensemble-learning-random-forest)**，探索如何通过多棵决策树组建森林！
 - **相关前置与扩展阅读**：
-  - **[04. 支持向量机 (SVM)](/learn/machine-learning/supervised/04-svm)**：对比最大间隔超平面与决策树正交切分的边界差异
+  - **[05. 支持向量机 (SVM)](/learn/machine-learning/supervised/04-svm)**：对比最大间隔超平面与决策树正交切分的边界差异
   - **[02. 逻辑回归与二分类评估](/learn/machine-learning/supervised/02-logistic-regression)**：复习二分类混淆矩阵与评估指标
 
 ---
