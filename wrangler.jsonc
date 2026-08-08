@@ -2,9 +2,6 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "mindpath-ai",
   "compatibility_date": "2025-01-01",
-  "assets": {
-    "directory": "./out"
-  },
   "d1_databases": [
     {
       "binding": "DB",
