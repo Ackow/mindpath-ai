@@ -42,3 +42,7 @@ Thumbs.db
 /.wrangler/
 
 参考图/
+# local working materials (not committed)
+/.codex/
+/参考图/
+/设计文档/
