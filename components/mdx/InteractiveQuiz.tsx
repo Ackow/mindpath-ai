@@ -191,7 +191,7 @@ const getQuizStorageKey = (pathname: string, quizTitle: string, firstQId: string
 };
 
 export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
-  title = '🎯 课后互动自测与概念验证',
+  title = '课后互动自测与概念验证',
   questions = [],
 }) => {
   const pathname = usePathname() || '';

@@ -109,8 +109,8 @@ function parseMermaidToFlow(chartText: string): { initialNodes: Node[]; initialE
     const trimmed = part.trim();
     if (!trimmed) return null;
 
-    // 1. 匹配标准带引号节点: ID["文本"] 或 ID['文本'] 或 ID("文本")
-    const quotedMatch = trimmed.match(/^([A-Za-z0-9_.-]+)\s*(?:\[|\()\s*["'](.*?)["']\s*(?:\]|\))$/s);
+    // 1. 匹配标准带引号节点: ID["文本"] 或 ID['文本'] 或 ID("文本") 或 ID{"文本"}
+    const quotedMatch = trimmed.match(/^([A-Za-z0-9_.-]+)\s*(?:\[|\(|\{)\s*["'](.*?)["']\s*(?:\]|\|\})$/s);
     if (quotedMatch) {
       const id = quotedMatch[1];
       const label = cleanLabelText(quotedMatch[2]);

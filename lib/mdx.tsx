@@ -36,6 +36,8 @@ import { NaiveBayesLab } from '@/components/animations/NaiveBayesLab';
 import { SvmMarginKernelLab } from '@/components/animations/SvmMarginKernelLab';
 import { SvmHandCalculationLab } from '@/components/animations/SvmHandCalculationLab';
 import { DecisionTreeLab } from '@/components/animations/DecisionTreeLab';
+import { DecisionTreeHandCalcLab } from '@/components/animations/DecisionTreeHandCalcLab';
+import { RandomForestLab } from '@/components/animations/RandomForestLab';
 import { PandasDataImportLab } from '@/components/animations/PandasDataImportLab';
 import { MatplotlibParamsLab } from '@/components/animations/MatplotlibParamsLab';
 import { ReactFlowDiagram } from '@/components/mdx/ReactFlowDiagram';
@@ -65,10 +67,10 @@ function normalizeAlerts(source: string) {
   });
 }
 
-function normalizeDisplayMath(source: string) {
-  // 1. 保护大写字母开头的 JSX 组件 (如 <ReactFlowDiagram ... />, <InteractiveQuiz ... />)
+function transformMath(source: string) {
+  // 1. 保护自闭合 JSX 组件 (如 <DecisionTreeLab />, <ReactFlowDiagram chart="..." />, <SvmMarginKernelLab />)
   const jsxBlocks: string[] = [];
-  let protectedSource = source.replace(/<([A-Z][a-zA-Z0-9]*)([\s\S]*?)(\/>|>[^]*?<\/\1>)/g, (match) => {
+  let protectedSource = source.replace(/<([A-Z][a-zA-Z0-9]*)([\s\S]*?)\/>/g, (match) => {
     jsxBlocks.push(match);
     return `___JSX_BLOCK_${jsxBlocks.length - 1}___`;
   });
@@ -99,13 +101,23 @@ function normalizeDisplayMath(source: string) {
     return match;
   });
 
-  // 4. 安全还原 JSX 组件标签 (在 replace 替换串中 $$ 代表单个 $ 字符)
+  // 4. 安全还原自闭合 JSX 组件标签
   result = result.replace(/___JSX_BLOCK_(\d+)___/g, (_, idx) => {
     const block = jsxBlocks[parseInt(idx, 10)] || '';
     return block.replace(/\$/g, '$$');
   });
 
   return result;
+}
+
+function normalizeDisplayMath(source: string) {
+  // 如果包含 YAML Frontmatter (--- ... ---)，只对正文内容做 KaTeX 转换，保留 YAML 不被破坏
+  const fmMatch = source.match(/^(---\r?\n[\s\S]*?\r?\n---\r?\n)([\s\S]*)$/);
+  if (fmMatch) {
+    const [, frontmatter, body] = fmMatch;
+    return frontmatter + transformMath(body);
+  }
+  return transformMath(source);
 }
 
 function normalizeMarkdownTables(source: string) {
@@ -210,6 +222,8 @@ export const mdxComponents = {
   SvmMarginKernelLab,
   SvmHandCalculationLab,
   DecisionTreeLab,
+  DecisionTreeHandCalcLab,
+  RandomForestLab,
   PandasDataImportLab,
   MatplotlibParamsLab,
   ReactFlowDiagram,

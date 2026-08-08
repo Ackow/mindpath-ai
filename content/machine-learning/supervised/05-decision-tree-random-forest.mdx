@@ -1,6 +1,6 @@
 ---
 id: supervised-decision-tree-random-forest
-title: 05.决策树与随机森林
+title: 05. 决策树算法 (Decision Tree)
 module: machine-learning
 submodule: supervised
 order: 5
@@ -11,38 +11,39 @@ nextNotes: []
 map:
   layoutGroup: machine-learning
 estimatedMinutes: 45
-tags: [机器学习, 监督学习, 决策树, 随机森林, 信息熵, 信息增益, 基尼指数, 剪枝, 集成学习, Scikit-Learn]
-summary: 掌握决策树与随机森林的核心原理与代码实战，理解信息熵 (Entropy)、信息增益 (ID3/C4.5)、基尼指数 (CART)、预剪枝与后剪枝，以及随机森林的 Bagging 重采样与特征随机选择机制。
+tags: [机器学习, 监督学习, 决策树, 信息熵, 信息增益, 基尼指数, 剪枝, Scikit-Learn]
+summary: 掌握决策树算法的核心原理与手算推导实战，理解信息熵 (Entropy)、信息增益 (ID3)、增益率 (C4.5)、基尼指数 (CART)，通过具体银行贷款手算案例直观理解分步分割过程，掌握预剪枝与后剪枝及 Scikit-Learn 代码实现。
 symbols:
-  - symbol: "H(X) = -\\sum_{i=1}^n p_i \\log_2 p_i"
+  - symbol: "$H(D) = -\\sum_{k=1}^K p_k \\log_2 p_k$"
     mean: "信息熵 (Information Entropy)"
-  - symbol: "\\text{Gini}(D) = 1 - \\sum_{k=1}^K p_k^2"
+  - symbol: "$\\text{Gini}(D) = 1 - \\sum_{k=1}^K p_k^2$"
     mean: "基尼不纯度 (Gini Impurity)"
-  - symbol: "\\text{Gain}(D, a) = H(D) - \\sum_{v=1}^V \\frac{|D^v|}{|D|} H(D^v)"
+  - symbol: "$\\text{Gain}(D, a) = H(D) - \\sum_{v=1}^V \\frac{|D_v|}{|D|} H(D_v)$"
     mean: "信息增益 (Information Gain)"
 ---
 
 ## 1. 问题导入：人类是如何做决策的？
 
 > [!TIP]
-> **前置知识指引**：在学习决策树与随机森林之前，建议先完成：
+> **前置知识指引**：在学习决策树算法之前，建议先完成：
 > 1. **[03. 概率论与数理统计](/learn/foundations/math/03-math-probability-stats)**（理解概率分布与期望值）；
 > 2. **[04. 支持向量机 (SVM)](/learn/machine-learning/supervised/04-svm)**（对比线性/非线性决策边界形态）。
 
-假设你周末打算出门打羽毛球，你会怎么决定去不去？
+假设你是一家商业银行的风险控制专家。当一位新客户提交贷款申请时，你会怎么决定是否批准？
 
-你可能会在脑海中快速做出一连串问答：
-- **天气怎么样？** $\to$ 如果是“下雨”，直接“取消”；如果是“晴天”，继续问：
-- **湿度高不高？** $\to$ 如果“湿度大于 80%”，容易中暑，“取消”；如果“湿度正常”，决定“出发”！
+你可能会在脑海中快速做出一连串判断问答：
+- **信用记录好不好？** $\to$ 如果是“不良信用”，直接“拒绝贷款”；如果是“良好信用”，继续问：
+- **年收入高不高？** $\to$ 如果“年收入大于 15 万”，直接“批准贷款”；如果“年收入偏低”，决定“拒绝贷款”。
 
-这一连串形如 **“如果……那么……” (If-Then)** 的树状结构，就是**决策树 (Decision Tree)** 的直觉！
+这一连串形如 **“如果……那么……” (If-Then)** 的树状结构，就是**决策树算法 (Decision Tree)** 的直觉！
 
 ```mermaid
 graph TD
-    A["天气状况如何?"] -->|"雨天"| B["取消活动"]
-    A -->|"晴天"| C["空气湿度如何?"]
-    C -->|"湿度 > 80%"| D["取消活动"]
-    C -->|"湿度正常"| E["出发打球!"]
+    Start["评估客户贷款申请"] --> Branch1["信用记录是否良好?"]
+    Branch1 -->|"不良信用"| Denied1["拒绝贷款"]
+    Branch1 -->|"良好信用"| Branch2["年收入大于15万?"]
+    Branch2 -->|"否"| Denied2["拒绝贷款 (收入偏低)"]
+    Branch2 -->|"是"| Approved["批准贷款"]
 ```
 
 与 Logistic 回归或 SVM 不同，决策树不需要计算复杂的向量点积，它通过建立一棵清晰的“判断树”，不仅预测准确，而且具备**极强的可解释性**！
@@ -54,11 +55,10 @@ graph TD
 完成本章学习后，你将能够：
 
 1. **掌握决策树构建流程**：理解自顶向下的递归划分 (Recursive Partitioning) 贪心策略；
-2. **熟练计算不纯度指标**：掌握信息熵 (Entropy)、信息增益 (ID3/C4.5) 与基尼指数 (CART) 的计算公式；
-3. **掌握过拟合控制与剪枝**：对比预剪枝 (Pre-pruning) 与后剪枝 (Post-pruning) 的调参策略；
-4. **透彻理解随机森林 (Random Forest)**：明白 Bagging 自助重采样与特征随机挑选的双重随机性机制；
-5. **熟练进行 Python 代码实战**：使用 `sklearn.tree` 与 `sklearn.ensemble` 训练模型并提取特征重要性 (Feature Importances)；
-6. **识别工程踩坑点**：掌握对高基数类别特征处理、连续变量切分与非线性抗噪技巧。
+2. **熟练手算不纯度指标**：掌握信息熵 (Entropy)、信息增益 (ID3)、增益率 (C4.5) 与基尼指数 (CART) 的计算公式；
+3. **透彻理解真实手算案例**：通过具体的 8 样本贷款数据集，完成根节点特征选择的分步手算推导；
+4. **掌握过拟合控制与剪枝**：对比预剪枝 (Pre-pruning) 与后剪枝 (Post-pruning) 的调参策略；
+5. **熟练进行 Python 代码实战**：使用 `sklearn.tree.DecisionTreeClassifier` 训练模型、提取特征重要性与可视化决策树。
 
 ---
 
@@ -70,7 +70,7 @@ graph TD
 
 ---
 
-## 4. 不纯度度量与分裂准则
+## 4. 不纯度度量与切分准则
 
 决策树的核心问题是：**在当前节点，应该优先选择哪一个特征进行切分？**
 
@@ -93,7 +93,7 @@ $$
 使用特征 $a$ 切分数据集 $D$ 产生的信息增益为切分前后熵的差值：
 
 $$
-\text{Gain}(D, a) = H(D) - \sum_{v=1}^V \frac{|D^v|}{|D|} H(D^v)
+\text{Gain}(D, a) = H(D) - \sum_{v=1}^V \frac{|D_v|}{|D|} H(D_v)
 $$
 
 **ID3 算法**选择信息增益最大的特征进行切分。但 ID3 偏向于选择取值较多的特征（例如“用户身份证号”，切分后每个子节点只有 1 个人，纯度极大但毫无泛化价值）。
@@ -103,7 +103,7 @@ $$
 为了纠正 ID3 偏向多值特征的缺陷，**C4.5 算法**引入了**增益率 (Gain Ratio)**，利用固有值 $IV(a)$ 对多值特征进行惩罚：
 
 $$
-\text{Gain\_ratio}(D, a) = \frac{\text{Gain}(D, a)}{IV(a)}, \quad \text{其中 } IV(a) = -\sum_{v=1}^V \frac{|D^v|}{|D|} \log_2\left(\frac{|D^v|}{|D|}\right)
+\text{Gain\_ratio}(D, a) = \frac{\text{Gain}(D, a)}{IV(a)}, \quad \text{其中 } IV(a) = -\sum_{v=1}^V \frac{|D_v|}{|D|} \log_2\left(\frac{|D_v|}{|D|}\right)
 $$
 
 ### 4.4 基尼指数 (Gini Impurity - CART 算法)
@@ -124,56 +124,168 @@ $$
 
 ---
 
-## 5. 树的生长与过拟合控制 (剪枝 Pruning)
+## 5. 经典实例推导：10 样本 2 层决策树递归切分分步手算与可视化
+
+<ConceptCard title="核心逻辑：决策树为什么要进行多层递归切分？" targetId="concept-why-impurity">
+**1. 计算机没有人类视觉**：计算机无法像人类一样用肉眼看'哪些点聚在一起'，它必须依靠数值指标（信息熵 H 或基尼指数 Gini）来客观度量集合的混乱程度。
+
+**2. 递归深入切分**：如果第 1 层切分后某个子节点内部依然不纯（如包含 3 批准 3 拒绝），决策树就会**在该子节点处继续递归挑选剩余特征（如年龄）进行二次切分**，直到所有叶节点纯净或达到停止条件！
+
+**3. 贪心竞标胜出**：决策树在每一个节点处遍历候选特征，挑选能带来**最大的不纯度降幅（基尼增益 Delta Gini 或 信息增益 Gain）**的特征作为当前分支节点。
+</ConceptCard>
+
+为了让你彻底看懂决策树是如何通过数学指标一步步从根节点递归生长的，请点击下方交互动画实验室，结合 5 步数据卡片与 2 层树图同步观察：
+
+<DecisionTreeHandCalcLab />
+
+### 5.1 10 样本数据集
+
+| 客户 ID | 年收入 ($x_1$) | 信用记录 ($x_2$) | 年龄 ($x_3$) | 贷款结果 ($y$) |
+| :--- | :--- | :--- | :--- | :--- |
+| **1** | 高 | 不良 | 青年 | 拒绝 (0) |
+| **2** | 高 | 不良 | 青年 | 拒绝 (0) |
+| **3** | 低 | 不良 | 中年 | 拒绝 (0) |
+| **4** | 低 | 不良 | 中年 | 拒绝 (0) |
+| **5** | 高 | 良好 | 青年 | 拒绝 (0) |
+| **6** | 高 | 良好 | 中年 | 批准 (1) |
+| **7** | 中 | 良好 | 青年 | 拒绝 (0) |
+| **8** | 中 | 良好 | 中年 | 批准 (1) |
+| **9** | 低 | 良好 | 青年 | 拒绝 (0) |
+| **10**| 低 | 良好 | 中年 | 批准 (1) |
+
+- **总样本量** $|D| = 10$（正例批准 3 人，负例拒绝 7 人）
+- **根节点初始正负占比**：$p_{\text{批准}} = \frac{3}{10} = 0.3, \quad p_{\text{拒绝}} = \frac{7}{10} = 0.7$
+- **根节点初始基尼指数**：
+  $$\text{Gini}(D) = 1 - \left(p_{\text{批准}}^2 + p_{\text{拒绝}}^2\right) = 1 - (0.3^2 + 0.7^2) = 1 - (0.09 + 0.49) = \mathbf{0.4200}$$
+- **根节点初始信息熵**：
+  $$H(D) = -\left(0.3 \log_2 0.3 + 0.7 \log_2 0.7\right) = \mathbf{0.8813 \text{ Bit}}$$
+
+---
+
+### 5.2 步骤 1：第 1 层根节点选拔 (三大候选特征全量计算 PK)
+
+决策树遍历数据集的所有候选特征，计算如果以该特征作为第一刀切分，能获得多少基尼降幅（$\Delta \text{Gini}$）：
+
+#### 候选 1：按“信用记录 ($x_2$)”切分
+1. **信用记录 = 不良**（4 人：客户 1, 2, 3, 4 $\to$ 0 批准 4 拒绝）：
+   $$\text{Gini}_{\text{不良}} = 1 - (0^2 + 1.0^2) = 0.0000 \quad (\text{纯净，生成叶节点 A})$$
+2. **信用记录 = 良好**（6 人：客户 5, 6, 7, 8, 9, 10 $\to$ 3 批准 3 拒绝）：
+   $$\text{Gini}_{\text{良好}} = 1 - (0.5^2 + 0.5^2) = 0.5000 \quad (\text{不纯，仍需二次切分})$$
+3. **切分后加权基尼指数**：
+   $$\text{Gini}_{\text{split}}(D, \text{信用}) = \frac{4}{10} \times \text{Gini}_{\text{不良}} + \frac{6}{10} \times \text{Gini}_{\text{良好}} = \frac{4}{10}(0) + \frac{6}{10}(0.5000) = \mathbf{0.3000}$$
+4. **基尼降幅**：
+   $$\Delta \text{Gini}(D, \text{信用}) = \text{Gini}(D) - \text{Gini}_{\text{split}} = 0.4200 - 0.3000 = \mathbf{0.1200}$$
+
+#### 候选 2：按“年龄 ($x_3$)”切分
+1. **年龄 = 青年**（4 人：客户 1, 2, 5, 7 $\to$ 0 批准 4 拒绝）：
+   $$\text{Gini}_{\text{青年}} = 1 - (0^2 + 1.0^2) = 0.0000$$
+2. **年龄 = 中年**（6 人：客户 3, 4, 6, 8, 9, 10 $\to$ 3 批准 3 拒绝）：
+   $$\text{Gini}_{\text{中年}} = 1 - (0.5^2 + 0.5^2) = 0.5000$$
+3. **切分后加权基尼指数与降幅**：
+   $$\text{Gini}_{\text{split}}(D, \text{年龄}) = \frac{4}{10}(0) + \frac{6}{10}(0.5000) = 0.3000$$
+   $$\Delta \text{Gini}(D, \text{年龄}) = 0.4200 - 0.3000 = \mathbf{0.1200}$$
+
+#### 候选 3：按“年收入 ($x_1$)”切分
+1. **高收入**（4 人：1 批准 3 拒绝）：$\text{Gini}_{\text{高}} = 1 - (0.25^2 + 0.75^2) = 0.3750$
+2. **中收入**（2 人：1 批准 1 拒绝）：$\text{Gini}_{\text{中}} = 1 - (0.5^2 + 0.5^2) = 0.5000$
+3. **低收入**（4 人：1 批准 3 拒绝）：$\text{Gini}_{\text{低}} = 1 - (0.25^2 + 0.75^2) = 0.3750$
+4. **切分后加权基尼指数与降幅**：
+   $$\text{Gini}_{\text{split}}(D, \text{收入}) = \frac{4}{10}(0.375) + \frac{2}{10}(0.5) + \frac{4}{10}(0.375) = 0.4000$$
+   $$\Delta \text{Gini}(D, \text{收入}) = 0.4200 - 0.4000 = \mathbf{0.0200}$$
+
+#### 第 1 层特征 PK 结果汇总表
+
+| 特征候选 | **切分后加权基尼 $\text{Gini}_{\text{split}}$** | **基尼降幅 $\Delta \text{Gini}$** | 结论 |
+| :--- | :--- | :--- | :--- |
+| **信用记录 ($x_2$)** | **0.3000** | **0.1200** | **胜出 (选为第 1 层根节点)** |
+| **年龄 ($x_3$)** | 0.3000 | 0.1200 | 并列 |
+| **年收入 ($x_1$)** | 0.4000 | 0.0200 | 落败 (仅降低 0.02) |
+
+决策树算法选择“信用记录 ($x_2$)”作为第 1 层根节点！
+
+---
+
+### 5.3 步骤 2：第 2 层右节点递归竞标 (年收入 vs 年龄)
+
+第 1 层切分后：
+- **左节点（信用不良 4 人）**：$\text{Gini}=0.0000$，属于纯净叶节点 A，无需再切分；
+- **右节点（信用良好 6 人：客户 5, 6, 7, 8, 9, 10）**：包含 3 批准 3 拒绝，初始 $\text{Gini}=0.5000$，**依然混乱！必须在该节点处递归挑选剩余特征展开二次切分**。
+
+在右节点 6 位客户中比较剩余特征：
+
+#### 尝试候选 1：按“年收入 ($x_1$)”二次切分
+- 高收入（2 人）、中收入（2 人）、低收入（2 人），各组内部均为 1 批准 1 拒绝：
+  $$\text{Gini}_{\text{高}} = 0.5000, \quad \text{Gini}_{\text{中}} = 0.5000, \quad \text{Gini}_{\text{低}} = 0.5000$$
+- 加权基尼指数：
+  $$\text{Gini}_{\text{split}} = \frac{2}{6}(0.5) + \frac{2}{6}(0.5) + \frac{2}{6}(0.5) = 0.5000$$
+- 基尼降幅：
+  $$\Delta \text{Gini} = 0.5000 - 0.5000 = \mathbf{0.0000} \quad (\text{无效切分，混乱度完全没有降低})$$
+
+#### 尝试候选 2：按“年龄 ($x_3$)”二次切分
+- **青年**（3 人：客户 5, 7, 9 $\to$ 0 批准 3 拒绝）：
+  $$\text{Gini}_{\text{青年}} = 1 - (0^2 + 1.0^2) = 0.0000 \quad (\text{生成叶节点 B})$$
+- **中年**（3 人：客户 6, 8, 10 $\to$ 3 批准 0 拒绝）：
+  $$\text{Gini}_{\text{中年}} = 1 - (1.0^2 + 0^2) = 0.0000 \quad (\text{生成叶节点 C})$$
+- 加权基尼指数：
+  $$\text{Gini}_{\text{split}} = \frac{3}{6}(0.0000) + \frac{3}{6}(0.0000) = \mathbf{0.0000}$$
+- 基尼降幅：
+  $$\Delta \text{Gini} = 0.5000 - 0.0000 = \mathbf{0.5000} \quad (\text{完美切分，混乱度一次性降为 0})$$
+
+**第 2 层竞标结论**：特征“年龄 ($x_3$)”以 $\Delta \text{Gini} = 0.5000 \gg 0$ 压倒性胜出，选为第 2 层二级节点！
+
+---
+
+### 5.4 步骤 3：第 2 层切分与生成最终 2 层决策树形态
+
+经过两轮递归切分后，数据集被 100% 划分归入 3 个纯净叶节点：
+
+| 叶节点编号 | 决策判定规则 | 包含客户 | 预测结果 | 单节点 Gini | 样本占比 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **叶节点 A** | 信用记录 = 不良 | 客户 1, 2, 3, 4 (4人) | 拒绝贷款 (y=0) | **0.0000** | 40% |
+| **叶节点 B** | 信用记录 = 良好 且 年龄 = 青年 | 客户 5, 7, 9 (3人) | 拒绝贷款 (y=0) | **0.0000** | 30% |
+| **叶节点 C** | 信用记录 = 良好 且 年龄 = 中年 | 客户 6, 8, 10 (3人) | 批准贷款 (y=1) | **0.0000** | 30% |
+
+**全树不纯度计算**：
+- 全树加权基尼指数：$$\text{Gini}_{\text{全树}} = \frac{4}{10}(0) + \frac{3}{10}(0) + \frac{3}{10}(0) = \mathbf{0.0000}$$
+- 全树总基尼降幅：$$\Delta \text{Gini}_{\text{Total}} = \text{Gini}_{\text{初始}}(0.4200) - \text{Gini}_{\text{全树}}(0.0000) = \mathbf{0.4200}$$
+
+全树所有叶节点不纯度降至 0.0000，递归建树完满成功！彻底解开了决策树如何多层生长、深层递归的数学全貌。
+
+---
+
+## 6. 树的生长与过拟合控制 (剪枝 Pruning)
 
 如果允许决策树无限生长，它会为每一个训练样本单独建立一条分支，导致训练集准确率 100%，但在测试集上惨败（**严重过拟合**）。
 
 ```mermaid
 graph LR
-    A["未剪枝树: 深度无限 (过拟合)"] -->|"限制深度 / 最小样本数"| B["剪枝后树: 结构精简 (泛化强)"]
-    A --> C["记忆训练集每一个噪声点"]
-    B --> D["捕捉核心特征规则"]
+    Overfit["未剪枝树: 深度无限 (过拟合)"] -->|"限制深度 / 最小样本数"| Pruned["剪枝后树: 结构精简 (泛化强)"]
+    Overfit --> Noise["记忆训练集每一个噪声点"]
+    Pruned --> Rules["捕捉核心决策规则"]
 ```
 
-### 5.1 预剪枝 (Pre-pruning)
+### 6.1 预剪枝 (Pre-pruning)
 
 在决策树构造过程中，提前设定停止条件：
 - **`max_depth`**：限制树的最大深度（如 `max_depth=3`）；
 - **`min_samples_split`**：节点再划分所需的最少样本数；
 - **`min_samples_leaf`**：叶子节点必须包含的最少样本数。
 
-### 5.2 后剪枝 (Post-pruning)
+### 6.2 后剪枝 (Post-pruning)
 
 先让决策树完全生长，然后自底向上评估合并分支后在验证集上的泛化误差。若合并后性能不下降，则将子树剪掉。
 
 ---
 
-## 6. 从单棵树到随机森林 (Random Forest)
+## 7. Python 代码实战：决策树训练与特征重要性提取
 
-单棵决策树容易发生方差过大（High Variance）与过拟合。
+下面的代码展示了如何使用 Scikit-Learn 的 `DecisionTreeClassifier` 进行分类、限制树深度、并提取特征重要性 (Feature Importances)：
 
-**随机森林 (Random Forest)** 采用 **Bagging (Bootstrap Aggregation)** 集成学习的思想，通过“组建由成百上千棵树构成的森林”，让所有树共同投票决定最终结果！
-
-<ConceptCard title="随机森林的双重随机性 (Dual Randomness)" targetId="concept-rf">
-随机森林之所以抗过拟合能力极强，是因为它引入了“双重随机性”：
-1. **样本随机 (Bootstrap Sampling)**：每棵树随机从全量训练集中有放回抽样 $N$ 个样本进行训练；
-2. **特征随机 (Random Subspace)**：在每个节点切分时，随机挑选 $m \lt D$ 个特征候选（通常 $m = \sqrt{D}$），从中选择最佳切分点。
-双重随机性保证了森林中的每一棵树都具备独特性，互相去相关 (De-correlation)，极大降低了整体方差！
-</ConceptCard>
-
----
-
-## 7. Python 代码实战：决策树与随机森林特征重要性评估
-
-下面的代码展示了如何使用 Scikit-Learn 的 `DecisionTreeClassifier` 与 `RandomForestClassifier` 进行分类、限制树深度、并提取特征重要性 (Feature Importances)：
-
-<RunnableCodeBlock title="Scikit-Learn 决策树与随机森林分类代码" language="python">
-```python
-import numpy as np
+<RunnableCodeBlock title="Scikit-Learn 决策树分类与树结构展示代码" language="python">
+{`import numpy as np
 from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier, export_text
 from sklearn.metrics import accuracy_score
 
 # 1. 加载乳腺癌分类数据集 (30 个特征)
@@ -185,26 +297,29 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 # 2. 训练单棵决策树 (使用预剪枝 max_depth=3)
-dt_model = DecisionTreeClassifier(max_depth=3, random_state=42)
+dt_model = DecisionTreeClassifier(max_depth=3, criterion='gini', random_state=42)
 dt_model.fit(X_train, y_train)
-dt_acc = accuracy_score(y_test, dt_model.predict(X_test))
 
-# 3. 训练随机森林 (n_estimators=100 棵树)
-rf_model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
-rf_model.fit(X_train, y_train)
-rf_acc = accuracy_score(y_test, rf_model.predict(X_test))
+# 3. 评估训练集与测试集准确率
+train_acc = dt_model.score(X_train, y_train)
+test_acc = accuracy_score(y_test, dt_model.predict(X_test))
 
-print(f"单棵决策树 (Depth=3) 测试集准确率: {dt_acc * 100:.2f}%")
-print(f"随机森林 (100棵树) 测试集准确率: {rf_acc * 100:.2f}%")
+print(f"决策树 (max_depth=3) 训练集准确率: {train_acc * 100:.2f}%")
+print(f"决策树 (max_depth=3) 测试集准确率: {test_acc * 100:.2f}%")
 
-# 4. 输出随机森林 Top-3 最重要的特征
-top_indices = np.argsort(rf_model.feature_importances_)[::-1][:3]
-print("\n随机森林 Top-3 特征重要性:")
+# 4. 打印文本形式的决策树判断分支规制
+tree_rules = export_text(dt_model, feature_names=list(data.feature_names))
+print("\\n决策树分支规则文本预览:")
+print(tree_rules[:400])
+
+# 5. 输出 Top-3 最重要的特征
+top_indices = np.argsort(dt_model.feature_importances_)[::-1][:3]
+print("\\n决策树 Top-3 特征重要性:")
 for rank, idx in enumerate(top_indices, 1):
     feat_name = data.feature_names[idx]
-    importance = rf_model.feature_importances_[idx]
+    importance = dt_model.feature_importances_[idx]
     print(f"Top {rank}: {feat_name} (重要性得分: {importance:.4f})")
-```
+`}
 </RunnableCodeBlock>
 
 ---
@@ -214,18 +329,18 @@ for rank, idx in enumerate(top_indices, 1):
 | 高频踩坑场景 | 触发现象 / 报错 | 根因分析 | 标准排查与解决方案 |
 | :--- | :--- | :--- | :--- |
 | **未限制树深度导致过拟合** | 训练集准确率 100%，测试集表现极差 | 未设置 `max_depth`，决策树长得过于茂密，死记硬背了训练集噪声 | **必设预剪枝**！设置 `max_depth \in [3, 8]` 或 `min_samples_leaf \in [5, 20]` |
-| **高基数类别特征偏置** | 随机森林严重偏向某个无用类别（如订单号） | ID3/CART 在面对包含成千上万独立取值的字段时，容易算出虚高的信息增益 | 对高基数类别改用 Target Encoding 或 Frequency Encoding 预处理后再输入 |
-| **不平衡数据集失真** | 少数类被严重忽视，召回率极低 | 默认基尼指数全局最小化，多数类主导了节点切分方向 | 设置 `class_weight='balanced'` 或在随机森林中使用 `RandomOverSampler` 均衡采样 |
-| **特征重要性排名有误** | 强相关特征相互稀释，重要性得分偏低 | 当两个特征高度共线性时，随机森林会将重要性随机平分给它们 | 结合排列重要性 (`permutation_importance`) 综合校验特征重要性 |
+| **高基数类别特征偏置** | 决策树严重偏向某个无用类别（如订单号） | ID3/CART 在面对包含成千上万独立取值的字段时，容易算出虚高的信息增益 | 对高基数类别改用 Target Encoding 或 Frequency Encoding 预处理后再输入 |
+| **不平衡数据集失真** | 少数类被严重忽视，召回率极低 | 默认基尼指数全局最小化，多数类主导了节点切分方向 | 设置 `class_weight='balanced'` 或在训练前使用过采样工具均衡类别 |
+| **误对连续特征做无谓独热编码** | 特征空间维度爆炸，训练变慢 | 决策树天然支持连续特征的数值区间自动切分（如 `x > 15`） | 连续数值特征直接输入决策树即可，无需提前离散化或 One-Hot 编码 |
 
 ---
 
 ## 9. 检查清单 (Checklist)
 
 - [ ] 是否理解信息熵 (Entropy) 与基尼指数 (Gini Impurity) 的计算公式？
+- [ ] 是否能够根据 8 样本贷款数据集，手算写出根节点信息增益的对比计算过程？
 - [ ] 是否能够写出单棵决策树预剪枝 (Pre-pruning) 的三个常用超参数？
 - [ ] 是否清楚 ID3、C4.5 与 CART 算法划分准则的区别？
-- [ ] 是否透彻理解随机森林 Bagging 采样与特征随机挑选的“双重随机性”？
 - [ ] 是否掌握了在 Scikit-Learn 中提取 `feature_importances_` 的方法？
 - [ ] 是否明白为什么决策树不需要做特征标准化 (Feature Scaling)？
 
@@ -251,15 +366,15 @@ for rank, idx in enumerate(top_indices, 1):
     {
       id: "q2",
       type: "single",
-      question: "随机森林 (Random Forest) 之所以能大幅降低单棵决策树的方差 (Variance)，主要依靠：",
+      question: "在 ID3 决策树算法中，为什么偏向于选择取值较多的特征（如身份证号）？",
       options: [
-        "A. 梯度下降法迭代更新参数",
-        "B. Bootstrap 样本有放回抽样与节点随机特征选择的双重随机性",
-        "C. 强制将所有树的深度限制为 1 (树桩)",
-        "D. 对训练集特征进行主成分分析 (PCA) 降维"
+        "A. 取值多意味着特征包含的信息少",
+        "B. 多值特征切分后子节点数量多且每个节点极纯，算出虚高信息增益",
+        "C. ID3 使用了增益率惩罚项",
+        "D. 基尼指数在多值特征上计算报错"
       ],
       answer: "B",
-      explanation: "正确！随机森林通过样本随机（Bootstrap 采样）和特征随机（随机挑选候选特征集）双重机制，保证了森林中成百上千棵树的去相关性，从而极大降低了模型整体方差。"
+      explanation: "正确！ID3 使用信息增益，当一个特征取值极多时（如身份证号），每个子节点只有 1 个样本，条件熵变为 0，导致算出极大但无用的信息增益。C4.5 算法引入增益率纠正了此问题。"
     },
     {
       id: "q3",
@@ -292,7 +407,7 @@ for rank, idx in enumerate(top_indices, 1):
 
 ## 11. 下一步与相关章节
 
-- **下一章推荐**：学习 **[06. 集成学习与 GBDT / XGBoost](/learn/machine-learning/supervised/06-gbdt-xgboost)**，探索工业界竞赛与工程霸主算法！
+- **下一章推荐**：学习 **[06. 随机森林与集成学习 (Random Forest & Bagging)](/learn/machine-learning/supervised/06-random-forest)**，探索如何通过多棵决策树组建森林！
 - **相关前置与扩展阅读**：
   - **[04. 支持向量机 (SVM)](/learn/machine-learning/supervised/04-svm)**：对比最大间隔超平面与决策树正交切分的边界差异
   - **[02. 逻辑回归与二分类评估](/learn/machine-learning/supervised/02-logistic-regression)**：复习二分类混淆矩阵与评估指标
@@ -302,6 +417,5 @@ for rank, idx in enumerate(top_indices, 1):
 ## 12. 参考资料
 
 - [scikit-learn Decision Trees Official Documentation](https://scikit-learn.org/stable/modules/tree.html)
-- [scikit-learn Random Forests Ensemble Documentation](https://scikit-learn.org/stable/modules/ensemble.html#forest)
-- [Breiman, L. (2001). Random Forests. Machine Learning, 45(1), 5-32.](https://link.springer.com/article/10.1023/A:1010933404324)
+- [Quinlan, J. R. (1986). Induction of decision trees. Machine Learning, 1(1), 81-106. (ID3 经典论文)](https://link.springer.com/article/10.1007/BF00116251)
 - [Li Hang, Statistical Learning Methods (李航《统计学习方法》- 决策树章节)](https://book.douban.com/subject/10590808/)

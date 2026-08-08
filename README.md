@@ -1,8 +1,5 @@
 # MindPath AI — 交互式 AI 知识图谱与学习路线通用框架
 
-<p align="center">
-  <img src="public/assets/machine-learning/ai-data-visualization.png" alt="MindPath AI Cover" width="800" style="border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);" />
-</p>
 
 <p align="center">
   <strong>一个通用的、开箱即用的现代化 AI / 技术知识拓扑图谱与交互式学习路线图框架</strong>

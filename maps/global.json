@@ -50,7 +50,7 @@
       "module": "machine-learning",
       "route": "/map/machine-learning",
       "difficulty": "beginner",
-      "estimatedMinutes": 175,
+      "estimatedMinutes": 315,
       "prerequisites": [
         "root"
       ],
@@ -665,7 +665,9 @@
         "supervised-logistic-regression",
         "math-probability-stats"
       ],
-      "next": [],
+      "next": [
+        "supervised-svm"
+      ],
       "relatedNotes": [
         "supervised-linear-regression"
       ],
@@ -686,6 +688,113 @@
       "position": {
         "x": 1120,
         "y": 260
+      },
+      "layoutGroup": "machine-learning"
+    },
+    {
+      "id": "supervised-svm",
+      "title": "04.支持向量机 (SVM)",
+      "module": "machine-learning",
+      "submodule": "supervised",
+      "route": "/learn/machine-learning/supervised/04-svm",
+      "difficulty": "intermediate",
+      "estimatedMinutes": 50,
+      "prerequisites": [
+        "supervised-logistic-regression",
+        "math-linear-algebra",
+        "math-calculus-gradient"
+      ],
+      "next": [
+        "supervised-decision-tree-random-forest"
+      ],
+      "relatedNotes": [
+        "supervised-linear-regression",
+        "supervised-knn-naive-bayes"
+      ],
+      "tags": [
+        "机器学习",
+        "监督学习",
+        "SVM",
+        "支持向量机",
+        "间隔最大化",
+        "软间隔",
+        "Hinge Loss",
+        "核技巧",
+        "RBF核",
+        "Scikit-Learn"
+      ],
+      "summary": "掌握支持向量机 (SVM) 模型原理与代码实战，理解几何间隔与超平面推导、软间隔 C 参数、Hinge Loss 损失函数、拉格朗日乘子法与对偶问题、KKT 条件，以及核技巧 (RBF/高斯核) 解决非线性分类问题。",
+      "position": {
+        "x": 1320,
+        "y": 260
+      },
+      "layoutGroup": "machine-learning"
+    },
+    {
+      "id": "supervised-decision-tree-random-forest",
+      "title": "05. 决策树算法 (Decision Tree)",
+      "module": "machine-learning",
+      "submodule": "supervised",
+      "route": "/learn/machine-learning/supervised/05-decision-tree-random-forest",
+      "difficulty": "beginner",
+      "estimatedMinutes": 45,
+      "prerequisites": [
+        "supervised-svm",
+        "math-probability-stats"
+      ],
+      "next": [],
+      "relatedNotes": [
+        "supervised-logistic-regression",
+        "supervised-knn-naive-bayes"
+      ],
+      "tags": [
+        "机器学习",
+        "监督学习",
+        "决策树",
+        "信息熵",
+        "信息增益",
+        "基尼指数",
+        "剪枝",
+        "Scikit-Learn"
+      ],
+      "summary": "掌握决策树算法的核心原理与手算推导实战，理解信息熵 (Entropy)、信息增益 (ID3)、增益率 (C4.5)、基尼指数 (CART)，通过具体银行贷款手算案例直观理解分步分割过程，掌握预剪枝与后剪枝及 Scikit-Learn 代码实现。",
+      "position": {
+        "x": 720,
+        "y": 315
+      },
+      "layoutGroup": "machine-learning"
+    },
+    {
+      "id": "supervised-ensemble-learning-random-forest",
+      "title": "06.集成学习与随机森林 (Ensemble Learning & Random Forest)",
+      "module": "machine-learning",
+      "submodule": "supervised",
+      "route": "/learn/machine-learning/supervised/06-ensemble-learning-random-forest",
+      "difficulty": "intermediate",
+      "estimatedMinutes": 45,
+      "prerequisites": [
+        "supervised-decision-tree-random-forest"
+      ],
+      "next": [],
+      "relatedNotes": [
+        "supervised-decision-tree-random-forest"
+      ],
+      "tags": [
+        "机器学习",
+        "监督学习",
+        "集成学习",
+        "随机森林",
+        "Bagging",
+        "Boosting",
+        "Stacking",
+        "投票机制",
+        "Out-Of-Bag",
+        "Scikit-Learn"
+      ],
+      "summary": "掌握集成学习三大范式（Bagging、Boosting、Stacking）的核心思想与数学直觉，深入剖析随机森林 (Random Forest) 的双重随机性（Bootstrap 样本重采样 + 特征随机子集挑选），手算 Bagging 降低方差机制，理解 OOB (Out-Of-Bag) 留包评估与 Scikit-Learn 实战。",
+      "position": {
+        "x": 920,
+        "y": 315
       },
       "layoutGroup": "machine-learning"
     }
@@ -835,6 +944,41 @@
       "id": "e-depends-math-probability-stats-supervised-knn-naive-bayes",
       "source": "math-probability-stats",
       "target": "supervised-knn-naive-bayes"
+    },
+    {
+      "id": "e-next-supervised-knn-naive-bayes-supervised-svm",
+      "source": "supervised-knn-naive-bayes",
+      "target": "supervised-svm"
+    },
+    {
+      "id": "e-depends-supervised-logistic-regression-supervised-svm",
+      "source": "supervised-logistic-regression",
+      "target": "supervised-svm"
+    },
+    {
+      "id": "e-depends-math-linear-algebra-supervised-svm",
+      "source": "math-linear-algebra",
+      "target": "supervised-svm"
+    },
+    {
+      "id": "e-depends-math-calculus-gradient-supervised-svm",
+      "source": "math-calculus-gradient",
+      "target": "supervised-svm"
+    },
+    {
+      "id": "e-next-supervised-svm-supervised-decision-tree-random-forest",
+      "source": "supervised-svm",
+      "target": "supervised-decision-tree-random-forest"
+    },
+    {
+      "id": "e-depends-math-probability-stats-supervised-decision-tree-random-forest",
+      "source": "math-probability-stats",
+      "target": "supervised-decision-tree-random-forest"
+    },
+    {
+      "id": "e-depends-supervised-decision-tree-random-forest-supervised-ensemble-learning-random-forest",
+      "source": "supervised-decision-tree-random-forest",
+      "target": "supervised-ensemble-learning-random-forest"
     }
   ]
 }

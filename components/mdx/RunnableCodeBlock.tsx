@@ -21,24 +21,29 @@ type WorkerMessage = {
   images?: string[];
 };
 
-export const RunnableCodeBlock: React.FC<RunnableCodeBlockProps> = ({
-  title = "用 Python 计算一个神经元的输出",
-  initialCode = `# 定义输入、权重和偏置
-x1 = 0.5
-x2 = -1.2
-w1 = 1.0
-w2 = -0.8
-b = 0.75
+function extractTextFromChildren(node: React.ReactNode): string {
+  if (typeof node === 'string') return node;
+  if (typeof node === 'number') return String(node);
+  if (!node) return '';
+  if (Array.isArray(node)) {
+    return node.map(extractTextFromChildren).join('');
+  }
+  if (React.isValidElement(node)) {
+    return extractTextFromChildren((node.props as any)?.children);
+  }
+  return '';
+}
 
-# 计算加权和 z
-z = w1 * x1 + w2 * x2 + b
-print(f"z = {z:.2f}")`,
+export const RunnableCodeBlock: React.FC<RunnableCodeBlockProps> = ({
+  title = "Python 代码实战",
+  initialCode = `# 请在此处输入 Python 代码`,
   code: suppliedCode,
   children,
 }) => {
-  const rawCode = (typeof children === 'string' && children.trim())
-    ? children
-    : (typeof suppliedCode === 'string' && suppliedCode.trim() ? suppliedCode : initialCode);
+  const extractedText = extractTextFromChildren(children).trim();
+  const rawCode = extractedText
+    ? extractedText
+    : (typeof suppliedCode === 'string' && suppliedCode.trim() ? suppliedCode.trim() : initialCode);
 
   const [code, setCode] = useState<string>(rawCode);
   const [output, setOutput] = useState<string | null>(null);
@@ -48,6 +53,12 @@ print(f"z = {z:.2f}")`,
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const workerRef = useRef<Worker | null>(null);
   const runIdRef = useRef(0);
+
+  useEffect(() => {
+    if (rawCode) {
+      setCode(rawCode);
+    }
+  }, [rawCode]);
 
   useEffect(() => {
     return () => workerRef.current?.terminate();
