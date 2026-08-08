@@ -1,12 +1,20 @@
-import { setAuthUser } from '@/lib/client/require-auth';
+import { clearAuthUser, setAuthUser } from '@/lib/client/require-auth';
 
 export type AuthUser = { id: string; email: string; nickname: string; avatar?: string | null };
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
   const response = await fetch('/api/auth/me', { credentials: 'include' });
-  if (!response.ok) return null;
+  if (!response.ok) {
+    clearAuthUser();
+    return null;
+  }
   const data = await response.json() as { user?: AuthUser | null };
-  return data.user || null;
+  if (data.user) {
+    setAuthUser(data.user);
+    return data.user;
+  }
+  clearAuthUser();
+  return null;
 }
 
 export async function authRequest(path: string, body: Record<string, unknown>) {
