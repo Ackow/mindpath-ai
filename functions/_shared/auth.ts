@@ -9,7 +9,12 @@ function base64ToBytes(value: string) {
 }
 export function randomToken(size = 32) { const bytes = crypto.getRandomValues(new Uint8Array(size)); return bytesToBase64(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, ''); }
 export async function hashValue(value: string) { const digest = await crypto.subtle.digest('SHA-256', encoder.encode(value)); return bytesToBase64(new Uint8Array(digest)); }
-export async function hashPassword(password: string, salt = randomToken(16)) { const key = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits']); const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: base64ToBytes(salt), iterations: 120000, hash: 'SHA-256' }, key, 256); return { salt, hash: bytesToBase64(new Uint8Array(bits)) }; }
+export async function hashPassword(password: string, salt = randomToken(16)) {
+  const saltBytes = base64ToBytes(salt);
+  const key = await crypto.subtle.importKey('raw', encoder.encode(password), { name: 'PBKDF2' }, false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: saltBytes, iterations: 120000, hash: 'SHA-256' }, key, 256);
+  return { salt, hash: bytesToBase64(new Uint8Array(bits)) };
+}
 export async function verifyPassword(password: string, salt: string, expectedHash: string) { return (await hashPassword(password, salt)).hash === expectedHash; }
 export function json(data: unknown, init: ResponseInit = {}) { return new Response(JSON.stringify(data), { ...init, headers: { 'Content-Type': 'application/json; charset=utf-8', ...(init.headers || {}) } }); }
 export function readJson(request: Request) { return request.json() as Promise<Record<string, unknown>>; }
