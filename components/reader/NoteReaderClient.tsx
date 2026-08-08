@@ -61,31 +61,22 @@ export const NoteReaderClient: React.FC<NoteReaderClientProps> = ({
   children,
 }) => {
   const currentRoute = `/learn/${slug.join('/')}`;
-  const studyTimerRef = useRef<{ startedAt: number; sentMinutes: number } | null>(null);
+  const studyTimerRef = useRef<{ startedAt: number; flushed: boolean } | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated()) return;
-    const timer = { startedAt: Date.now(), sentMinutes: 0 };
+    const timer = { startedAt: Date.now(), flushed: false };
     studyTimerRef.current = timer;
     const flushStudyTime = () => {
-      const elapsedMinutes = Math.floor((Date.now() - timer.startedAt) / 60000);
-      if (elapsedMinutes > timer.sentMinutes) {
-        const addedMinutes = elapsedMinutes - timer.sentMinutes;
-        const isFirstSync = timer.sentMinutes === 0;
-        timer.sentMinutes = elapsedMinutes;
-        void syncActivity(new Date().toISOString().slice(0, 10), isFirstSync ? 1 : 0, addedMinutes);
-      }
+      if (timer.flushed) return;
+      timer.flushed = true;
+      const elapsedMinutes = Math.max(0, Math.floor((Date.now() - timer.startedAt) / 60000));
+      void syncActivity(new Date().toISOString().slice(0, 10), 1, elapsedMinutes);
     };
-    const handleVisibility = () => {
-      if (document.visibilityState === 'hidden') flushStudyTime();
-      else timer.startedAt = Date.now() - timer.sentMinutes * 60000;
-    };
-    const interval = window.setInterval(flushStudyTime, 30000);
-    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('pagehide', flushStudyTime);
     return () => {
       flushStudyTime();
-      window.clearInterval(interval);
-      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('pagehide', flushStudyTime);
       studyTimerRef.current = null;
     };
   }, [currentRoute]);

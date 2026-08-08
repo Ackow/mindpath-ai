@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
-import { ChevronRight, ChevronRightIcon, CheckCircle2, BookOpen } from 'lucide-react';
+import { ChevronRight, ChevronRightIcon, CheckCircle2, BookOpen, Layers } from 'lucide-react';
 import { getGlobalGraphNodes, getHierarchicalModuleTree } from '@/lib/graph';
 import { loadCloudProgress, readDocumentProgress } from '@/components/mdx/TaskCheckbox';
 
@@ -14,6 +14,7 @@ export const ReaderSidebar: React.FC = () => {
   const currentNode = allNodes.find((node) => node.route === pathname) || allNodes.find((node) => node.route.startsWith('/learn/')) || allNodes[0];
   const moduleTree = getHierarchicalModuleTree();
   const currentModuleGroup = moduleTree.find((module) => module.id === currentNode.module) || moduleTree[0];
+  const moduleEntryRoute = (module: typeof moduleTree[number]) => module.submodules.flatMap((sub) => sub.children)[0]?.route || '/map';
   const moduleNodes = useMemo(() => allNodes.filter((node) => node.module === currentNode.module && node.route.startsWith('/learn/')), [allNodes, currentNode.module]);
   const [revision, setRevision] = useState(0);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -67,6 +68,27 @@ export const ReaderSidebar: React.FC = () => {
   return (
     <div className="w-full shrink-0 space-y-4 md:sticky md:top-20 md:self-start md:w-64 xl:w-72 select-none">
       <Card className="space-y-3 border border-slate-200/80 p-3.5 sm:p-4 shadow-sm">
+        <div className="space-y-2 border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2 text-xs font-extrabold text-slate-800">
+            <Layers className="h-4 w-4 text-teal-600" />
+            <span>快速切换模块</span>
+          </div>
+          <div className="grid grid-cols-2 gap-1.5">
+            {moduleTree.map((module) => (
+              <Link
+                key={module.id}
+                href={moduleEntryRoute(module)}
+                className={`truncate rounded-lg border px-2 py-1.5 text-left text-[11px] font-semibold transition-colors ${
+                  module.id === currentNode.module
+                    ? 'border-teal-200 bg-teal-50 text-teal-700'
+                    : 'border-slate-200 text-slate-600 hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700'
+                }`}
+              >
+                {module.title}
+              </Link>
+            ))}
+          </div>
+        </div>
         {/* Mobile Toggle Button */}
         <div
           onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
