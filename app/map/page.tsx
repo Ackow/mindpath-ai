@@ -7,7 +7,7 @@ import { DifficultyBadge } from '@/components/ui/Badge';
 import { getGlobalGraphNodes, getNodeById, getHierarchicalModuleTree } from '@/lib/graph';
 import { InteractiveMindMap } from '@/components/mindmap/InteractiveMindMap';
 import { LearningProgressValue } from '@/components/progress/LearningProgress';
-import { readDocumentProgress } from '@/components/mdx/TaskCheckbox';
+import { loadCloudProgress, readDocumentProgress } from '@/components/mdx/TaskCheckbox';
 import {
   ChevronDown,
   ChevronRight,
@@ -54,6 +54,7 @@ export default function MindMapPage() {
   useEffect(() => {
     const refresh = () => setProgressRevision((value) => value + 1);
     window.addEventListener('ai-learning:document-progress', refresh);
+    void loadCloudProgress().then(refresh);
     return () => window.removeEventListener('ai-learning:document-progress', refresh);
   }, []);
 

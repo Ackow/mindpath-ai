@@ -17,26 +17,40 @@ export interface DocumentTaskProgress {
 
 export type StudyActivity = Record<string, number>;
 
-export const getDocumentProgressKey = (pathname: string) => `ai-learning:document-progress:${pathname}`;
+const progressStore = new Map<string, DocumentTaskProgress>();
+
 export function readDocumentProgress(pathname: string): DocumentTaskProgress {
   const fallback = { tasks: {}, completed: false };
-  try {
-    const saved = window.localStorage.getItem(getDocumentProgressKey(pathname));
-    if (!saved) return fallback;
-    const parsed = JSON.parse(saved);
-    return {
-      tasks: typeof parsed.tasks === 'object' && parsed.tasks ? parsed.tasks : {},
-      completed: parsed.completed === true,
-      taskTotal: Number.isFinite(parsed.taskTotal) ? parsed.taskTotal : undefined,
-    };
-  } catch {
-    return fallback;
+  return progressStore.get(pathname) || fallback;
+}
+
+function parseProgress(payload: unknown): DocumentTaskProgress {
+  const parsed = typeof payload === 'string' ? JSON.parse(payload) : payload;
+  const value = parsed && typeof parsed === 'object' ? parsed as Partial<DocumentTaskProgress> : {};
+  return {
+    tasks: typeof value.tasks === 'object' && value.tasks ? value.tasks as Record<string, boolean> : {},
+    completed: value.completed === true,
+    taskTotal: Number.isFinite(value.taskTotal) ? value.taskTotal : undefined,
+  };
+}
+
+export function hydrateDocumentProgress(rows: Array<{ document_id: string; payload: unknown }>) {
+  for (const row of rows) {
+    try { progressStore.set(row.document_id, parseProgress(row.payload)); } catch { /* ignore malformed cloud rows */ }
   }
+}
+
+export async function loadCloudProgress(documentId?: string) {
+  const response = await fetch('/api/progress', { credentials: 'include' });
+  if (!response.ok) return null;
+  const data = await response.json() as { progress?: Array<{ document_id: string; payload: unknown }> };
+  hydrateDocumentProgress(data.progress || []);
+  return documentId ? readDocumentProgress(documentId) : null;
 }
 
 export function writeDocumentProgress(pathname: string, progress: DocumentTaskProgress) {
   if (!requireLogin()) return;
-  window.localStorage.setItem(getDocumentProgressKey(pathname), JSON.stringify(progress));
+  progressStore.set(pathname, progress);
   window.dispatchEvent(new CustomEvent('ai-learning:document-progress', { detail: { pathname, progress } }));
   void syncProgress(pathname, progress);
 }
@@ -62,6 +76,17 @@ export const TaskCheckbox: React.FC<TaskCheckboxProps> = ({ checked = false, ...
     const progress = readDocumentProgress(pathname);
     setIsChecked(progress.tasks[taskId] ?? Boolean(checked));
     inputRef.current?.setAttribute('data-task-id', taskId);
+  }, [pathname]);
+
+  useEffect(() => {
+    const refresh = (event: Event) => {
+      const detail = (event as CustomEvent<{ pathname?: string; progress?: DocumentTaskProgress }>).detail;
+      if (detail?.pathname !== pathname || !detail.progress) return;
+      const taskId = inputRef.current?.getAttribute('data-task-id');
+      if (taskId) setIsChecked(detail.progress.tasks[taskId] ?? false);
+    };
+    window.addEventListener('ai-learning:document-progress', refresh);
+    return () => window.removeEventListener('ai-learning:document-progress', refresh);
   }, [pathname]);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {

@@ -3,7 +3,7 @@
 import React, { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { BookOpen, CalendarDays, CheckCircle2, Clock3, Pencil } from 'lucide-react';
 import { getGlobalGraphNodes } from '@/lib/graph';
-import { readDocumentProgress, StudyActivity } from '@/components/mdx/TaskCheckbox';
+import { hydrateDocumentProgress, readDocumentProgress, StudyActivity } from '@/components/mdx/TaskCheckbox';
 import { requireLogin } from '@/lib/client/require-auth';
 
 interface UserProfile {
@@ -64,7 +64,7 @@ export default function ProfilePage() {
     const refresh = () => setRevision((value) => value + 1);
     void fetch('/api/profile', { credentials: 'include' }).then((response) => response.ok ? response.json() : null).then((data) => { if (data?.user) { setProfile(data.user); setDraftNickname(data.user.nickname); } });
     void fetch('/api/activity', { credentials: 'include' }).then((response) => response.ok ? response.json() : null).then((data) => { const nextActivity: StudyActivity = {}; const nextDuration: StudyActivity = {}; for (const row of data?.activity || []) { nextActivity[row.activity_date] = row.activity_count; nextDuration[row.activity_date] = row.duration_minutes; } setActivity(nextActivity); setDuration(nextDuration); });
-    void fetch('/api/progress', { credentials: 'include' }).then((response) => response.ok ? response.json() : null).then((data) => { for (const row of data?.progress || []) { try { window.localStorage.setItem('ai-learning:document-progress:' + row.document_id, row.payload); } catch {} } refresh(); });
+    void fetch('/api/progress', { credentials: 'include' }).then((response) => response.ok ? response.json() : null).then((data) => { hydrateDocumentProgress(data?.progress || []); refresh(); });
     refresh();
     window.addEventListener('ai-learning:document-progress', refresh);
     window.addEventListener('ai-learning:study-activity', refresh);

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Play } from 'lucide-react';
-import { readDocumentProgress } from '@/components/mdx/TaskCheckbox';
+import { loadCloudProgress, readDocumentProgress } from '@/components/mdx/TaskCheckbox';
 
 type Candidate = { route: string };
 
@@ -13,6 +13,10 @@ export function ContinueLearningLink({ candidates }: { candidates: Candidate[] }
   React.useEffect(() => {
     const next = candidates.find((candidate) => !readDocumentProgress(candidate.route).completed);
     setRoute(next?.route || candidates[0]?.route || '/map');
+    void loadCloudProgress().then(() => {
+      const cloudNext = candidates.find((candidate) => !readDocumentProgress(candidate.route).completed);
+      setRoute(cloudNext?.route || candidates[0]?.route || '/map');
+    });
   }, [candidates]);
 
   return (

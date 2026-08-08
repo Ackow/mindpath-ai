@@ -7,7 +7,7 @@ import 'katex/dist/katex.min.css';
 import { Card } from '@/components/ui/Card';
 import { ConceptCard } from '@/components/mdx/ConceptCard';
 import { RunnableCodeBlock } from '@/components/mdx/RunnableCodeBlock';
-import { DocumentTaskProgress, readDocumentProgress, writeDocumentProgress } from '@/components/mdx/TaskCheckbox';
+import { DocumentTaskProgress, loadCloudProgress, readDocumentProgress, writeDocumentProgress } from '@/components/mdx/TaskCheckbox';
 import { isAuthenticated } from '@/lib/client/require-auth';
 import { syncActivity, syncProgress } from '@/lib/client/sync';
 import { getNodeById, getGlobalGraphNodes, getCurriculumModules, getHierarchicalModuleTree } from '@/lib/graph';
@@ -164,7 +164,14 @@ export const NoteReaderClient: React.FC<NoteReaderClientProps> = ({
   const [documentProgress, setDocumentProgress] = useState<DocumentTaskProgress>({ tasks: {}, completed: false });
 
   useEffect(() => {
-    if (isAuthenticated()) void syncProgress(currentRoute, readDocumentProgress(currentRoute));
+    if (isAuthenticated()) {
+      void loadCloudProgress(currentRoute).then((progress) => {
+        if (progress) {
+          setDocumentProgress(progress);
+          window.dispatchEvent(new CustomEvent('ai-learning:document-progress', { detail: { pathname: currentRoute, progress } }));
+        }
+      });
+    }
   }, [currentRoute]);
 
   useEffect(() => {

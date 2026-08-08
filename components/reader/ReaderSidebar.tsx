@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { ChevronRight, ChevronRightIcon, CheckCircle2, BookOpen } from 'lucide-react';
 import { getGlobalGraphNodes, getHierarchicalModuleTree } from '@/lib/graph';
-import { readDocumentProgress } from '@/components/mdx/TaskCheckbox';
+import { loadCloudProgress, readDocumentProgress } from '@/components/mdx/TaskCheckbox';
 
 export const ReaderSidebar: React.FC = () => {
   const pathname = usePathname();
@@ -22,6 +22,7 @@ export const ReaderSidebar: React.FC = () => {
   useEffect(() => {
     const refresh = () => setRevision((value) => value + 1);
     setIsHydrated(true);
+    void loadCloudProgress().then(refresh);
     window.addEventListener('ai-learning:document-progress', refresh);
     return () => window.removeEventListener('ai-learning:document-progress', refresh);
   }, []);
@@ -160,4 +161,3 @@ function ReaderChapterLink({ node, active, percent }: { node: ReturnType<typeof 
     </Link>
   );
 }
-
