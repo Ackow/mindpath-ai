@@ -1,0 +1,2 @@
+import { clearSessionCookie, Env, hashValue, json } from '../../_shared/auth';
+export async function onRequestPost({ request, env }: { request: Request; env: Env }) { const token = request.headers.get('Cookie')?.match(/(?:^|;\s*)session=([^;]+)/)?.[1]; if (token) await env.DB.prepare('DELETE FROM sessions WHERE token_hash = ?').bind(await hashValue(token)).run(); return json({ ok: true }, { headers: { 'Set-Cookie': clearSessionCookie() } }); }

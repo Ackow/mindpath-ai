@@ -5,25 +5,18 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Network, BookOpen, Beaker, Search, Menu, X } from 'lucide-react';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
+import { getCurrentUser, AuthUser } from '@/lib/client/auth';
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
-  const [avatar, setAvatar] = useState<string | undefined>();
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    const refreshAvatar = () => {
-      try {
-        const saved = localStorage.getItem('ai-learning:user-profile');
-        const parsed = saved ? JSON.parse(saved) : null;
-        setAvatar(typeof parsed?.avatar === 'string' ? parsed.avatar : undefined);
-      } catch {
-        setAvatar(undefined);
-      }
-    };
-    refreshAvatar();
-    window.addEventListener('ai-learning:user-profile', refreshAvatar);
-    return () => window.removeEventListener('ai-learning:user-profile', refreshAvatar);
+    const refreshUser = () => { void getCurrentUser().then(setUser).catch(() => setUser(null)); };
+    refreshUser();
+    window.addEventListener('ai-learning:auth-changed', refreshUser);
+    return () => window.removeEventListener('ai-learning:auth-changed', refreshUser);
   }, []);
 
   // 路由发生变化时自动关闭手机菜单
@@ -91,13 +84,13 @@ export const Navbar: React.FC = () => {
         {/* Right: Theme, Profile & Mobile Hamburger Toggle */}
         <div className="flex items-center gap-2 sm:gap-3">
           <ThemeToggle compact />
-          <Link
-            href="/profile"
-            aria-label="打开用户页"
-            className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-slate-700 text-xs font-bold text-white shadow-sm transition-all hover:ring-2 hover:ring-teal-200"
-          >
-            {avatar ? <img src={avatar} alt="用户头像" className="h-full w-full object-cover" /> : 'H'}
-          </Link>
+          {user ? (
+            <Link href="/profile" aria-label="打开用户页" className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-slate-700 text-xs font-bold text-white shadow-sm transition-all hover:ring-2 hover:ring-teal-200">
+              {user.avatar ? <img src={user.avatar} alt="用户头像" className="h-full w-full object-cover" /> : user.nickname.slice(0, 1).toUpperCase()}
+            </Link>
+          ) : (
+            <Link href="/auth" className="rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-teal-700">登录 / 注册</Link>
+          )}
 
           {/* Mobile Hamburger Button */}
           <button

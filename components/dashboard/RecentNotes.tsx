@@ -5,8 +5,6 @@ import Link from 'next/link';
 import { Bookmark } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 
-const RECENT_KEY = 'ai-learning:recent-notes';
-
 type Note = {
   title?: string;
   module?: string;
@@ -20,16 +18,15 @@ export function RecentNotes({ notes }: { notes: Note[] }) {
   const [isLoaded, setIsLoaded] = React.useState(false);
 
   React.useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(RECENT_KEY) || '{}') as Record<string, number>;
-      const ordered = [...notes].sort((a, b) => (saved[b.route] || 0) - (saved[a.route] || 0));
-      const visited = ordered.filter((note) => saved[note.route] && saved[note.route] > 0);
-      setRecent(visited.slice(0, 3));
-    } catch {
-      setRecent([]);
-    } finally {
-      setIsLoaded(true);
-    }
+    void fetch('/api/progress', { credentials: 'include' })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => {
+        const timestamps = new Map<string, number>((data?.progress || []).map((item: { document_id: string; updated_at: string }) => [item.document_id, Date.parse(item.updated_at) || 0]));
+        const visited = [...notes].filter((note) => timestamps.has(note.route)).sort((a, b) => (timestamps.get(b.route) || 0) - (timestamps.get(a.route) || 0));
+        setRecent(visited.slice(0, 3));
+      })
+      .catch(() => setRecent([]))
+      .finally(() => setIsLoaded(true));
   }, [notes]);
 
   if (!isLoaded || recent.length === 0) {

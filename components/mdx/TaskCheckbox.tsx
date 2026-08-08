@@ -2,6 +2,8 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { syncProgress } from '@/lib/client/sync';
+import { requireLogin } from '@/lib/client/require-auth';
 
 interface TaskCheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
   checked?: boolean;
@@ -16,52 +18,6 @@ export interface DocumentTaskProgress {
 export type StudyActivity = Record<string, number>;
 
 export const getDocumentProgressKey = (pathname: string) => `ai-learning:document-progress:${pathname}`;
-const STUDY_ACTIVITY_KEY = 'ai-learning:study-activity';
-const STUDY_DURATION_KEY = 'ai-learning:study-duration';
-
-function localDateKey(date = new Date()) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-export function readStudyActivity(): StudyActivity {
-  try {
-    const saved = window.localStorage.getItem(STUDY_ACTIVITY_KEY);
-    const parsed = saved ? JSON.parse(saved) : {};
-    if (!parsed || typeof parsed !== 'object') return {};
-    return Object.fromEntries(Object.entries(parsed).filter(([, value]) => Number.isFinite(value) && Number(value) > 0).map(([key, value]) => [key, Number(value)]));
-  } catch {
-    return {};
-  }
-}
-
-export function recordStudyActivity() {
-  const activity = readStudyActivity();
-  const date = localDateKey();
-  const nextActivity = { ...activity, [date]: (activity[date] || 0) + 1 };
-  window.localStorage.setItem(STUDY_ACTIVITY_KEY, JSON.stringify(nextActivity));
-  window.dispatchEvent(new CustomEvent('ai-learning:study-activity', { detail: { date } }));
-}
-
-export function readStudyDuration(): StudyActivity {
-  try {
-    const saved = window.localStorage.getItem(STUDY_DURATION_KEY);
-    const parsed = saved ? JSON.parse(saved) : {};
-    if (!parsed || typeof parsed !== 'object') return {};
-    return Object.fromEntries(Object.entries(parsed).filter(([, value]) => Number.isFinite(value) && Number(value) > 0).map(([key, value]) => [key, Number(value)]));
-  } catch {
-    return {};
-  }
-}
-
-function recordStudyDuration(minutes: number) {
-  const duration = readStudyDuration();
-  const date = localDateKey();
-  window.localStorage.setItem(STUDY_DURATION_KEY, JSON.stringify({ ...duration, [date]: (duration[date] || 0) + Math.max(1, minutes) }));
-}
-
 export function readDocumentProgress(pathname: string): DocumentTaskProgress {
   const fallback = { tasks: {}, completed: false };
   try {
@@ -78,13 +34,11 @@ export function readDocumentProgress(pathname: string): DocumentTaskProgress {
   }
 }
 
-export function writeDocumentProgress(pathname: string, progress: DocumentTaskProgress, recordActivity = false, activityMinutes = 5) {
+export function writeDocumentProgress(pathname: string, progress: DocumentTaskProgress) {
+  if (!requireLogin()) return;
   window.localStorage.setItem(getDocumentProgressKey(pathname), JSON.stringify(progress));
-  if (recordActivity) {
-    recordStudyDuration(activityMinutes);
-    recordStudyActivity();
-  }
   window.dispatchEvent(new CustomEvent('ai-learning:document-progress', { detail: { pathname, progress } }));
+  void syncProgress(pathname, progress);
 }
 
 function stableKey(value: string) {
@@ -116,7 +70,7 @@ export const TaskCheckbox: React.FC<TaskCheckboxProps> = ({ checked = false, ...
     const taskId = inputRef.current?.getAttribute('data-task-id');
     if (taskId) {
       const progress = readDocumentProgress(pathname);
-      writeDocumentProgress(pathname, { ...progress, tasks: { ...progress.tasks, [taskId]: nextValue } }, true);
+      writeDocumentProgress(pathname, { ...progress, tasks: { ...progress.tasks, [taskId]: nextValue } });
     }
     props.onChange?.(event);
   };
@@ -130,7 +84,7 @@ export const TaskCheckbox: React.FC<TaskCheckboxProps> = ({ checked = false, ...
       disabled={false}
       onChange={handleChange}
       className="mr-2 h-4 w-4 accent-teal-600 align-[-2px] cursor-pointer disabled:cursor-pointer"
-      aria-label="标记任务完成"
+      aria-label="鏍囪浠诲姟瀹屾垚"
     />
   );
 };

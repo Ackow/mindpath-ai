@@ -4,6 +4,14 @@
   "compatibility_date": "2025-01-01",
   "assets": {
     "directory": "./out"
-  }
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "mindpath-ai-users",
+      "database_id": "48b99f98-6baa-4ede-904e-e23e1998ed64",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "pages_build_output_dir": "out"
 }
-

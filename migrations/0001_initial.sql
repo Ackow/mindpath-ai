@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, password_salt TEXT NOT NULL, nickname TEXT NOT NULL DEFAULT 'learner', avatar TEXT, created_at TEXT NOT NULL DEFAULT (datetime('now')), updated_at TEXT NOT NULL DEFAULT (datetime('now')));
+CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, token_hash TEXT NOT NULL UNIQUE, expires_at TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')));
+CREATE INDEX IF NOT EXISTS sessions_token_hash_idx ON sessions(token_hash);
+CREATE TABLE IF NOT EXISTS document_progress (user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, document_id TEXT NOT NULL, payload TEXT NOT NULL, updated_at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (user_id, document_id));
+CREATE TABLE IF NOT EXISTS study_activity (user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, activity_date TEXT NOT NULL, activity_count INTEGER NOT NULL DEFAULT 0, duration_minutes INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (user_id, activity_date));

@@ -404,9 +404,9 @@ r2_lr = r2_score(y_test, y_pred_lr)
 
 print("== 经典数据集: 房价预测回归拟合实战 (Housing Dataset) ==")
 print(f"训练集特征维度: {X_train.shape} | 包含特征: {feature_names[:4]}...")
-print(f"\n[普通线性回归拟合结果]")
+print(f"\\n[普通线性回归拟合结果]")
 print(f"  测试集均方误差 MSE : {mse_lr:.4f}")
-print(f"  测试集拟合优度 R²  : {r2_lr:.4f} (越接近 1.0 代表拟合越佳)\n")
+print(f"  测试集拟合优度 R²  : {r2_lr:.4f} (越接近 1.0 代表拟合越佳)\\n")
 
 # 4. 拟合 Ridge (L2) 与 Lasso (L1) 正则化模型
 ridge = Ridge(alpha=10.0).fit(X_train_scaled, y_train)
@@ -418,12 +418,12 @@ y_pred_lasso = lasso.predict(X_test_scaled)
 print("[Ridge (L2) 正则化拟合结果]")
 print(f"  测试集 MSE: {mean_squared_error(y_test, y_pred_ridge):.4f} | R²: {r2_score(y_test, y_pred_ridge):.4f}")
 
-print("\n[Lasso (L1) 正则化拟合结果]")
+print("\\n[Lasso (L1) 正则化拟合结果]")
 print(f"  测试集 MSE: {mean_squared_error(y_test, y_pred_lasso):.4f} | R²: {r2_score(y_test, y_pred_lasso):.4f}")
 
 # 5. 验证 Lasso 的稀疏特征选择能力
 zero_weights = np.sum(lasso.coef_ == 0)
-print(f"\n特征选择验证: Lasso 成功将 {zero_weights} 个次要特征的拟合权重压缩至绝对 0！")
+print(f"\\n特征选择验证: Lasso 成功将 {zero_weights} 个次要特征的拟合权重压缩至绝对 0！")
 `}
 </RunnableCodeBlock>
 

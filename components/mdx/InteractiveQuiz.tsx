@@ -17,7 +17,8 @@ import {
   ChevronUp,
   RotateCcw,
 } from 'lucide-react';
-import { recordStudyActivity } from '@/components/mdx/TaskCheckbox';
+import { requireLogin } from '@/lib/client/require-auth';
+import { syncQuiz } from '@/lib/client/sync';
 
 export interface QuestionItem {
   id: string;
@@ -204,44 +205,29 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
   const [showExplanation, setShowExplanation] = useState<Record<string, boolean>>({});
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // 客户端挂载时读取 localStorage 持久化进度
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        const data: SavedQuizData = JSON.parse(saved);
+    void fetch(`/api/quiz?documentId=${encodeURIComponent(pathname)}&quizKey=${encodeURIComponent(storageKey)}`, { credentials: 'include' })
+      .then((response) => response.ok ? response.json() : null)
+      .then((result) => {
+        if (!result?.quiz?.payload) return;
+        const data: SavedQuizData = JSON.parse(result.quiz.payload);
         if (data.userAnswers) setUserAnswers(data.userAnswers);
         if (data.submittedStatus) setSubmittedStatus(data.submittedStatus);
         if (data.showExplanation) setShowExplanation(data.showExplanation);
-        if (typeof data.currentIndex === 'number' && data.currentIndex >= 0 && data.currentIndex < questions.length) {
-          setCurrentIndex(data.currentIndex);
-        }
-      }
-    } catch (e) {
-      console.warn('Failed to read quiz progress from localStorage:', e);
-    } finally {
-      setIsLoaded(true);
-    }
-  }, [storageKey, questions.length]);
+        if (typeof data.currentIndex === 'number' && data.currentIndex >= 0 && data.currentIndex < questions.length) setCurrentIndex(data.currentIndex);
+      })
+      .catch(() => undefined)
+      .finally(() => setIsLoaded(true));
+  }, [pathname, questions.length, storageKey]);
 
-  // 状态更新时保存至 localStorage
   const saveProgress = (
     nextUserAns: Record<string, number | number[]>,
     nextSubmitted: Record<string, boolean>,
     nextExp: Record<string, boolean>,
     nextIdx: number
   ) => {
-    try {
-      const data: SavedQuizData = {
-        userAnswers: nextUserAns,
-        submittedStatus: nextSubmitted,
-        showExplanation: nextExp,
-        currentIndex: nextIdx,
-      };
-      localStorage.setItem(storageKey, JSON.stringify(data));
-    } catch (e) {
-      console.warn('Failed to save quiz progress to localStorage:', e);
-    }
+    const data: SavedQuizData = { userAnswers: nextUserAns, submittedStatus: nextSubmitted, showExplanation: nextExp, currentIndex: nextIdx };
+    void syncQuiz(pathname, storageKey, data);
   };
 
   if (!questions || questions.length === 0) return null;
@@ -268,6 +254,7 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
 
   // 选择选项
   const handleSelectOption = (qId: string, optionIdx: number, isMulti: boolean) => {
+    if (!requireLogin()) return;
     if (submittedStatus[qId]) return;
 
     let updatedAns: number | number[];
@@ -287,6 +274,7 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
 
   // 提交单题
   const handleSubmitQuestion = (qId: string) => {
+    if (!requireLogin()) return;
     if (userAnswers[qId] === undefined) return;
 
     const nextSubmitted = { ...submittedStatus, [qId]: true };
@@ -299,7 +287,7 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
     // 检查是否全量题完成，记录学习活跃度
     if (questions.every((q) => nextSubmitted[q.id])) {
       try {
-        recordStudyActivity();
+        // Activity is tracked by the note reader timer.
       } catch (e) {
         // ignore
       }
@@ -308,19 +296,17 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
 
   // 重新答题（完全清空历史记录）
   const handleResetQuiz = () => {
+    if (!requireLogin()) return;
     setUserAnswers({});
     setSubmittedStatus({});
     setShowExplanation({});
     setCurrentIndex(0);
-    try {
-      localStorage.removeItem(storageKey);
-    } catch (e) {
-      console.warn('Failed to clear quiz storage:', e);
-    }
+    void syncQuiz(pathname, storageKey, { userAnswers: {}, submittedStatus: {}, showExplanation: {}, currentIndex: 0 });
   };
 
   // 切换题目
   const handleNavigate = (idx: number) => {
+    if (!requireLogin()) return;
     const targetIdx = Math.max(0, Math.min(questions.length - 1, idx));
     setCurrentIndex(targetIdx);
     saveProgress(userAnswers, submittedStatus, showExplanation, targetIdx);

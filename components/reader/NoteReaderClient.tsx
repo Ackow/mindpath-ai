@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
@@ -8,6 +8,8 @@ import { Card } from '@/components/ui/Card';
 import { ConceptCard } from '@/components/mdx/ConceptCard';
 import { RunnableCodeBlock } from '@/components/mdx/RunnableCodeBlock';
 import { DocumentTaskProgress, readDocumentProgress, writeDocumentProgress } from '@/components/mdx/TaskCheckbox';
+import { isAuthenticated } from '@/lib/client/require-auth';
+import { syncActivity, syncProgress } from '@/lib/client/sync';
 import { getNodeById, getGlobalGraphNodes, getCurriculumModules, getHierarchicalModuleTree } from '@/lib/graph';
 import {
   ChevronRight,
@@ -59,6 +61,34 @@ export const NoteReaderClient: React.FC<NoteReaderClientProps> = ({
   children,
 }) => {
   const currentRoute = `/learn/${slug.join('/')}`;
+  const studyTimerRef = useRef<{ startedAt: number; sentMinutes: number } | null>(null);
+
+  useEffect(() => {
+    if (!isAuthenticated()) return;
+    const timer = { startedAt: Date.now(), sentMinutes: 0 };
+    studyTimerRef.current = timer;
+    const flushStudyTime = () => {
+      const elapsedMinutes = Math.floor((Date.now() - timer.startedAt) / 60000);
+      if (elapsedMinutes > timer.sentMinutes) {
+        const addedMinutes = elapsedMinutes - timer.sentMinutes;
+        const isFirstSync = timer.sentMinutes === 0;
+        timer.sentMinutes = elapsedMinutes;
+        void syncActivity(new Date().toISOString().slice(0, 10), isFirstSync ? 1 : 0, addedMinutes);
+      }
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') flushStudyTime();
+      else timer.startedAt = Date.now() - timer.sentMinutes * 60000;
+    };
+    const interval = window.setInterval(flushStudyTime, 30000);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      flushStudyTime();
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      studyTimerRef.current = null;
+    };
+  }, [currentRoute]);
   const allNodes = getGlobalGraphNodes();
   const currentNode = allNodes.find((n) => n.route === currentRoute) || allNodes[0];
   const currentModule = getCurriculumModules().find((module) => module.id === currentNode.module);
@@ -134,15 +164,7 @@ export const NoteReaderClient: React.FC<NoteReaderClientProps> = ({
   const [documentProgress, setDocumentProgress] = useState<DocumentTaskProgress>({ tasks: {}, completed: false });
 
   useEffect(() => {
-    try {
-      void window.navigator.storage?.persist?.();
-      const key = 'ai-learning:recent-notes';
-      const saved = JSON.parse(window.localStorage.getItem(key) || '{}');
-      const history = saved && typeof saved === 'object' ? saved : {};
-      window.localStorage.setItem(key, JSON.stringify({ ...history, [currentRoute]: Date.now() }));
-    } catch {
-      // Recent-note history is an optional local enhancement.
-    }
+    if (isAuthenticated()) void syncProgress(currentRoute, readDocumentProgress(currentRoute));
   }, [currentRoute]);
 
   useEffect(() => {
@@ -171,7 +193,7 @@ export const NoteReaderClient: React.FC<NoteReaderClientProps> = ({
   useEffect(() => {
     if (taskTotal > 0 && checkedTaskCount === taskTotal && !documentProgress.completed) {
       const nextProgress = { ...documentProgress, completed: true };
-      writeDocumentProgress(currentRoute, nextProgress, true, currentNode.estimatedMinutes || 25);
+      writeDocumentProgress(currentRoute, nextProgress);
       setDocumentProgress(nextProgress);
     }
   }, [checkedTaskCount, currentNode.estimatedMinutes, currentRoute, documentProgress, taskTotal]);
@@ -179,7 +201,7 @@ export const NoteReaderClient: React.FC<NoteReaderClientProps> = ({
   const markDocumentCompleted = () => {
     if (!documentProgress.completed && !window.confirm('确认将本篇文档标记为已完成？')) return;
     const nextProgress = { ...documentProgress, completed: !documentProgress.completed };
-    writeDocumentProgress(currentRoute, nextProgress, true, currentNode.estimatedMinutes || 25);
+    writeDocumentProgress(currentRoute, nextProgress);
     setDocumentProgress(nextProgress);
   };
 
