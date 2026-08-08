@@ -12,7 +12,7 @@ export async function hashValue(value: string) { const digest = await crypto.sub
 export async function hashPassword(password: string, salt = randomToken(16)) {
   const saltBytes = base64ToBytes(salt);
   const key = await crypto.subtle.importKey('raw', encoder.encode(password), { name: 'PBKDF2' }, false, ['deriveBits']);
-  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: saltBytes, iterations: 120000, hash: 'SHA-256' }, key, 256);
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: saltBytes, iterations: 100000, hash: 'SHA-256' }, key, 256);
   return { salt, hash: bytesToBase64(new Uint8Array(bits)) };
 }
 export async function verifyPassword(password: string, salt: string, expectedHash: string) { return (await hashPassword(password, salt)).hash === expectedHash; }

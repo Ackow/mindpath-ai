@@ -21,7 +21,6 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
     return json({ user: { id: userId, username, nickname: username } }, { headers: { 'Set-Cookie': sessionCookie(token) } });
   } catch (error) {
     console.error('register_failed', error);
-    const detail = error instanceof Error ? error.message : String(error);
-    return json({ error: '注册失败', detail }, { status: 500 });
+    return json({ error: '注册失败，请稍后重试' }, { status: 500 });
   }
 }
